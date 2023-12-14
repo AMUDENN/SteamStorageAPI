@@ -1,0 +1,297 @@
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace SteamStorageAPI.DBEntities;
+
+public partial class SteamStorageContext : DbContext
+{
+    public SteamStorageContext()
+    {
+    }
+
+    public SteamStorageContext(DbContextOptions<SteamStorageContext> options)
+        : base(options)
+    {
+    }
+
+    public virtual DbSet<Active> Actives { get; set; }
+
+    public virtual DbSet<ActiveGroup> ActiveGroups { get; set; }
+
+    public virtual DbSet<ActiveGroupsDynamic> ActiveGroupsDynamics { get; set; }
+
+    public virtual DbSet<Archive> Archives { get; set; }
+
+    public virtual DbSet<ArchiveGroup> ArchiveGroups { get; set; }
+
+    public virtual DbSet<Currency> Currencies { get; set; }
+
+    public virtual DbSet<Game> Games { get; set; }
+
+    public virtual DbSet<Inventory> Inventories { get; set; }
+
+    public virtual DbSet<MarkedSkin> MarkedSkins { get; set; }
+
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<Skin> Skins { get; set; }
+
+    public virtual DbSet<SkinsDynamic> SkinsDynamics { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Active>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Actives__3214EC27390B65D1");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.BuyDate).HasColumnType("datetime");
+            entity.Property(e => e.BuyPrice).HasColumnType("decimal(14, 2)");
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.GoalPrice).HasColumnType("decimal(14, 2)");
+            entity.Property(e => e.GroupId).HasColumnName("GroupID");
+            entity.Property(e => e.SkinId).HasColumnName("SkinID");
+
+            entity.HasOne(d => d.Group).WithMany(p => p.Actives)
+                .HasForeignKey(d => d.GroupId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Actives__GroupID__5DCAEF64");
+
+            entity.HasOne(d => d.Skin).WithMany(p => p.Actives)
+                .HasForeignKey(d => d.SkinId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Actives__SkinID__5EBF139D");
+        });
+
+        modelBuilder.Entity<ActiveGroup>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC278A531D89");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Colour).HasMaxLength(8);
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.GoalSum).HasColumnType("decimal(14, 2)");
+            entity.Property(e => e.Title).HasMaxLength(100);
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ActiveGroups)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ActiveGro__UserI__5AEE82B9");
+        });
+
+        modelBuilder.Entity<ActiveGroupsDynamic>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC271AECE830");
+
+            entity.ToTable("ActiveGroupsDynamic");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.DateUpdate).HasColumnType("datetime");
+            entity.Property(e => e.GroupId).HasColumnName("GroupID");
+            entity.Property(e => e.Sum).HasColumnType("decimal(14, 2)");
+
+            entity.HasOne(d => d.Group).WithMany(p => p.ActiveGroupsDynamics)
+                .HasForeignKey(d => d.GroupId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ActiveGro__Group__5BE2A6F2");
+        });
+
+        modelBuilder.Entity<Archive>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Archive__3214EC279D84DE18");
+
+            entity.ToTable("Archive");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.BuyDate).HasColumnType("datetime");
+            entity.Property(e => e.BuyPrice).HasColumnType("decimal(14, 2)");
+            entity.Property(e => e.GroupId).HasColumnName("GroupID");
+            entity.Property(e => e.SkinId).HasColumnName("SkinID");
+            entity.Property(e => e.SoldDate).HasColumnType("datetime");
+            entity.Property(e => e.SoldPrice).HasColumnType("decimal(14, 2)");
+
+            entity.HasOne(d => d.Group).WithMany(p => p.Archives)
+                .HasForeignKey(d => d.GroupId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Archive__GroupID__5FB337D6");
+
+            entity.HasOne(d => d.Skin).WithMany(p => p.Archives)
+                .HasForeignKey(d => d.SkinId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Archive__SkinID__60A75C0F");
+        });
+
+        modelBuilder.Entity<ArchiveGroup>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ArchiveG__3214EC27F80691B1");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Colour).HasMaxLength(8);
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.Title).HasMaxLength(100);
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ArchiveGroups)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ArchiveGr__UserI__5CD6CB2B");
+        });
+
+        modelBuilder.Entity<Currency>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Currenci__3214EC2749C8F396");
+
+            entity.HasIndex(e => e.SteamCurrencyId, "UQ__Currenci__E1F42BF7C145C3D2").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Mark).HasMaxLength(1);
+            entity.Property(e => e.SteamCurrencyId).HasColumnName("SteamCurrencyID");
+            entity.Property(e => e.Title).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Game>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Games__3214EC2789919467");
+
+            entity.HasIndex(e => e.SteamGameId, "UQ__Games__20E24016110F4353").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.GameIconUrl).HasMaxLength(300);
+            entity.Property(e => e.SteamGameId).HasColumnName("SteamGameID");
+            entity.Property(e => e.Title).HasMaxLength(300);
+        });
+
+        modelBuilder.Entity<Inventory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC278E2AFBB7");
+
+            entity.ToTable("Inventory");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.SkinId).HasColumnName("SkinID");
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.Skin).WithMany(p => p.Inventories)
+                .HasForeignKey(d => d.SkinId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Inventory__SkinI__5812160E");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Inventories)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Inventory__UserI__571DF1D5");
+        });
+
+        modelBuilder.Entity<MarkedSkin>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__MarkedSk__3214EC2779C3BEC6");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.SkinId).HasColumnName("SkinID");
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.Skin).WithMany(p => p.MarkedSkins)
+                .HasForeignKey(d => d.SkinId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__MarkedSki__SkinI__59FA5E80");
+
+            entity.HasOne(d => d.User).WithMany(p => p.MarkedSkins)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__MarkedSki__UserI__59063A47");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC273BF6CBBD");
+
+            entity.HasIndex(e => e.Title, "UQ__Roles__2CB664DC05E4F724").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Title).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Skin>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Skins__3214EC27352FBBA1");
+
+            entity.HasIndex(e => e.MarketHashName, "UQ__Skins__B593E7DA563B2E74").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.GameId).HasColumnName("GameID");
+            entity.Property(e => e.MarketHashName).HasMaxLength(300);
+            entity.Property(e => e.SkinIconUrl).HasMaxLength(300);
+            entity.Property(e => e.Title).HasMaxLength(300);
+
+            entity.HasOne(d => d.Game).WithMany(p => p.Skins)
+                .HasForeignKey(d => d.GameId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Skins__GameID__5535A963");
+        });
+
+        modelBuilder.Entity<SkinsDynamic>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SkinsDyn__3214EC27B015358F");
+
+            entity.ToTable("SkinsDynamic");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.DateUpdate).HasColumnType("datetime");
+            entity.Property(e => e.Price).HasColumnType("decimal(14, 2)");
+            entity.Property(e => e.SkinId).HasColumnName("SkinID");
+
+            entity.HasOne(d => d.Skin).WithMany(p => p.SkinsDynamics)
+                .HasForeignKey(d => d.SkinId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__SkinsDyna__SkinI__5629CD9C");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC27FFD03B47");
+
+            entity.HasIndex(e => e.SteamId, "UQ__Users__6F4E9AD00FA80211").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CurrencyId).HasColumnName("CurrencyID");
+            entity.Property(e => e.DateRegistration).HasColumnType("datetime");
+            entity.Property(e => e.RoleId).HasColumnName("RoleID");
+            entity.Property(e => e.SteamId).HasColumnName("SteamID");
+
+            entity.HasOne(d => d.Currency).WithMany(p => p.Users)
+                .HasForeignKey(d => d.CurrencyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Users__CurrencyI__5441852A");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Users__RoleID__534D60F1");
+        });
+
+        OnModelCreatingPartial(modelBuilder);
+    }
+
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
+    public void UndoChanges()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Modified:
+                    entry.State = EntityState.Unchanged;
+                    break;
+                case EntityState.Deleted:
+                    entry.Reload();
+                    break;
+                case EntityState.Added:
+                    entry.State = EntityState.Detached;
+                    break;
+            }
+        }
+    }
+}
