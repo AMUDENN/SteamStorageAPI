@@ -97,7 +97,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "SteamAuthCallback")]
-        public async Task<ActionResult<AuthResponse>> SteamAuthCallback([FromQuery] SteamAuthRequest steamAuthRequest)
+        public async Task<ActionResult<AuthResponse>> SteamAuthCallback([FromQuery]SteamAuthRequest steamAuthRequest)
         {
             try
             {

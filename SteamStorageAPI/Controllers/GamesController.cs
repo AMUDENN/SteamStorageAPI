@@ -44,10 +44,10 @@ namespace SteamStorageAPI.Controllers
             HttpResponseMessage? response = await client.GetAsync(SteamUrls.GetGameIconUrl(steamGameId, iconUrlHash));
             return response.StatusCode == HttpStatusCode.OK;
         }
-        private SteamGameResponse? GetGameResponse(int steamGameId)
+        private async Task<SteamGameResponse?> GetGameResponse(int steamGameId)
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            return client.GetFromJsonAsync<SteamGameResponse>(@$"https://store.steampowered.com/api/libraryappdetails/?appid={steamGameId}").Result;
+            return await client.GetFromJsonAsync<SteamGameResponse>(SteamUrls.GetGameInfoUrl(steamGameId));
         }
         #endregion Methods
 
@@ -78,7 +78,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                SteamGameResponse? response = GetGameResponse(request.SteamGameId);
+                SteamGameResponse? response = await GetGameResponse(request.SteamGameId);
 
                 if (response is null)
                     return BadRequest("Указан неверный id игры");

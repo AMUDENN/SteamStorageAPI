@@ -38,13 +38,10 @@ namespace SteamStorageAPI.Controllers
             return _context.Users.FirstOrDefault(x => x.Id == Id);
         }
 
-        private async Task<UserResponse?> GetUserResponse(User? user)
+        private UserResponse? GetUserResponse(User? user)
         {
             if (user is null)
                 return null;
-
-            await _context.Roles.LoadAsync();
-            await _context.Currencies.LoadAsync();
 
             return new UserResponse(user.Id,
                                     user.SteamId,
@@ -64,7 +61,7 @@ namespace SteamStorageAPI.Controllers
                 await _context.Roles.LoadAsync();
                 await _context.Currencies.LoadAsync();
 
-                return Ok(_context.Users.ToList().Select(async x => await GetUserResponse(x)));
+                return Ok(_context.Users.ToList().Select(x => GetUserResponse(x)));
             }
             catch (Exception ex)
             {
@@ -83,7 +80,10 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(await GetUserResponse(user));
+                await _context.Roles.LoadAsync();
+                await _context.Currencies.LoadAsync();
+
+                return Ok(GetUserResponse(user));
             }
             catch (Exception ex)
             {
@@ -102,7 +102,10 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(await GetUserResponse(user));
+                await _context.Roles.LoadAsync();
+                await _context.Currencies.LoadAsync();
+
+                return Ok(GetUserResponse(user));
             }
             catch (Exception ex)
             {
