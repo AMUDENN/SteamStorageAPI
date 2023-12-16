@@ -10,7 +10,7 @@ public partial class ArchiveGroup
 
     public string? Description { get; set; }
 
-    public string? Colour { get; set; } = null!;
+    public string? Colour { get; set; }
 
     public virtual ICollection<Archive> Archives { get; set; } = new List<Archive>();
 

@@ -16,6 +16,8 @@
             $"https://steamcommunity.com/market/search/render?norender=1&l=russian&start=0&count=1&query={marketHashName}";
         public static string GetInventoryUrl(long steamProfileId, int appId, int count) =>
             @$"https://steamcommunity.com/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
+        public static string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId) =>
+            $@"https://steamcommunity.com/market/priceoverview/?appid={appId}&market_hash_name={marketHashName}&currency={steamCurrencyId}";
         public static string GetAuthUrl(string returnTo, string realm) =>
             "https://steamcommunity.com/openid/login" +
             "?openid.ns=http://specs.openid.net/auth/2.0" +

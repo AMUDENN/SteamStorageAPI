@@ -123,7 +123,7 @@ namespace SteamStorageAPI.Controllers
 
                 HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), JsonConvert.SerializeObject(steamAuthRequest));
 
-                await _context.Roles.LoadAsync();
+                _context.Entry(user).Reference(u => u.Role).Load();
 
                 return Ok(new AuthResponse(_jwtProvider.Generate(user)));
             }

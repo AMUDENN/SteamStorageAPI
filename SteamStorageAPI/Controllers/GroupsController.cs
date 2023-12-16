@@ -29,11 +29,11 @@ namespace SteamStorageAPI.Controllers
         public record ArchiveGroupsResponse(int Id, string Title, string Description, string Colour);
         public record ActiveGroupsResponse(int Id, string Title, string Description, string Colour, decimal? GoalSum);
         public record ActiveGroupDynamicsResponse(int Id, DateTime DateUpdate, decimal Sum);
-        public record ActiveGroupDynamicRequest(int GroupID, int DaysDynamic = 30);
-        public record AddArchiveGroupRequest(string Title, string? Description, string? Colour);
-        public record AddActiveGroupRequest(string Title, string? Description, string? Colour, decimal? GoalSum);
-        public record EditArchiveGroupRequest(int GroupId, string Title, string? Description, string? Colour);
-        public record EditActiveGroupRequest(int GroupId, string Title, string? Description, string? Colour, decimal? GoalSum);
+        public record GetActiveGroupDynamicRequest(int GroupID, int DaysDynamic = 30);
+        public record PostArchiveGroupRequest(string Title, string? Description, string? Colour);
+        public record PostActiveGroupRequest(string Title, string? Description, string? Colour, decimal? GoalSum);
+        public record PutArchiveGroupRequest(int GroupId, string Title, string? Description, string? Colour);
+        public record PutActiveGroupRequest(int GroupId, string Title, string? Description, string? Colour, decimal? GoalSum);
         public record DeleteArchiveGroupRequest(int GroupId);
         public record DeleteActiveGroupRequest(int GroupId);
         #endregion Records
@@ -87,7 +87,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetActiveGroupDynamics")]
-        public async Task<ActionResult<IEnumerable<ActiveGroupDynamicsResponse>>> GetActiveGroupDynamics([FromQuery]ActiveGroupDynamicRequest request)
+        public ActionResult<IEnumerable<ActiveGroupDynamicsResponse>> GetActiveGroupDynamics([FromQuery]GetActiveGroupDynamicRequest request)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace SteamStorageAPI.Controllers
 
                 DateTime startDate = DateTime.Now.AddDays(-request.DaysDynamic);
 
-                await _context.ActiveGroupsDynamics.LoadAsync();
+                _context.Entry(group).Collection(s => s.ActiveGroupsDynamics).Load();
 
                 return Ok(group.ActiveGroupsDynamics.Where(x => x.DateUpdate > startDate).Select(x =>
                         new ActiveGroupDynamicsResponse(x.Id,
@@ -120,7 +120,7 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
         [HttpPost(Name = "PostArchiveGroup")]
-        public async Task<ActionResult> PostArchiveGroups(AddArchiveGroupRequest request)
+        public async Task<ActionResult> PostArchiveGroups(PostArchiveGroupRequest request)
         {
             try
             {
@@ -150,7 +150,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpPost(Name = "PostActiveGroup")]
-        public async Task<ActionResult> PostActiveGroups(AddActiveGroupRequest request)
+        public async Task<ActionResult> PostActiveGroups(PostActiveGroupRequest request)
         {
             try
             {
@@ -183,7 +183,7 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
         [HttpPut(Name = "PutArchiveGroup")]
-        public async Task<ActionResult> PutArchiveGroups(EditArchiveGroupRequest request)
+        public async Task<ActionResult> PutArchiveGroups(PutArchiveGroupRequest request)
         {
             try
             {
@@ -214,7 +214,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpPut(Name = "PutActiveGroup")]
-        public async Task<ActionResult> PutActiveGroups(EditActiveGroupRequest request)
+        public async Task<ActionResult> PutActiveGroups(PutActiveGroupRequest request)
         {
             try
             {

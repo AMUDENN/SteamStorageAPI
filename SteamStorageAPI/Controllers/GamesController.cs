@@ -32,8 +32,8 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
         public record GameResponse(int Id, int SteamGameId, string Title, string GameIconUrl);
-        public record GameRequest(int SteamGameId, string IconUrlHash);
-        public record EditGameRequest(int GameId, string IconUrlHash, string Title);
+        public record PostGameRequest(int SteamGameId, string IconUrlHash);
+        public record PutGameRequest(int GameId, string IconUrlHash, string Title);
         public record DeleteGameRequest(int GameId);
         #endregion Records
 
@@ -74,7 +74,7 @@ namespace SteamStorageAPI.Controllers
         #region POST
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpPost(Name = "PostGame")]
-        public async Task<ActionResult> PostGame(GameRequest request)
+        public async Task<ActionResult> PostGame(PostGameRequest request)
         {
             try
             {
@@ -109,7 +109,7 @@ namespace SteamStorageAPI.Controllers
         #region PUT
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpPut(Name = "PutGameInfo")]
-        public async Task<ActionResult> PutGameInfo(EditGameRequest request)
+        public async Task<ActionResult> PutGameInfo(PutGameRequest request)
         {
             try
             {

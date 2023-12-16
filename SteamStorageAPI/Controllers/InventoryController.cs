@@ -1,15 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SteamStorageAPI.DBEntities;
-using static SteamStorageAPI.Controllers.GroupsController;
-using SteamStorageAPI.Utilities;
-using static SteamStorageAPI.Controllers.SkinsController;
 using Microsoft.EntityFrameworkCore;
-using static SteamStorageAPI.Controllers.GamesController;
-using SteamStorageAPI.Utilities.Steam;
-using System.Net.Http;
-using SteamStorageAPI.Models.SteamAPIModels.Skins;
+using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Inventory;
+using SteamStorageAPI.Utilities;
+using SteamStorageAPI.Utilities.Steam;
+using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -35,11 +31,12 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
         public record InventoryResponse(int Id, SkinResponse Skin, int Count);
+        public record GetInventoryRequest(int GameId);
         #endregion Records
 
         #region GET
         [HttpGet(Name = "GetInventory")]
-        public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory()
+        public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory([FromQuery]GetInventoryRequest request)
         {
             try
             {
@@ -48,14 +45,15 @@ namespace SteamStorageAPI.Controllers
                 if (userId is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                await _context.Skins.LoadAsync();
-                await _context.Games.LoadAsync();
-                await _context.SkinsDynamics.LoadAsync();
+                Game? game = _context.Games.Where(x => x.Id == request.GameId).FirstOrDefault();
 
-                return Ok(_context.Inventories.Where(x => x.UserId == userId)
+                if (game is null)
+                    return NotFound("Игры с таким Id не существует");
+
+                return Ok(_context.Inventories.Include(x => x.Skin).Where(x => x.UserId == userId && x.Skin.GameId == game.Id)
                     .Select(x =>
                         new InventoryResponse(x.Id,
-                                              GetSkinResponse(x.Skin)!,
+                                              GetSkinResponse(_context, x.Skin)!,
                                               x.Count)));
             }
             catch (Exception ex)
@@ -68,7 +66,7 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
         [HttpPost(Name = "RefreshInventory")]
-        public async Task<ActionResult> RefreshInventory()
+        public async Task<ActionResult> RefreshInventory(GetInventoryRequest request)
         {
             try
             {
@@ -79,32 +77,45 @@ namespace SteamStorageAPI.Controllers
 
                 User user = _context.Users.First(x => x.Id == userId);
 
-                _context.Inventories.RemoveRange(_context.Inventories.Where(x => x.UserId == userId));
+                Game? game = _context.Games.Where(x => x.Id == request.GameId).FirstOrDefault();
+
+                if (game is null)
+                    return NotFound("Игры с таким Id не существует");
+
+                _context.Inventories.RemoveRange(_context.Inventories.Where(x => x.UserId == userId && x.Skin.GameId == game.Id));
 
                 HttpClient client = _httpClientFactory.CreateClient();
+                SteamInventoryResponse? response = await client.GetFromJsonAsync<SteamInventoryResponse>(SteamUrls.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
 
-                IEnumerable<Game> games = _context.Games.ToList();
+                if (response is null)
+                    throw new Exception("При получении данных с сервера Steam произошла ошибка");
 
-                foreach (Game game in games)
+                foreach (var item in response!.descriptions)
                 {
-                    SteamInventoryResponse? response = await client.GetFromJsonAsync<SteamInventoryResponse>(SteamUrls.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
-
-                    if (response is null)
+                    if (item.marketable == 0 && item.tradable == 0)
                         continue;
 
-                    foreach (var item in response!.descriptions)
+                    //Сделать добавление нового скина в базу, если его ещё нет
+                    Skin? skin = _context.Skins.FirstOrDefault(x => x.MarketHashName == item.market_hash_name);
+                    if (skin is null)
                     {
-                        Skin? skin = _context.Skins.FirstOrDefault(x => x.MarketHashName == item.market_hash_name);
-                        if (skin is null)
-                            continue;
-
-                        _context.Inventories.Add(new Inventory()
+                        skin = new()
                         {
-                            User = user,
-                            Skin = skin,
-                            Count = 1
-                        });
+                            GameId = game.Id,
+                            MarketHashName = item.market_hash_name,
+                            Title = item.name,
+                            SkinIconUrl = item.icon_url
+                        };
+                        _context.Skins.Add(skin);
                     }
+                    
+
+                    _context.Inventories.Add(new Inventory()
+                    {
+                        User = user,
+                        Skin = skin,
+                        Count = 1
+                    });
                 }
 
                 await _context.SaveChangesAsync();

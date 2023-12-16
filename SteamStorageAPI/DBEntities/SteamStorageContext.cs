@@ -25,6 +25,8 @@ public partial class SteamStorageContext : DbContext
 
     public virtual DbSet<Currency> Currencies { get; set; }
 
+    public virtual DbSet<CurrencyDynamic> CurrencyDynamics { get; set; }
+
     public virtual DbSet<Game> Games { get; set; }
 
     public virtual DbSet<Inventory> Inventories { get; set; }
@@ -43,7 +45,7 @@ public partial class SteamStorageContext : DbContext
     {
         modelBuilder.Entity<Active>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Actives__3214EC27390B65D1");
+            entity.HasKey(e => e.Id).HasName("PK__Actives__3214EC27A0B6A2E3");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.BuyDate).HasColumnType("datetime");
@@ -56,7 +58,7 @@ public partial class SteamStorageContext : DbContext
             entity.HasOne(d => d.Group).WithMany(p => p.Actives)
                 .HasForeignKey(d => d.GroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Actives__GroupID__5DCAEF64");
+                .HasConstraintName("FK__Actives__GroupID__5535A963");
 
             entity.HasOne(d => d.Skin).WithMany(p => p.Actives)
                 .HasForeignKey(d => d.SkinId)
@@ -66,7 +68,7 @@ public partial class SteamStorageContext : DbContext
 
         modelBuilder.Entity<ActiveGroup>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC278A531D89");
+            entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC27D1172601");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Colour).HasMaxLength(8);
@@ -78,12 +80,12 @@ public partial class SteamStorageContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ActiveGroups)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ActiveGro__UserI__5AEE82B9");
+                .HasConstraintName("FK__ActiveGro__UserI__534D60F1");
         });
 
         modelBuilder.Entity<ActiveGroupsDynamic>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC271AECE830");
+            entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC272CD4BB2C");
 
             entity.ToTable("ActiveGroupsDynamic");
 
@@ -95,12 +97,12 @@ public partial class SteamStorageContext : DbContext
             entity.HasOne(d => d.Group).WithMany(p => p.ActiveGroupsDynamics)
                 .HasForeignKey(d => d.GroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ActiveGro__Group__5BE2A6F2");
+                .HasConstraintName("FK__ActiveGro__Group__5441852A");
         });
 
         modelBuilder.Entity<Archive>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Archive__3214EC279D84DE18");
+            entity.HasKey(e => e.Id).HasName("PK__Archive__3214EC274C88A91A");
 
             entity.ToTable("Archive");
 
@@ -141,14 +143,28 @@ public partial class SteamStorageContext : DbContext
 
         modelBuilder.Entity<Currency>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Currenci__3214EC2749C8F396");
+            entity.HasKey(e => e.Id).HasName("PK__Currenci__3214EC273C93DBA6");
 
-            entity.HasIndex(e => e.SteamCurrencyId, "UQ__Currenci__E1F42BF7C145C3D2").IsUnique();
+            entity.HasIndex(e => e.SteamCurrencyId, "UQ__Currenci__E1F42BF7926A89FE").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Mark).HasMaxLength(1);
             entity.Property(e => e.SteamCurrencyId).HasColumnName("SteamCurrencyID");
             entity.Property(e => e.Title).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<CurrencyDynamic>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Currency__3214EC27B3D14A7F");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CurrencyId).HasColumnName("CurrencyID");
+            entity.Property(e => e.DateUpdate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Currency).WithMany(p => p.CurrencyDynamics)
+                .HasForeignKey(d => d.CurrencyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__CurrencyD__Curre__72C60C4A");
         });
 
         modelBuilder.Entity<Game>(entity =>
@@ -158,14 +174,13 @@ public partial class SteamStorageContext : DbContext
             entity.HasIndex(e => e.SteamGameId, "UQ__Games__20E24016110F4353").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.GameIconUrl).HasMaxLength(300);
             entity.Property(e => e.SteamGameId).HasColumnName("SteamGameID");
             entity.Property(e => e.Title).HasMaxLength(300);
         });
 
         modelBuilder.Entity<Inventory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC278E2AFBB7");
+            entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC278790377C");
 
             entity.ToTable("Inventory");
 
@@ -181,12 +196,12 @@ public partial class SteamStorageContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Inventories)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__UserI__571DF1D5");
+                .HasConstraintName("FK__Inventory__UserI__5AEE82B9");
         });
 
         modelBuilder.Entity<MarkedSkin>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__MarkedSk__3214EC2779C3BEC6");
+            entity.HasKey(e => e.Id).HasName("PK__MarkedSk__3214EC2798FE4252");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.SkinId).HasColumnName("SkinID");
@@ -200,14 +215,14 @@ public partial class SteamStorageContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.MarkedSkins)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__MarkedSki__UserI__59063A47");
+                .HasConstraintName("FK__MarkedSki__UserI__5CD6CB2B");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC273BF6CBBD");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC27C69DA33E");
 
-            entity.HasIndex(e => e.Title, "UQ__Roles__2CB664DC05E4F724").IsUnique();
+            entity.HasIndex(e => e.Title, "UQ__Roles__2CB664DC7330A5BE").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Title).HasMaxLength(100);
@@ -222,7 +237,6 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.GameId).HasColumnName("GameID");
             entity.Property(e => e.MarketHashName).HasMaxLength(300);
-            entity.Property(e => e.SkinIconUrl).HasMaxLength(300);
             entity.Property(e => e.Title).HasMaxLength(300);
 
             entity.HasOne(d => d.Game).WithMany(p => p.Skins)
@@ -233,7 +247,7 @@ public partial class SteamStorageContext : DbContext
 
         modelBuilder.Entity<SkinsDynamic>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__SkinsDyn__3214EC27B015358F");
+            entity.HasKey(e => e.Id).HasName("PK__SkinsDyn__3214EC2762527D0C");
 
             entity.ToTable("SkinsDynamic");
 
@@ -250,9 +264,9 @@ public partial class SteamStorageContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC27FFD03B47");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC2727F435B9");
 
-            entity.HasIndex(e => e.SteamId, "UQ__Users__6F4E9AD00FA80211").IsUnique();
+            entity.HasIndex(e => e.SteamId, "UQ__Users__6F4E9AD04FAC4669").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CurrencyId).HasColumnName("CurrencyID");
@@ -263,12 +277,12 @@ public partial class SteamStorageContext : DbContext
             entity.HasOne(d => d.Currency).WithMany(p => p.Users)
                 .HasForeignKey(d => d.CurrencyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Users__CurrencyI__5441852A");
+                .HasConstraintName("FK__Users__CurrencyI__5FB337D6");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Users__RoleID__534D60F1");
+                .HasConstraintName("FK__Users__RoleID__60A75C0F");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities;
-using static SteamStorageAPI.Controllers.CurrenciesController;
-using static SteamStorageAPI.Controllers.RolesController;
 using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
@@ -28,8 +25,8 @@ namespace SteamStorageAPI.Controllers
         #endregion Constructor
 
         #region Records
-        public record UserRequest(int UserId);
-        public record UserResponse(int UserId, long SteamId, RoleResponse Role, CurrencyResponse Currency, DateTime DateRegistration);
+        public record UserResponse(int UserId, long SteamId, int RoleId, int CurrencyId, DateTime DateRegistration);
+        public record GetUserRequest(int UserId);
         #endregion Records
 
         #region Methods
@@ -45,8 +42,8 @@ namespace SteamStorageAPI.Controllers
 
             return new UserResponse(user.Id,
                                     user.SteamId,
-                                    new RoleResponse(user.Role.Id, user.Role.Title),
-                                    new CurrencyResponse(user.Currency.Id, user.Currency.SteamCurrencyId, user.Currency.Title, user.Currency.Mark),
+                                    user.RoleId,
+                                    user.CurrencyId,
                                     user.DateRegistration);
         }
         #endregion Methods
@@ -54,13 +51,10 @@ namespace SteamStorageAPI.Controllers
         #region GET
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpGet(Name = "GetUsers")]
-        public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
+        public ActionResult<IEnumerable<UserResponse>> GetUsers()
         {
             try
             {
-                await _context.Roles.LoadAsync();
-                await _context.Currencies.LoadAsync();
-
                 return Ok(_context.Users.ToList().Select(x => GetUserResponse(x)));
             }
             catch (Exception ex)
@@ -71,7 +65,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetUserInfo")]
-        public async Task<ActionResult<UserResponse>> GetUserInfo([FromQuery]UserRequest request)
+        public ActionResult<UserResponse> GetUserInfo([FromQuery]GetUserRequest request)
         {
             try
             {
@@ -79,9 +73,6 @@ namespace SteamStorageAPI.Controllers
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
-
-                await _context.Roles.LoadAsync();
-                await _context.Currencies.LoadAsync();
 
                 return Ok(GetUserResponse(user));
             }
@@ -93,7 +84,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetCurrentUserInfo")]
-        public async Task<ActionResult<UserResponse>> GetCurrentUserInfo()
+        public ActionResult<UserResponse> GetCurrentUserInfo()
         {
             try
             {
@@ -101,9 +92,6 @@ namespace SteamStorageAPI.Controllers
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
-
-                await _context.Roles.LoadAsync();
-                await _context.Currencies.LoadAsync();
 
                 return Ok(GetUserResponse(user));
             }

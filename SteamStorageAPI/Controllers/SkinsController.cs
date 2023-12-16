@@ -44,12 +44,16 @@ namespace SteamStorageAPI.Controllers
         #endregion Constructor
 
         #region Records
-        public record SkinResponse(int Id, GameResponse Game, string MarketHashName, string Title, string SkinIconUrl, string MarketUrl, IEnumerable<SkinDynamicResponse> SkinDynamics);
+        public record SkinResponse(int Id, int GameId, string MarketHashName, string Title, string SkinIconUrl, string MarketUrl, IEnumerable<SkinDynamicResponse> SkinDynamics);
         public record SkinDynamicResponse(int Id, DateTime DateUpdate, decimal Price);
         public record PageCountRespose(int Count);
-        public record SkinRequest(int SkinId);
-        public record SkinsRequest(int GameId, string? Filter, OrderName? OrderName, bool? IsAscending, int PageNumber, int PageSize);
-        public record PageCountRequest(int GameId, string? Filter, int PageSize);
+        public record SteamSkinsCountResponse(int Count);
+        public record SavedSkinsCountResponse(int Count);
+        public record GetSkinRequest(int SkinId);
+        public record GetSkinsRequest(int GameId, string? Filter, OrderName? OrderName, bool? IsAscending, int PageNumber, int PageSize);
+        public record GetPageCountRequest(int GameId, string? Filter, int PageSize);
+        public record GetSteamSkinsCountRequest(int GameId);
+        public record GetSavedSkinsCountRequest(int GameId);
         public record PostSkinsRequest(int GameId);
         public record PostSkinRequest(int GameId, string MarketHashName);
         #endregion Records
@@ -65,25 +69,30 @@ namespace SteamStorageAPI.Controllers
             return _context.Games.FirstOrDefault(x => x.Id == Id);
         }
 
-        public static SkinResponse? GetSkinResponse(Skin? skin)
+        public static SkinResponse? GetSkinResponse(SteamStorageContext context, Skin? skin)
         {
             if (skin is null)
                 return null;
 
-            return new SkinResponse(skin.Id,
-                                    new GameResponse(skin.Game.Id, skin.Game.SteamGameId, skin.Game.Title, SteamUrls.GetGameIconUrl(skin.Game.SteamGameId, skin.Game.GameIconUrl)),
-                                    skin.MarketHashName,
-                                    skin.Title,
-                                    SteamUrls.GetSkinIconUrl(skin.SkinIconUrl),
-                                    SteamUrls.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName),
-                                    skin.SkinsDynamics.OrderBy(x => x.DateUpdate)
+            context.Entry(skin).Reference(s => s.Game).Load();
+            context.Entry(skin).Collection(s => s.SkinsDynamics).Load();
+
+            return new SkinResponse(
+                skin.Id,
+                skin.GameId,
+                skin.MarketHashName,
+                skin.Title,
+                SteamUrls.GetSkinIconUrl(skin.SkinIconUrl),
+                SteamUrls.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName),
+                skin.SkinsDynamics.OrderBy(x => x.DateUpdate)
                                     .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, x.Price)));
+
         }
         #endregion Methods
 
         #region GET
         [HttpGet(Name = "GetSkinInfo")]
-        public async Task<ActionResult<SkinResponse>> GetSkinInfo([FromQuery]SkinRequest request)
+        public ActionResult<SkinResponse> GetSkinInfo([FromQuery]GetSkinRequest request)
         {
             try
             {
@@ -92,10 +101,7 @@ namespace SteamStorageAPI.Controllers
                 if (skin is null)
                     return NotFound("Скина с таким Id не существует");
 
-                await _context.Games.LoadAsync();
-                await _context.SkinsDynamics.LoadAsync();
-
-                return Ok(GetSkinResponse(skin));
+                return Ok(GetSkinResponse(_context, skin));
             }
             catch (Exception ex)
             {
@@ -105,7 +111,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSkins")]
-        public async Task<ActionResult<IEnumerable<SkinResponse>>> GetSkins([FromQuery]SkinsRequest request)
+        public ActionResult<IEnumerable<SkinResponse>> GetSkins([FromQuery]GetSkinsRequest request)
         {
             try
             {
@@ -122,10 +128,7 @@ namespace SteamStorageAPI.Controllers
 
                 skins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
 
-                await _context.Games.LoadAsync();
-                await _context.SkinsDynamics.LoadAsync();
-
-                return Ok(skins.Select(x => GetSkinResponse(x)));
+                return Ok(skins.Select(x => GetSkinResponse(_context, x)));
             }
             catch (Exception ex)
             {
@@ -135,7 +138,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetPagesCount")]
-        public ActionResult<PageCountRespose> GetPagesCount([FromQuery]PageCountRequest request)
+        public ActionResult<PageCountRespose> GetPagesCount([FromQuery]GetPageCountRequest request)
         {
             try
             {
@@ -149,6 +152,50 @@ namespace SteamStorageAPI.Controllers
                                                                && request.Filter == null || x.Title.Contains(request.Filter));
 
                 return Ok(new PageCountRespose((int)Math.Ceiling((double)skins.Count() / request.PageSize)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(Name = "GetSteamSkinsCount")]
+        public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount([FromQuery]GetSteamSkinsCountRequest request)
+        {
+            try
+            {
+                Game? game = FindGame(request.GameId);
+
+                if (game is null)
+                    return NotFound("Игры с таким Id не существует");
+
+                HttpClient client = _httpClientFactory.CreateClient();
+                SteamSkinResponse? response = await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, 1, 0));
+
+                if (response is null)
+                    throw new Exception("При получении данных с сервера Steam произошла ошибка");
+
+                return Ok(new SteamSkinsCountResponse(response.total_count));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(Name = "GetSavedSkinsCount")]
+        public ActionResult<SavedSkinsCountResponse> GetSavedSkinsCount([FromQuery]GetSavedSkinsCountRequest request)
+        {
+            try
+            {
+                Game? game = FindGame(request.GameId);
+
+                if (game is null)
+                    return NotFound("Игры с таким Id не существует");
+
+                return Ok(new SavedSkinsCountResponse(_context.Skins.Where(x => x.GameId == request.GameId).Count()));
             }
             catch (Exception ex)
             {
@@ -177,18 +224,27 @@ namespace SteamStorageAPI.Controllers
 
                 int answerCount = 100;
 
-                int totalCount = -1;
+                SteamSkinResponse? response = await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, 1, 0));
+
+                if (response is null)
+                    throw new Exception("При получении данных с сервера Steam произошла ошибка");
+
+                int totalCount = response.total_count;
+
+                Random rnd = new();
 
                 while (count == answerCount || start < totalCount)
                 {
                     try
                     {
-                        SteamSkinResponse? response = await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, count, start));
+                        _logger.LogInformation($"{start} / {totalCount}");
+
+
+                        response = await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, count, start));
 
                         if (response is null)
                             throw new Exception("При получении данных с сервера Steam произошла ошибка");
 
-                        totalCount = response.total_count;
 
                         List<Skin> skins = [];
 
@@ -209,16 +265,20 @@ namespace SteamStorageAPI.Controllers
                         _context.Skins.AddRange(skins);
 
                         await _context.SaveChangesAsync();
-                        
+
                         answerCount = response.results.Length;
                         start += response.results.Length;
 
-                        await Task.Delay(3000);
+                        count = 100;
+
+                        await Task.Delay(rnd.Next(3000, 4000));
                     }
                     catch (Exception ex)
                     {
+                        count = rnd.Next(20, 99);
+                        start -= 1;
                         _logger.LogError(ex.Message);
-                        await Task.Delay(30000);
+                        await Task.Delay(rnd.Next(100000, 150000));
                     }
                 }
 

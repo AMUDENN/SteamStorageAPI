@@ -9,6 +9,7 @@ namespace SteamStorageAPI.Utilities.JWT
     {
         public string Generate(User tokenOwner)
         {
+
             List<Claim> claims =
             [
                 new(ClaimTypes.Name, tokenOwner.SteamId.ToString()),
