@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities.JWT;
@@ -97,7 +96,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "SteamAuthCallback")]
-        public async Task<ActionResult<AuthResponse>> SteamAuthCallback([FromQuery]SteamAuthRequest steamAuthRequest)
+        public async Task<ActionResult<AuthResponse>> SteamAuthCallback([FromQuery] SteamAuthRequest steamAuthRequest)
         {
             try
             {

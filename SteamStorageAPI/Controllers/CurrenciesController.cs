@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Utilities.Steam;
@@ -42,7 +41,7 @@ namespace SteamStorageAPI.Controllers
         {
             if (currency is null)
                 return null;
-            _context.Entry(currency).Collection(s => s.CurrencyDynamics);
+            _context.Entry(currency).Collection(s => s.CurrencyDynamics).Load();
             return new CurrencyResponse(currency.Id,
                                         currency.SteamCurrencyId,
                                         currency.Title,
@@ -67,7 +66,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetCurrency")]
-        public ActionResult<CurrencyResponse> GetCurrency([FromQuery]GetCurrencyRequest request)
+        public ActionResult<CurrencyResponse> GetCurrency([FromQuery] GetCurrencyRequest request)
         {
             try
             {
@@ -132,7 +131,7 @@ namespace SteamStorageAPI.Controllers
 
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
-                if (response is null)
+                if (response is null || response.lowest_price is null)
                     throw new Exception("При получении данных с сервера Steam произошла ошибка");
 
                 double dollarPrice = Convert.ToDouble(response.lowest_price.Replace(dollar.Mark, string.Empty).Replace('.', ','));

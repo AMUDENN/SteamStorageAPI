@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Models.SteamAPIModels.Games;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Utilities.Steam;
-using static SteamStorageAPI.Controllers.GamesController;
 using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
@@ -92,7 +89,7 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
         [HttpGet(Name = "GetSkinInfo")]
-        public ActionResult<SkinResponse> GetSkinInfo([FromQuery]GetSkinRequest request)
+        public ActionResult<SkinResponse> GetSkinInfo([FromQuery] GetSkinRequest request)
         {
             try
             {
@@ -111,7 +108,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSkins")]
-        public ActionResult<IEnumerable<SkinResponse>> GetSkins([FromQuery]GetSkinsRequest request)
+        public ActionResult<IEnumerable<SkinResponse>> GetSkins([FromQuery] GetSkinsRequest request)
         {
             try
             {
@@ -138,7 +135,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetPagesCount")]
-        public ActionResult<PageCountRespose> GetPagesCount([FromQuery]GetPageCountRequest request)
+        public ActionResult<PageCountRespose> GetPagesCount([FromQuery] GetPageCountRequest request)
         {
             try
             {
@@ -161,7 +158,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSteamSkinsCount")]
-        public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount([FromQuery]GetSteamSkinsCountRequest request)
+        public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount([FromQuery] GetSteamSkinsCountRequest request)
         {
             try
             {
@@ -186,7 +183,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSavedSkinsCount")]
-        public ActionResult<SavedSkinsCountResponse> GetSavedSkinsCount([FromQuery]GetSavedSkinsCountRequest request)
+        public ActionResult<SavedSkinsCountResponse> GetSavedSkinsCount([FromQuery] GetSavedSkinsCountRequest request)
         {
             try
             {
@@ -237,7 +234,7 @@ namespace SteamStorageAPI.Controllers
                 {
                     try
                     {
-                        _logger.LogInformation($"{start} / {totalCount}");
+                        _logger.LogInformation($"Процесс выполнения загрузки скинов:\nЗагружено: {start} / {totalCount}");
 
 
                         response = await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, count, start));
@@ -304,7 +301,7 @@ namespace SteamStorageAPI.Controllers
 
                 HttpClient client = _httpClientFactory.CreateClient();
 
-                
+
                 SteamSkinResponse? response = await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinInfo(request.MarketHashName));
 
                 if (response is null)

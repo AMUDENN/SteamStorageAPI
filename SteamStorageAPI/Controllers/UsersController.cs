@@ -65,7 +65,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetUserInfo")]
-        public ActionResult<UserResponse> GetUserInfo([FromQuery]GetUserRequest request)
+        public ActionResult<UserResponse> GetUserInfo([FromQuery] GetUserRequest request)
         {
             try
             {

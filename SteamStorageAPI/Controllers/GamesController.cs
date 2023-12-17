@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Games;
-using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Steam;
 using System.Net;
 using static SteamStorageAPI.Utilities.ProgramConstants;

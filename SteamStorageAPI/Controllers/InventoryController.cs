@@ -36,7 +36,7 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
         [HttpGet(Name = "GetInventory")]
-        public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory([FromQuery]GetInventoryRequest request)
+        public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory([FromQuery] GetInventoryRequest request)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace SteamStorageAPI.Controllers
                         };
                         _context.Skins.Add(skin);
                     }
-                    
+
 
                     _context.Inventories.Add(new Inventory()
                     {
