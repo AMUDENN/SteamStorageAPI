@@ -8,9 +8,13 @@ public partial class User
 
     public int RoleId { get; set; }
 
+    public int StartPageId { get; set; }
+
     public int CurrencyId { get; set; }
 
     public DateTime DateRegistration { get; set; }
+
+    public double? GoalSum { get; set; }
 
     public virtual ICollection<ActiveGroup> ActiveGroups { get; set; } = new List<ActiveGroup>();
 
@@ -23,4 +27,6 @@ public partial class User
     public virtual ICollection<MarkedSkin> MarkedSkins { get; set; } = new List<MarkedSkin>();
 
     public virtual Role Role { get; set; } = null!;
+
+    public virtual Page StartPage { get; set; } = null!;
 }

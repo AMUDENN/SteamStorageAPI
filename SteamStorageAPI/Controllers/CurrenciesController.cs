@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
+using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
 
@@ -13,16 +14,18 @@ namespace SteamStorageAPI.Controllers
     public class CurrenciesController : ControllerBase
     {
         #region Fields
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CurrenciesController> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
         #endregion Fields
 
         #region Constructor
-        public CurrenciesController(IHttpClientFactory httpClientFactory, ILogger<CurrenciesController> logger, SteamStorageContext context)
+        public CurrenciesController(ILogger<CurrenciesController> logger, IHttpClientFactory httpClientFactory, IUserService userService, SteamStorageContext context)
         {
-            _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            _userService = userService;
             _context = context;
         }
         #endregion Constructor
@@ -33,6 +36,7 @@ namespace SteamStorageAPI.Controllers
         public record PostCurrencyRequest(int SteamCurrencyId, string Title, string Mark);
         public record RefreshCurrencyRequest(string MarketHashName);
         public record PutCurrencyRequest(int CurrencyId, string Title, string Mark);
+        public record SetCurrencyRequest(int CurrencyID);
         public record DeleteCurrencyRequest(int CurrencyId);
         #endregion Records
 
@@ -56,7 +60,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                return Ok(_context.Currencies.ToList().Select(x => GetCurrencyResponse(x)));
+                return Ok(_context.Currencies.Select(GetCurrencyResponse));
             }
             catch (Exception ex)
             {
@@ -70,7 +74,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                Currency? currency = _context.Currencies.ToList().Where(x => x.Id == request.Id).FirstOrDefault();
+                Currency? currency = _context.Currencies.FirstOrDefault(x => x.Id == request.Id);
 
                 if (currency is null)
                     return NotFound("Валюты с таким Id не существует");
@@ -119,11 +123,11 @@ namespace SteamStorageAPI.Controllers
             {
                 IEnumerable<Currency> currencies = _context.Currencies.ToList();
 
-                Currency? dollar = _context.Currencies.Where(x => x.SteamCurrencyId == 1).FirstOrDefault();
+                Currency? dollar = _context.Currencies.FirstOrDefault(x => x.SteamCurrencyId == 1);
                 if (dollar is null)
                     return NotFound("В базе данных отсутствует базовая валюта (американский доллар)");
 
-                Skin? skin = _context.Skins.Where(x => x.MarketHashName == request.MarketHashName).FirstOrDefault();
+                Skin? skin = _context.Skins.FirstOrDefault(x => x.MarketHashName == request.MarketHashName);
                 if (skin is null)
                     return NotFound("В базе данных отсутствует скин с таким MarketHashName");
 
@@ -183,6 +187,33 @@ namespace SteamStorageAPI.Controllers
                 currency.Title = request.Title;
 
                 currency.Mark = request.Mark;
+
+                await _context.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _context.UndoChanges();
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut(Name = "SetCurrency")]
+        public async Task<ActionResult> SetCurrency(SetCurrencyRequest request)
+        {
+            try
+            {
+                User? user = _userService.GetCurrentUser();
+
+                if (user is null)
+                    return NotFound("Пользователя с таким Id не существует");
+
+                if (!_context.Currencies.Any(x => x.Id == request.CurrencyID))
+                    return NotFound("Валюты с таким Id не существует");
+
+                user.CurrencyId = request.CurrencyID;
 
                 await _context.SaveChangesAsync();
 

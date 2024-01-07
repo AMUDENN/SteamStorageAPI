@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Utilities;
+using SteamStorageAPI.Models.SteamAPIModels.User;
+using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
@@ -13,38 +15,54 @@ namespace SteamStorageAPI.Controllers
     {
         #region Fields
         private readonly ILogger<UsersController> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
         #endregion Fields
 
         #region Constructor
-        public UsersController(ILogger<UsersController> logger, SteamStorageContext context)
+        public UsersController(ILogger<UsersController> logger, IHttpClientFactory httpClientFactory, IUserService userService, SteamStorageContext context)
         {
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            _userService = userService;
             _context = context;
         }
         #endregion Constructor
 
         #region Records
-        public record UserResponse(int UserId, long SteamId, int RoleId, int CurrencyId, DateTime DateRegistration);
+        public record UserResponse(int UserId, long SteamId, string ImageUrl, string ImageUrlMedium, string ImageUrlFull, string Nickname, int RoleId, int StartPageID, int CurrencyId, DateTime DateRegistration, double? GoalSum);
         public record GetUserRequest(int UserId);
+        public record PutGoalSumRequest(double? GoalSum);
+        public record PutStartPageRequest(int StartPageID);
         #endregion Records
 
         #region Methods
-        private User? FindUser(int? Id)
-        {
-            return _context.Users.FirstOrDefault(x => x.Id == Id);
-        }
-
-        private UserResponse? GetUserResponse(User? user)
+        private async Task<UserResponse?> GetUserResponse(User? user)
         {
             if (user is null)
                 return null;
 
+            HttpClient client = _httpClientFactory.CreateClient();
+            SteamUserResult? steamUserResult = await client.GetFromJsonAsync<SteamUserResult>(SteamUrls.GetUserInfo(user.SteamId));
+
+            if (steamUserResult is null)
+                return null;
+
+            SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
+
+            if (steamUser is null)
+                return null;
+
             return new UserResponse(user.Id,
                                     user.SteamId,
+                                    steamUser.avatar, steamUser.avatarmedium, steamUser.avatarfull,
+                                    steamUser.personaname,
                                     user.RoleId,
+                                    user.StartPageId,
                                     user.CurrencyId,
-                                    user.DateRegistration);
+                                    user.DateRegistration,
+                                    user.GoalSum);
         }
         #endregion Methods
 
@@ -55,7 +73,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                return Ok(_context.Users.ToList().Select(x => GetUserResponse(x)));
+                return Ok(_context.Users.ToList().Select(async x => await GetUserResponse(x)));
             }
             catch (Exception ex)
             {
@@ -64,17 +82,18 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        [Authorize(Roles = nameof(Roles.Admin))]
         [HttpGet(Name = "GetUserInfo")]
-        public ActionResult<UserResponse> GetUserInfo([FromQuery] GetUserRequest request)
+        public async Task<ActionResult<UserResponse>> GetUserInfo([FromQuery] GetUserRequest request)
         {
             try
             {
-                User? user = FindUser(request.UserId);
+                User? user = _userService.FindUser(request.UserId);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(GetUserResponse(user));
+                return Ok(await GetUserResponse(user));
             }
             catch (Exception ex)
             {
@@ -84,16 +103,16 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetCurrentUserInfo")]
-        public ActionResult<UserResponse> GetCurrentUserInfo()
+        public async Task<ActionResult<UserResponse>> GetCurrentUserInfo()
         {
             try
             {
-                User? user = FindUser(UserContext.GetUserId(HttpContext));
+                User? user = _userService.GetCurrentUser();
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(GetUserResponse(user));
+                return Ok(await GetUserResponse(user));
             }
             catch (Exception ex)
             {
@@ -102,5 +121,57 @@ namespace SteamStorageAPI.Controllers
             }
         }
         #endregion GET
+
+        #region PUT
+        [HttpPut(Name = "PutGoalSum")]
+        public async Task<ActionResult> PutGoalSum(PutGoalSumRequest request)
+        {
+            try
+            {
+                User? user = _userService.GetCurrentUser();
+
+                if (user is null)
+                    return NotFound("Пользователя с таким Id не существует");
+
+                user.GoalSum = request.GoalSum;
+
+                await _context.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _context.UndoChanges();
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+        #endregion PUT
+
+        #region DELETE
+        [HttpDelete(Name = "DeleteUser")]
+        public async Task<ActionResult> DeleteUser()
+        {
+            try
+            {
+                User? user = _userService.GetCurrentUser();
+
+                if (user is null)
+                    return NotFound("Пользователя с таким Id не существует");
+
+                _context.Users.Remove(user);
+
+                await _context.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _context.UndoChanges();
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+        #endregion DELETE
     }
 }

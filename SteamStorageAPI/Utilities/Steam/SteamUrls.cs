@@ -2,6 +2,8 @@
 {
     public static class SteamUrls
     {
+        public static string GetUserInfo(long steamProfileId) =>
+            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamConstants.SteamAPIKey}&steamids={steamProfileId}";
         public static string GetGameIconUrl(int appId, string urlHash) => 
             $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appId}/{urlHash}.jpg";
         public static string GetGameInfoUrl(int appId) => 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.JWT;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
@@ -12,20 +13,22 @@ namespace SteamStorageAPI.Controllers
     public class AuthorizeController : ControllerBase
     {
         #region Fields
+        private readonly ILogger<AuthorizeController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IJwtProvider _jwtProvider;
-        private readonly ILogger<AuthorizeController> _logger;
+        private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
         #endregion Fields
 
         #region Constructor
-        public AuthorizeController(IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor, IJwtProvider jwtProvider, ILogger<AuthorizeController> logger, SteamStorageContext context)
+        public AuthorizeController(ILogger<AuthorizeController> logger, IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor, IJwtProvider jwtProvider, IUserService userService, SteamStorageContext context)
         {
+            _logger = logger;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
             _jwtProvider = jwtProvider;
-            _logger = logger;
+            _userService = userService;
             _context = context;
         }
         #endregion Constructor
@@ -47,20 +50,16 @@ namespace SteamStorageAPI.Controllers
         #endregion Records
 
         #region Methods
-        private User? FindUser(long steamID)
+        private async Task<User> CreateUser(long steamID, int currencyID = 1, int startPageID = 1)
         {
-            return _context.Users.FirstOrDefault(x => x.SteamId == steamID);
-        }
-
-        private async Task<User> CreateUser(long steamID, int currencyID = 1)
-        {
-            Role role = _context.Roles.Where(x => x.Title == nameof(Roles.User)).First();
+            Role role = _context.Roles.First(x => x.Title == nameof(Roles.User));
             User user = new()
             {
                 SteamId = steamID,
+                RoleId = role.Id,
+                StartPageId = startPageID,
                 CurrencyId = currencyID,
-                DateRegistration = DateTime.Now,
-                RoleId = role.Id
+                DateRegistration = DateTime.Now
             };
             _context.Users.Add(user);
 
@@ -118,7 +117,7 @@ namespace SteamStorageAPI.Controllers
 
                 long steamID = Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
 
-                User user = FindUser(steamID) ?? await CreateUser(steamID);
+                User user = _userService.FindUser(steamID) ?? await CreateUser(steamID);
 
                 HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), JsonConvert.SerializeObject(steamAuthRequest));
 

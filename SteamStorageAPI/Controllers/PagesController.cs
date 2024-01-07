@@ -2,23 +2,22 @@
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
-using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
 {
+    [Authorize]
     [ApiController]
-    [Authorize(Roles = nameof(Roles.Admin))]
     [Route("api/[controller]/[action]")]
-    public class RolesController : ControllerBase
+    public class PagesController : ControllerBase
     {
         #region Fields
-        private readonly ILogger<RolesController> _logger;
+        private readonly ILogger<PagesController> _logger;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
         #endregion Fields
 
         #region Constructor
-        public RolesController(ILogger<RolesController> logger, IUserService userService, SteamStorageContext context)
+        public PagesController(ILogger<PagesController> logger, IUserService userService, SteamStorageContext context)
         {
             _logger = logger;
             _userService = userService;
@@ -27,18 +26,18 @@ namespace SteamStorageAPI.Controllers
         #endregion Constructor
 
         #region Records
-        public record RoleResponse(int Id, string Title);
-        public record SetRoleRequest(int UserID, int RoleID);
+        public record PageResponse(int Id, string Title);
+        public record SetPageRequest(int UserID, int PageID);
         #endregion Records
 
         #region GET
-        [HttpGet(Name = "GetRoles")]
-        public ActionResult<IEnumerable<RoleResponse>> GetRoles()
+        [HttpGet(Name = "GetPages")]
+        public ActionResult<IEnumerable<PageResponse>> GetPages()
         {
             try
             {
-                return Ok(_context.Roles.ToList().Select(x =>
-                    new RoleResponse(x.Id, x.Title)));
+                return Ok(_context.Pages.ToList().Select(x =>
+                    new PageResponse(x.Id, x.Title)));
             }
             catch (Exception ex)
             {
@@ -49,8 +48,8 @@ namespace SteamStorageAPI.Controllers
         #endregion GET
 
         #region PUT
-        [HttpPut(Name = "SetRole")]
-        public async Task<ActionResult> SetRole(SetRoleRequest request)
+        [HttpPut(Name = "SetStartPage")]
+        public async Task<ActionResult> SetStartPage(SetPageRequest request)
         {
             try
             {
@@ -59,10 +58,10 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Roles.Any(x => x.Id == request.RoleID))
-                    return NotFound("Роли с таким Id не существует");
+                if (!_context.Pages.Any(x => x.Id == request.PageID))
+                    return NotFound("Страницы с таким Id не существует");
 
-                user.RoleId = request.RoleID;
+                user.RoleId = request.PageID;
 
                 await _context.SaveChangesAsync();
 

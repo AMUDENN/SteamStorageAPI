@@ -56,7 +56,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                return Ok(_context.Games.ToList().Select(x =>
+                return Ok(_context.Games.Select(x =>
                                 new GameResponse(x.Id,
                                                  x.SteamGameId,
                                                  x.Title,

@@ -33,6 +33,8 @@ public partial class SteamStorageContext : DbContext
 
     public virtual DbSet<MarkedSkin> MarkedSkins { get; set; }
 
+    public virtual DbSet<Page> Pages { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Skin> Skins { get; set; }
@@ -148,7 +150,7 @@ public partial class SteamStorageContext : DbContext
             entity.HasIndex(e => e.SteamCurrencyId, "UQ__Currenci__E1F42BF7926A89FE").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Mark).HasMaxLength(1);
+            entity.Property(e => e.Mark).HasMaxLength(10);
             entity.Property(e => e.SteamCurrencyId).HasColumnName("SteamCurrencyID");
             entity.Property(e => e.Title).HasMaxLength(100);
         });
@@ -218,6 +220,16 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__MarkedSki__UserI__5CD6CB2B");
         });
 
+        modelBuilder.Entity<Page>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Pages__3214EC2744DC59BE");
+
+            entity.HasIndex(e => e.Title, "UQ__Pages__2CB664DCFBABA136").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Title).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC27C69DA33E");
@@ -272,6 +284,7 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.CurrencyId).HasColumnName("CurrencyID");
             entity.Property(e => e.DateRegistration).HasColumnType("datetime");
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
+            entity.Property(e => e.StartPageId).HasColumnName("StartPageID");
             entity.Property(e => e.SteamId).HasColumnName("SteamID");
 
             entity.HasOne(d => d.Currency).WithMany(p => p.Users)
@@ -283,6 +296,11 @@ public partial class SteamStorageContext : DbContext
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Users__RoleID__60A75C0F");
+
+            entity.HasOne(d => d.StartPage).WithMany(p => p.Users)
+                .HasForeignKey(d => d.StartPageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Users__StartPage__0D7A0286");
         });
 
         OnModelCreatingPartial(modelBuilder);
