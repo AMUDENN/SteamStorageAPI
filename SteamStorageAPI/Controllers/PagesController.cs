@@ -27,7 +27,7 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
         public record PageResponse(int Id, string Title);
-        public record SetPageRequest(int UserID, int PageID);
+        public record SetPageRequest(int PageId);
         #endregion Records
 
         #region GET
@@ -53,15 +53,15 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                User? user = _userService.FindUser(request.UserID);
+                User? user = _userService.GetCurrentUser();
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Pages.Any(x => x.Id == request.PageID))
+                if (!_context.Pages.Any(x => x.Id == request.PageId))
                     return NotFound("Страницы с таким Id не существует");
 
-                user.RoleId = request.PageID;
+                user.RoleId = request.PageId;
 
                 await _context.SaveChangesAsync();
 

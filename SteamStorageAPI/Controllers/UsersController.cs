@@ -31,9 +31,9 @@ namespace SteamStorageAPI.Controllers
         #endregion Constructor
 
         #region Records
-        public record UserResponse(int UserId, long SteamId, string ImageUrl, string ImageUrlMedium, string ImageUrlFull, string Nickname, int RoleId, int StartPageID, int CurrencyId, DateTime DateRegistration, double? GoalSum);
+        public record UserResponse(int UserId, long SteamId, string? ImageUrl, string? ImageUrlMedium, string? ImageUrlFull, string? Nickname, int RoleId, int StartPageId, int CurrencyId, DateTime DateRegistration, decimal? GoalSum);
         public record GetUserRequest(int UserId);
-        public record PutGoalSumRequest(double? GoalSum);
+        public record PutGoalSumRequest(decimal? GoalSum);
         public record PutStartPageRequest(int StartPageID);
         #endregion Records
 
@@ -51,13 +51,10 @@ namespace SteamStorageAPI.Controllers
 
             SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
 
-            if (steamUser is null)
-                return null;
-
             return new UserResponse(user.Id,
                                     user.SteamId,
-                                    steamUser.avatar, steamUser.avatarmedium, steamUser.avatarfull,
-                                    steamUser.personaname,
+                                    steamUser?.avatar, steamUser?.avatarmedium, steamUser?.avatarfull,
+                                    steamUser?.personaname,
                                     user.RoleId,
                                     user.StartPageId,
                                     user.CurrencyId,
@@ -88,7 +85,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                User? user = _userService.FindUser(request.UserId);
+                User? user = _context.Users.FirstOrDefault(x => x.Id == request.UserId);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");

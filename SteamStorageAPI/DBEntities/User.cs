@@ -14,7 +14,7 @@ public partial class User
 
     public DateTime DateRegistration { get; set; }
 
-    public double? GoalSum { get; set; }
+    public decimal? GoalSum { get; set; }
 
     public virtual ICollection<ActiveGroup> ActiveGroups { get; set; } = new List<ActiveGroup>();
 

@@ -29,10 +29,10 @@ namespace SteamStorageAPI.Controllers
         #region Records
         public record ActiveGroupsResponse(int Id, string Title, string Description, string Colour, decimal? GoalSum);
         public record ActiveGroupDynamicsResponse(int Id, DateTime DateUpdate, decimal Sum);
-        public record GetActiveGroupDynamicRequest(int GroupID, int DaysDynamic = 30);
+        public record GetActiveGroupDynamicRequest(int GroupId, int DaysDynamic = 30);
         public record PostActiveGroupRequest(string Title, string? Description, string? Colour, decimal? GoalSum);
-        public record PutActiveGroupRequest(int GroupID, string Title, string? Description, string? Colour, decimal? GoalSum);
-        public record DeleteActiveGroupRequest(int GroupID);
+        public record PutActiveGroupRequest(int GroupId, string Title, string? Description, string? Colour, decimal? GoalSum);
+        public record DeleteActiveGroupRequest(int GroupId);
         #endregion Records
 
         #region GET
@@ -46,14 +46,15 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ActiveGroups).Load();
-
-                return Ok(user.ActiveGroups.Select(x =>
-                        new ActiveGroupsResponse(x.Id,
-                                                 x.Title,
-                                                 x.Description ?? string.Empty,
-                                                 $"#{x.Colour ?? ProgramConstants.BaseActiveGroupColour}",
-                                                 x.GoalSum)));
+                return Ok(_context.Entry(user)
+                                  .Collection(u => u.ActiveGroups)
+                                  .Query()
+                                  .Select(x =>
+                                    new ActiveGroupsResponse(x.Id,
+                                                             x.Title,
+                                                             x.Description ?? string.Empty,
+                                                             $"#{x.Colour ?? ProgramConstants.BaseActiveGroupColour}",
+                                                             x.GoalSum)));
             }
             catch (Exception ex)
             {
@@ -72,21 +73,24 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ActiveGroups).Load();
-
-                ActiveGroup? group = user.ActiveGroups.FirstOrDefault(x => x.Id == request.GroupID);
+                ActiveGroup? group = _context.Entry(user)
+                                             .Collection(u => u.ActiveGroups)
+                                             .Query()
+                                             .FirstOrDefault(x => x.Id == request.GroupId);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к информации о группе с таким Id или группы с таким Id не существует");
 
                 DateTime startDate = DateTime.Now.AddDays(-request.DaysDynamic);
 
-                _context.Entry(group).Collection(s => s.ActiveGroupsDynamics).Load();
-
-                return Ok(group.ActiveGroupsDynamics.Where(x => x.DateUpdate > startDate).Select(x =>
-                        new ActiveGroupDynamicsResponse(x.Id,
-                                                        x.DateUpdate,
-                                                        x.Sum)));
+                return Ok(_context.Entry(group)
+                                  .Collection(s => s.ActiveGroupsDynamics)
+                                  .Query()
+                                  .Where(x => x.DateUpdate > startDate)
+                                  .Select(x =>
+                                        new ActiveGroupDynamicsResponse(x.Id,
+                                                                        x.DateUpdate,
+                                                                        x.Sum)));
             }
             catch (Exception ex)
             {
@@ -140,9 +144,7 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ActiveGroups).Load();
-
-                ActiveGroup? group = user.ActiveGroups.FirstOrDefault(x => x.Id == request.GroupID);
+                ActiveGroup? group = _context.Entry(user).Collection(u => u.ActiveGroups).Query().FirstOrDefault(x => x.Id == request.GroupId);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
@@ -176,9 +178,7 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ActiveGroups).Load();
-
-                ActiveGroup? group = user.ActiveGroups.FirstOrDefault(x => x.Id == request.GroupID);
+                ActiveGroup? group = _context.Entry(user).Collection(u => u.ActiveGroups).Query().FirstOrDefault(x => x.Id == request.GroupId);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");

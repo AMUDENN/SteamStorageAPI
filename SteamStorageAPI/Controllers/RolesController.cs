@@ -28,7 +28,7 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
         public record RoleResponse(int Id, string Title);
-        public record SetRoleRequest(int UserID, int RoleID);
+        public record SetRoleRequest(int UserId, int RoleId);
         #endregion Records
 
         #region GET
@@ -54,15 +54,15 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                User? user = _userService.FindUser(request.UserID);
+                User? user = _context.Users.FirstOrDefault(x => x.Id == request.UserId);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Roles.Any(x => x.Id == request.RoleID))
+                if (!_context.Roles.Any(x => x.Id == request.RoleId))
                     return NotFound("Роли с таким Id не существует");
 
-                user.RoleId = request.RoleID;
+                user.RoleId = request.RoleId;
 
                 await _context.SaveChangesAsync();
 

@@ -50,15 +50,15 @@ namespace SteamStorageAPI.Controllers
         #endregion Records
 
         #region Methods
-        private async Task<User> CreateUser(long steamID, int currencyID = 1, int startPageID = 1)
+        private async Task<User> CreateUser(long steamId, int currencyId = 1, int startPageId = 1)
         {
             Role role = _context.Roles.First(x => x.Title == nameof(Roles.User));
             User user = new()
             {
-                SteamId = steamID,
+                SteamId = steamId,
                 RoleId = role.Id,
-                StartPageId = startPageID,
-                CurrencyId = currencyID,
+                StartPageId = startPageId,
+                CurrencyId = currencyId,
                 DateRegistration = DateTime.Now
             };
             _context.Users.Add(user);
@@ -115,9 +115,9 @@ namespace SteamStorageAPI.Controllers
                     return BadRequest("Авторизация не удалась");
 
 
-                long steamID = Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
+                long steamId = Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
 
-                User user = _userService.FindUser(steamID) ?? await CreateUser(steamID);
+                User user = _context.Users.FirstOrDefault(x => x.SteamId == steamId) ?? await CreateUser(steamId);
 
                 HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), JsonConvert.SerializeObject(steamAuthRequest));
 

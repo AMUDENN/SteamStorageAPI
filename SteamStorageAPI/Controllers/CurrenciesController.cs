@@ -36,7 +36,7 @@ namespace SteamStorageAPI.Controllers
         public record PostCurrencyRequest(int SteamCurrencyId, string Title, string Mark);
         public record RefreshCurrencyRequest(string MarketHashName);
         public record PutCurrencyRequest(int CurrencyId, string Title, string Mark);
-        public record SetCurrencyRequest(int CurrencyID);
+        public record SetCurrencyRequest(int CurrencyId);
         public record DeleteCurrencyRequest(int CurrencyId);
         #endregion Records
 
@@ -45,12 +45,14 @@ namespace SteamStorageAPI.Controllers
         {
             if (currency is null)
                 return null;
-            _context.Entry(currency).Collection(s => s.CurrencyDynamics).Load();
+
+            List<CurrencyDynamic> currencyDynamics = _context.Entry(currency).Collection(s => s.CurrencyDynamics).Query().ToList();
+
             return new CurrencyResponse(currency.Id,
                                         currency.SteamCurrencyId,
                                         currency.Title,
                                         currency.Mark,
-                                        currency.CurrencyDynamics.Count == 0 ? 0 : currency.CurrencyDynamics.OrderBy(x => x.DateUpdate).Last().Price);
+                                        currencyDynamics.Count == 0 ? 0 : currencyDynamics.OrderBy(x => x.DateUpdate).Last().Price);
         }
         #endregion Methods
 
@@ -116,8 +118,8 @@ namespace SteamStorageAPI.Controllers
         }
 
         [Authorize(Roles = nameof(Roles.Admin))]
-        [HttpPost(Name = "RefreshCurrencyExchangeRates")]
-        public async Task<ActionResult> RefreshCurrencyExchangeRates(RefreshCurrencyRequest request)
+        [HttpPost(Name = "RefreshCurrenciesExchangeRates")]
+        public async Task<ActionResult> RefreshCurrenciesExchangeRates(RefreshCurrencyRequest request)
         {
             try
             {
@@ -210,10 +212,10 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Currencies.Any(x => x.Id == request.CurrencyID))
+                if (!_context.Currencies.Any(x => x.Id == request.CurrencyId))
                     return NotFound("Валюты с таким Id не существует");
 
-                user.CurrencyId = request.CurrencyID;
+                user.CurrencyId = request.CurrencyId;
 
                 await _context.SaveChangesAsync();
 

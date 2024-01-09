@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Middlewares;
+using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.JWT;
@@ -30,6 +31,7 @@ public class Program
 
         //Services
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+        builder.Services.AddTransient<ISkinService, SkinService>();
         builder.Services.AddTransient<IUserService, UserService>();
 
         //Swagger

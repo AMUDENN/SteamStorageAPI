@@ -22,15 +22,7 @@ namespace SteamStorageAPI.Services.UserService
         public User? GetCurrentUser()
         {
             string? nameIdentifier = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return nameIdentifier is null ? null : FindUser(int.Parse(nameIdentifier));
-        }
-        public User? FindUser(int Id)
-        {
-            return _context.Users.FirstOrDefault(x => x.Id == Id);
-        }
-        public User? FindUser(long steamId)
-        {
-            return _context.Users.FirstOrDefault(x => x.SteamId == steamId);
+            return nameIdentifier is null ? null : _context.Users.FirstOrDefault(x => x.Id == int.Parse(nameIdentifier));
         }
         #endregion Methods
     }

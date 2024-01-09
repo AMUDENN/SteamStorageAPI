@@ -286,6 +286,7 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.StartPageId).HasColumnName("StartPageID");
             entity.Property(e => e.SteamId).HasColumnName("SteamID");
+            entity.Property(e => e.GoalSum).HasColumnType("decimal(14, 2)");
 
             entity.HasOne(d => d.Currency).WithMany(p => p.Users)
                 .HasForeignKey(d => d.CurrencyId)

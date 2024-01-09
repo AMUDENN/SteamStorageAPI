@@ -29,8 +29,8 @@ namespace SteamStorageAPI.Controllers
         #region Records
         public record ArchiveGroupsResponse(int Id, string Title, string Description, string Colour);
         public record PostArchiveGroupRequest(string Title, string? Description, string? Colour);
-        public record PutArchiveGroupRequest(int GroupID, string Title, string? Description, string? Colour);
-        public record DeleteArchiveGroupRequest(int GroupID);
+        public record PutArchiveGroupRequest(int GroupId, string Title, string? Description, string? Colour);
+        public record DeleteArchiveGroupRequest(int GroupId);
         #endregion Records
 
         #region GET
@@ -44,13 +44,14 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ArchiveGroups).Load();
-
-                return Ok(user.ArchiveGroups.Select(x =>
-                        new ArchiveGroupsResponse(x.Id,
-                                                    x.Title,
-                                                    x.Description ?? string.Empty,
-                                                    $"#{x.Colour ?? ProgramConstants.BaseArchiveGroupColour}")));
+                return Ok(_context.Entry(user)
+                                  .Collection(u => u.ArchiveGroups)
+                                  .Query()
+                                  .Select(x =>
+                            new ArchiveGroupsResponse(x.Id,
+                                                        x.Title,
+                                                        x.Description ?? string.Empty,
+                                                        $"#{x.Colour ?? ProgramConstants.BaseArchiveGroupColour}")));
             }
             catch (Exception ex)
             {
@@ -103,9 +104,7 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ArchiveGroups).Load();
-
-                ArchiveGroup? group = user.ArchiveGroups.FirstOrDefault(x => x.Id == request.GroupID);
+                ArchiveGroup? group = _context.Entry(user).Collection(u => u.ArchiveGroups).Query().FirstOrDefault(x => x.Id == request.GroupId);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
@@ -138,9 +137,7 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.Entry(user).Collection(u => u.ArchiveGroups).Load();
-
-                ArchiveGroup? group = user.ArchiveGroups.FirstOrDefault(x => x.Id == request.GroupID);
+                ArchiveGroup? group = _context.Entry(user).Collection(u => u.ArchiveGroups).Query().FirstOrDefault(x => x.Id == request.GroupId);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
