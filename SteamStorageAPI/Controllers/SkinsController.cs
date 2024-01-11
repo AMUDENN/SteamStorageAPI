@@ -53,9 +53,9 @@ namespace SteamStorageAPI.Controllers
                                    .OrderBy(x => x.DateUpdate)
                                    .ToList();
 
-                    double currentPrice = _skinService.GetCurrentPrice(x);
+                    decimal currentPrice = _skinService.GetCurrentPrice(x);
 
-                    return dynamic7.Count == 0 ? 0 : (currentPrice - (double)dynamic7.First().Price) / (double)dynamic7.First().Price;
+                    return dynamic7.Count == 0 ? 0 : (currentPrice - dynamic7.First().Price) / dynamic7.First().Price;
                 },
                 [SkinOrderName.Change30D] = x =>
                 {
@@ -66,9 +66,9 @@ namespace SteamStorageAPI.Controllers
                                    .OrderBy(x => x.DateUpdate)
                                    .ToList();
 
-                    double currentPrice = _skinService.GetCurrentPrice(x);
+                    decimal currentPrice = _skinService.GetCurrentPrice(x);
 
-                    return dynamic30.Count == 0 ? 0 : (currentPrice - (double)dynamic30.First().Price) / (double)dynamic30.First().Price;
+                    return dynamic30.Count == 0 ? 0 : (currentPrice - dynamic30.First().Price) /dynamic30.First().Price;
                 }
             };
         }
@@ -76,9 +76,9 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
         public record BaseSkinResponse(int Id, string SkinIconUrl, string Title, string MarketHashName, string MarketUrl);
-        public record SkinResponse(BaseSkinResponse Skin, double CurrentPrice, double Change7D, double Change30D, bool IsMarked);
+        public record SkinResponse(BaseSkinResponse Skin, decimal CurrentPrice, double Change7D, double Change30D, bool IsMarked);
         public record SkinDynamicResponse(int Id, DateTime DateUpdate, decimal Price);
-        public record SkinPageCountRespose(int Count);
+        public record SkinPagesCountRespose(int Count);
         public record SteamSkinsCountResponse(int Count);
         public record SavedSkinsCountResponse(int Count);
         public record GetSkinRequest(int SkinId);
@@ -103,10 +103,10 @@ namespace SteamStorageAPI.Controllers
             List<SkinsDynamic> dynamic7 = dynamics.Where(x => x.DateUpdate > DateTime.Now.AddDays(-7)).ToList();
             List<SkinsDynamic> dynamic30 = dynamics.Where(x => x.DateUpdate > DateTime.Now.AddDays(-30)).ToList();
 
-            double currentPrice = _skinService.GetCurrentPrice(skin);
+            decimal currentPrice = _skinService.GetCurrentPrice(skin);
 
-            double change7D = dynamic7.Count == 0 ? 0 : (currentPrice - (double)dynamic7.First().Price) / (double)dynamic7.First().Price;
-            double change30D = dynamic30.Count == 0 ? 0 : (currentPrice - (double)dynamic30.First().Price) / (double)dynamic30.First().Price;
+            double change7D = (double)(dynamic7.Count == 0 ? 0 : (currentPrice - dynamic7.First().Price) / dynamic7.First().Price);
+            double change30D = (double)(dynamic30.Count == 0 ? 0 : (currentPrice - dynamic30.First().Price) / dynamic30.First().Price);
 
             bool isMarked = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Where(x => x.SkinId ==  skin.Id).Any();
 
@@ -200,7 +200,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSkinPagesCount")]
-        public ActionResult<SkinPageCountRespose> GetSkinPagesCount([FromQuery] GetSkinPagesCountRequest request)
+        public ActionResult<SkinPagesCountRespose> GetSkinPagesCount([FromQuery] GetSkinPagesCountRequest request)
         {
             try
             {
@@ -224,7 +224,7 @@ namespace SteamStorageAPI.Controllers
                                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
                                                 && (request.IsMarked == null || request.IsMarked == markedSkinIds.Any(y => y == x.Id)));
 
-                return Ok(new SkinPageCountRespose((int)Math.Ceiling((double)skins.Count() / request.PageSize)));
+                return Ok(new SkinPagesCountRespose((int)Math.Ceiling((double)skins.Count() / request.PageSize)));
             }
             catch (Exception ex)
             {

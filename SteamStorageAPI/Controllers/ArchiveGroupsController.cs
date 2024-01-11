@@ -11,10 +11,19 @@ namespace SteamStorageAPI.Controllers
     [Route("api/[controller]/[action]")]
     public class ArchiveGroupsController : ControllerBase
     {
+        #region Enums
+        public enum ArchiveGroupOrderName
+        {
+            Title, Count, BuySum, SoldSum, Change
+        }
+        #endregion Enums
+
         #region Fields
         private readonly ILogger<ArchiveGroupsController> _logger;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
+
+        private readonly Dictionary<ArchiveGroupOrderName, Func<ArchiveGroup, object>> _orderNames;
         #endregion Fields
 
         #region Constructor
@@ -23,11 +32,29 @@ namespace SteamStorageAPI.Controllers
             _logger = logger;
             _userService = userService;
             _context = context;
+
+
+            _orderNames = new()
+            {
+                [ArchiveGroupOrderName.Title] = x => x.Title,
+                [ArchiveGroupOrderName.Count] = x => _context.Entry(x).Collection(x => x.Archives).Query().Count(),
+                [ArchiveGroupOrderName.BuySum] = x => _context.Entry(x).Collection(x => x.Archives).Query().Sum(x => x.Count * x.BuyPrice),
+                [ArchiveGroupOrderName.SoldSum] = x => _context.Entry(x).Collection(x => x.Archives).Query().Sum(x => x.Count * x.SoldPrice),
+                [ArchiveGroupOrderName.Change] = x =>
+                {
+                    decimal buySum = _context.Entry(x).Collection(x => x.Archives).Query().Sum(x => x.Count * x.BuyPrice);
+                    decimal soldSum = _context.Entry(x).Collection(x => x.Archives).Query().Sum(x => x.Count * x.SoldPrice);
+
+                    return buySum == 0 ? 0 : (soldSum - buySum) / buySum;
+                }
+            };
         }
         #endregion Constructor
 
         #region Records
         public record ArchiveGroupsResponse(int Id, string Title, string Description, string Colour);
+        public record ArchiveGroupsCountResponse(int Count);
+        public record GetArchiveGroupsRequest(ArchiveGroupOrderName? OrderName, bool? IsAscending);
         public record PostArchiveGroupRequest(string Title, string? Description, string? Colour);
         public record PutArchiveGroupRequest(int GroupId, string Title, string? Description, string? Colour);
         public record DeleteArchiveGroupRequest(int GroupId);
@@ -35,7 +62,7 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
         [HttpGet(Name = "GetArchiveGroups")]
-        public ActionResult<IEnumerable<ArchiveGroupsResponse>> GetArchiveGroups()
+        public ActionResult<IEnumerable<ArchiveGroupsResponse>> GetArchiveGroups([FromQuery] GetArchiveGroupsRequest request)
         {
             try
             {
@@ -44,10 +71,14 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(_context.Entry(user)
-                                  .Collection(u => u.ArchiveGroups)
-                                  .Query()
-                                  .Select(x =>
+
+                IEnumerable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query();
+
+                if (request.OrderName != null && request.IsAscending != null)
+                    groups = (bool)request.IsAscending ? groups.OrderBy(_orderNames[(ArchiveGroupOrderName)request.OrderName])
+                                                       : groups.OrderByDescending(_orderNames[(ArchiveGroupOrderName)request.OrderName]);
+
+                return Ok(groups.Select(x =>
                             new ArchiveGroupsResponse(x.Id,
                                                         x.Title,
                                                         x.Description ?? string.Empty,
@@ -59,11 +90,30 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet(Name = "GetArchiveGroupsCount")]
+        public ActionResult<ArchiveGroupsCountResponse> GetArchiveGroupsCount()
+        {
+            try
+            {
+                User? user = _userService.GetCurrentUser();
+
+                if (user is null)
+                    return NotFound("Пользователя с таким Id не существует");
+
+                return Ok(new ArchiveGroupsCountResponse(_context.Entry(user).Collection(x => x.ArchiveGroups).Query().Count()));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
         #endregion GET
 
         #region POST
         [HttpPost(Name = "PostArchiveGroup")]
-        public async Task<ActionResult> PostArchiveGroups(PostArchiveGroupRequest request)
+        public async Task<ActionResult> PostArchiveGroup(PostArchiveGroupRequest request)
         {
             try
             {
@@ -95,7 +145,7 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
         [HttpPut(Name = "PutArchiveGroup")]
-        public async Task<ActionResult> PutArchiveGroups(PutArchiveGroupRequest request)
+        public async Task<ActionResult> PutArchiveGroup(PutArchiveGroupRequest request)
         {
             try
             {

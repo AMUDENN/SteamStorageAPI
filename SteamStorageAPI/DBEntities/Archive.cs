@@ -8,6 +8,8 @@ public partial class Archive
 
     public int SkinId { get; set; }
 
+    public string? Description { get; set; }
+
     public int Count { get; set; }
 
     public DateTime BuyDate { get; set; }

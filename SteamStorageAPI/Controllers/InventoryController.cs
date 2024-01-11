@@ -53,7 +53,7 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
         public record InventoryResponse(int Id, BaseSkinResponse Skin, int Count);
-        public record InventoryPageCountRespose(int Count);
+        public record InventoryPagesCountRespose(int Count);
         public record SavedInventoriesCountResponse(int Count);
         public record GetInventoryRequest(int? GameId, string? Filter, InventoryOrderName? OrderName, bool? IsAscending, int PageNumber, int PageSize);
         public record GetInventoryPagesCountRequest(int? GameId, string? Filter, int PageSize);
@@ -102,7 +102,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetInventoryPagesCount")]
-        public ActionResult<InventoryPageCountRespose> GetInventoryPagesCount([FromQuery] GetInventoryPagesCountRequest request)
+        public ActionResult<InventoryPagesCountRespose> GetInventoryPagesCount([FromQuery] GetInventoryPagesCountRequest request)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace SteamStorageAPI.Controllers
                                                             .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                                                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
 
-                return Ok(new SkinPageCountRespose((int)Math.Ceiling((double)inventories.Count() / request.PageSize)));
+                return Ok(new InventoryPagesCountRespose((int)Math.Ceiling((double)inventories.Count() / request.PageSize)));
             }
             catch (Exception ex)
             {

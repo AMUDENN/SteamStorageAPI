@@ -111,6 +111,7 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.BuyDate).HasColumnType("datetime");
             entity.Property(e => e.BuyPrice).HasColumnType("decimal(14, 2)");
+            entity.Property(e => e.Description).HasMaxLength(300);
             entity.Property(e => e.GroupId).HasColumnName("GroupID");
             entity.Property(e => e.SkinId).HasColumnName("SkinID");
             entity.Property(e => e.SoldDate).HasColumnType("datetime");

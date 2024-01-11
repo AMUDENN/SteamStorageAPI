@@ -29,7 +29,7 @@ namespace SteamStorageAPI.Services.SkinService
                 SteamUrls.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
         }
 
-        public double GetCurrentPrice(Skin skin)
+        public decimal GetCurrentPrice(Skin skin)
         {
             List<SkinsDynamic> dynamics = _context.Entry(skin)
                                                .Collection(x => x.SkinsDynamics)
@@ -37,7 +37,7 @@ namespace SteamStorageAPI.Services.SkinService
                                                .OrderBy(x => x.DateUpdate)
                                                .ToList();
 
-            return (double)(dynamics.Count == 0 ? 0 : dynamics.Last().Price);
+            return dynamics.Count == 0 ? 0 : dynamics.Last().Price;
         }
 
         public IEnumerable<SkinDynamicResponse> GetSkinDynamicsResponse(Skin skin, int days)
