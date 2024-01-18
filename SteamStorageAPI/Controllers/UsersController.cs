@@ -74,7 +74,7 @@ namespace SteamStorageAPI.Controllers
 
             SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
 
-            return new (user.Id,
+            return new(user.Id,
                 user.SteamId,
                 steamUser?.avatar, steamUser?.avatarmedium, steamUser?.avatarfull,
                 steamUser?.personaname,
