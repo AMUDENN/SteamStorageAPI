@@ -1,9 +1,7 @@
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using SteamStorageAPI.DBEntities;
@@ -19,11 +17,15 @@ namespace SteamStorageAPI;
 public class Program
 {
     #region Records
-    public record HealthResponse(string Status, TimeSpan Duration, IEnumerable<MonitorResponse> Monitors);
-    public record MonitorResponse(string Name, string? Status);
+
+    private record HealthResponse(string Status, TimeSpan Duration, IEnumerable<MonitorResponse> Monitors);
+
+    private record MonitorResponse(string Name, string? Status);
+
     #endregion Records
 
     #region Methods
+
     private static WebApplicationBuilder ConfigureServices(WebApplicationBuilder builder)
     {
         builder.Services.AddControllers();
@@ -37,33 +39,35 @@ public class Program
         //Swagger
         builder.Services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo
+            c.SwaggerDoc("v1", new()
             {
                 Title = "SteamStorage API",
                 Version = "v1",
-                Description = "API для SteamStorage"
+                Description = "API РґР»СЏ SteamStorage"
             });
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            c.AddSecurityDefinition("Bearer", new()
             {
                 In = ParameterLocation.Header,
-                Description = "Авторизация происходит в формате: Bearer {token}",
+                Description = "РђРІС‚РѕСЂРёР·Р°С†РёСЏ РїСЂРѕРёСЃС…РѕРґРёС‚ РІ С„РѕСЂРјР°С‚Рµ: Bearer {token}",
                 Name = "Authorization",
                 Type = SecuritySchemeType.ApiKey,
                 Scheme = JwtBearerDefaults.AuthenticationScheme,
                 BearerFormat = "JWT"
             });
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+            c.AddSecurityRequirement(new()
+            {
                 {
-                    new OpenApiSecurityScheme
+                    new()
                     {
-                        Reference = new OpenApiReference
+                        Reference = new()
                         {
                             Type = ReferenceType.SecurityScheme,
                             Id = "Bearer"
                         }
                     },
                     Array.Empty<string>()
-                }});
+                }
+            });
         });
 
         builder.Services.AddHttpClient();
@@ -78,8 +82,8 @@ public class Program
 
         //HealthCheck
         builder.Services.AddHealthChecks()
-                .AddSqlServer(connectionString)
-                .AddCheck<APIHealthChecker>(nameof(APIHealthChecker));
+            .AddSqlServer(connectionString)
+            .AddCheck<ApiHealthChecker>(nameof(ApiHealthChecker));
 
         builder.Services.AddMemoryCache();
 
@@ -92,14 +96,14 @@ public class Program
             options.RealIpHeader = "X-Real-IP";
             options.ClientIdHeader = "X-ClientId";
             options.GeneralRules =
-                [
-                    new()
-                    {
-                        Endpoint = "*",
-                        Period = "1s",
-                        Limit = 5,
-                    }
-                ];
+            [
+                new()
+                {
+                    Endpoint = "*",
+                    Period = "1s",
+                    Limit = 5,
+                }
+            ];
         });
         builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
@@ -118,7 +122,7 @@ public class Program
             })
             .AddJwtBearer(options =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                options.TokenValidationParameters = new()
                 {
                     ValidateIssuer = true,
                     ValidIssuer = JwtOptions.ISSUER,
@@ -132,11 +136,12 @@ public class Program
 
         return builder;
     }
+
     public static void Main(string[] args)
     {
-        var builder = ConfigureServices(WebApplication.CreateBuilder(args));
+        WebApplicationBuilder builder = ConfigureServices(WebApplication.CreateBuilder(args));
 
-        var app = builder.Build();
+        WebApplication app = builder.Build();
 
         if (app.Environment.IsDevelopment())
         {
@@ -146,15 +151,16 @@ public class Program
 
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/health-details",
-            new HealthCheckOptions
+            new()
             {
                 ResponseWriter = async (context, report) =>
                 {
-                    var result = JsonConvert.SerializeObject(
+                    string result = JsonConvert.SerializeObject(
                         new HealthResponse(
                             report.Status.ToString(),
                             report.TotalDuration,
-                            report.Entries.Select(e => new MonitorResponse(e.Key, Enum.GetName(typeof(HealthStatus), e.Value.Status)))
+                            report.Entries.Select(e =>
+                                new MonitorResponse(e.Key, Enum.GetName(typeof(HealthStatus), e.Value.Status)))
                         )
                     );
                     context.Response.ContentType = MediaTypeNames.Application.Json;
@@ -176,5 +182,6 @@ public class Program
 
         app.Run();
     }
+
     #endregion Methods
 }

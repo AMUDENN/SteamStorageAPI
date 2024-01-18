@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class SkinsDynamic
+public class SkinsDynamic
 {
     public int Id { get; set; }
 

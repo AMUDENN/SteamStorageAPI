@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace SteamStorageAPI.DBEntities;
 
@@ -312,7 +313,7 @@ public partial class SteamStorageContext : DbContext
 
     public void UndoChanges()
     {
-        foreach (var entry in ChangeTracker.Entries())
+        foreach (EntityEntry entry in ChangeTracker.Entries())
         {
             switch (entry.State)
             {

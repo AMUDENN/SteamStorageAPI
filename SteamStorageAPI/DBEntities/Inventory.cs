@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class Inventory
+public class Inventory
 {
     public int Id { get; set; }
 

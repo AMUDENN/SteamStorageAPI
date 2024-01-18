@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class ActiveGroup
+public class ActiveGroup
 {
     public int Id { get; set; }
 
@@ -14,7 +14,8 @@ public partial class ActiveGroup
 
     public decimal? GoalSum { get; set; }
 
-    public virtual ICollection<ActiveGroupsDynamic> ActiveGroupsDynamics { get; set; } = new List<ActiveGroupsDynamic>();
+    public virtual ICollection<ActiveGroupsDynamic> ActiveGroupsDynamics { get; set; } =
+        new List<ActiveGroupsDynamic>();
 
     public virtual ICollection<Active> Actives { get; set; } = new List<Active>();
 

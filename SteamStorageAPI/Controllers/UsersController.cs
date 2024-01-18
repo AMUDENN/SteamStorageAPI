@@ -14,56 +14,81 @@ namespace SteamStorageAPI.Controllers
     public class UsersController : ControllerBase
     {
         #region Fields
+
         private readonly ILogger<UsersController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
+
         #endregion Fields
 
         #region Constructor
-        public UsersController(ILogger<UsersController> logger, IHttpClientFactory httpClientFactory, IUserService userService, SteamStorageContext context)
+
+        public UsersController(ILogger<UsersController> logger, IHttpClientFactory httpClientFactory,
+            IUserService userService, SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _userService = userService;
             _context = context;
         }
+
         #endregion Constructor
 
         #region Records
-        public record UserResponse(int UserId, long SteamId, string? ImageUrl, string? ImageUrlMedium, string? ImageUrlFull, string? Nickname, int RoleId, int StartPageId, int CurrencyId, DateTime DateRegistration, decimal? GoalSum);
+
+        public record UserResponse(
+            int UserId,
+            long SteamId,
+            string? ImageUrl,
+            string? ImageUrlMedium,
+            string? ImageUrlFull,
+            string? Nickname,
+            int RoleId,
+            int StartPageId,
+            int CurrencyId,
+            DateTime DateRegistration,
+            decimal? GoalSum);
+
         public record GetUserRequest(int UserId);
+
         public record PutGoalSumRequest(decimal? GoalSum);
-        public record PutStartPageRequest(int StartPageID);
+
+        public record PutStartPageRequest(int StartPageId);
+
         #endregion Records
 
         #region Methods
+
         private async Task<UserResponse?> GetUserResponse(User? user)
         {
             if (user is null)
                 return null;
 
             HttpClient client = _httpClientFactory.CreateClient();
-            SteamUserResult? steamUserResult = await client.GetFromJsonAsync<SteamUserResult>(SteamUrls.GetUserInfo(user.SteamId));
+            SteamUserResult? steamUserResult =
+                await client.GetFromJsonAsync<SteamUserResult>(SteamUrls.GetUserInfo(user.SteamId));
 
             if (steamUserResult is null)
                 return null;
 
             SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
 
-            return new UserResponse(user.Id,
-                                    user.SteamId,
-                                    steamUser?.avatar, steamUser?.avatarmedium, steamUser?.avatarfull,
-                                    steamUser?.personaname,
-                                    user.RoleId,
-                                    user.StartPageId,
-                                    user.CurrencyId,
-                                    user.DateRegistration,
-                                    user.GoalSum);
+            return new (user.Id,
+                user.SteamId,
+                steamUser?.avatar, steamUser?.avatarmedium, steamUser?.avatarfull,
+                steamUser?.personaname,
+                user.RoleId,
+                user.StartPageId,
+                user.CurrencyId,
+                user.DateRegistration,
+                user.GoalSum);
         }
+
         #endregion Methods
 
         #region GET
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpGet(Name = "GetUsers")]
         public ActionResult<IEnumerable<UserResponse>> GetUsers()
@@ -117,9 +142,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion GET
 
         #region PUT
+
         [HttpPut(Name = "PutGoalSum")]
         public async Task<ActionResult> PutGoalSum(PutGoalSumRequest request)
         {
@@ -143,9 +170,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion PUT
 
         #region DELETE
+
         [HttpDelete(Name = "DeleteUser")]
         public async Task<ActionResult> DeleteUser()
         {
@@ -169,6 +198,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion DELETE
     }
 }

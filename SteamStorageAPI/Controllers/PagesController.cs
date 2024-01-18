@@ -11,26 +11,34 @@ namespace SteamStorageAPI.Controllers
     public class PagesController : ControllerBase
     {
         #region Fields
+
         private readonly ILogger<PagesController> _logger;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
+
         #endregion Fields
 
         #region Constructor
+
         public PagesController(ILogger<PagesController> logger, IUserService userService, SteamStorageContext context)
         {
             _logger = logger;
             _userService = userService;
             _context = context;
         }
+
         #endregion Constructor
 
         #region Records
+
         public record PageResponse(int Id, string Title);
+
         public record SetPageRequest(int PageId);
+
         #endregion Records
 
         #region GET
+
         [HttpGet(Name = "GetPages")]
         public ActionResult<IEnumerable<PageResponse>> GetPages()
         {
@@ -45,9 +53,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion GET
 
         #region PUT
+
         [HttpPut(Name = "SetStartPage")]
         public async Task<ActionResult> SetStartPage(SetPageRequest request)
         {
@@ -74,6 +84,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion PUT
     }
 }

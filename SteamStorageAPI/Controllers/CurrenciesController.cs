@@ -14,49 +14,66 @@ namespace SteamStorageAPI.Controllers
     public class CurrenciesController : ControllerBase
     {
         #region Fields
+
         private readonly ILogger<CurrenciesController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
+
         #endregion Fields
 
         #region Constructor
-        public CurrenciesController(ILogger<CurrenciesController> logger, IHttpClientFactory httpClientFactory, IUserService userService, SteamStorageContext context)
+
+        public CurrenciesController(ILogger<CurrenciesController> logger, IHttpClientFactory httpClientFactory,
+            IUserService userService, SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _userService = userService;
             _context = context;
         }
+
         #endregion Constructor
 
         #region Records
+
         public record CurrencyResponse(int Id, int SteamCurrencyId, string Title, string Mark, double Price);
+
         public record GetCurrencyRequest(int Id);
+
         public record PostCurrencyRequest(int SteamCurrencyId, string Title, string Mark);
+
         public record RefreshCurrencyRequest(string MarketHashName);
+
         public record PutCurrencyRequest(int CurrencyId, string Title, string Mark);
+
         public record SetCurrencyRequest(int CurrencyId);
+
         public record DeleteCurrencyRequest(int CurrencyId);
+
         #endregion Records
 
         #region Methods
+
         private CurrencyResponse? GetCurrencyResponse(Currency? currency)
         {
             if (currency is null)
                 return null;
 
-            List<CurrencyDynamic> currencyDynamics = _context.Entry(currency).Collection(s => s.CurrencyDynamics).Query().ToList();
+            List<CurrencyDynamic> currencyDynamics =
+                _context.Entry(currency).Collection(s => s.CurrencyDynamics).Query().ToList();
 
-            return new CurrencyResponse(currency.Id,
-                                        currency.SteamCurrencyId,
-                                        currency.Title,
-                                        currency.Mark,
-                                        currencyDynamics.Count == 0 ? 0 : currencyDynamics.OrderBy(x => x.DateUpdate).Last().Price);
+            return new(currency.Id,
+                currency.SteamCurrencyId,
+                currency.Title,
+                currency.Mark,
+                currencyDynamics.Count == 0 ? 0 : currencyDynamics.OrderBy(x => x.DateUpdate).Last().Price);
         }
+
         #endregion Methods
 
         #region GET
+
         [HttpGet(Name = "GetCurrencies")]
         public ActionResult<IEnumerable<CurrencyResponse>> GetCurrencies()
         {
@@ -89,16 +106,18 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion GET
 
         #region POST
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpPost(Name = "PostCurrency")]
         public async Task<ActionResult> PostCurrency(PostCurrencyRequest request)
         {
             try
             {
-                _context.Currencies.Add(new Currency()
+                _context.Currencies.Add(new()
                 {
                     SteamCurrencyId = request.SteamCurrencyId,
                     Title = request.Title,
@@ -133,25 +152,30 @@ namespace SteamStorageAPI.Controllers
                 if (skin is null)
                     return NotFound("В базе данных отсутствует скин с таким MarketHashName");
 
-                _context.Entry(skin).Reference(s => s.Game).Load();
+                await _context.Entry(skin).Reference(s => s.Game).LoadAsync();
 
                 HttpClient client = _httpClientFactory.CreateClient();
-                SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
+                SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
+                    SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
                 if (response is null || response.lowest_price is null)
-                    throw new Exception("При получении данных с сервера Steam произошла ошибка");
+                    throw new("При получении данных с сервера Steam произошла ошибка");
 
-                double dollarPrice = Convert.ToDouble(response.lowest_price.Replace(dollar.Mark, string.Empty).Replace('.', ','));
+                double dollarPrice =
+                    Convert.ToDouble(response.lowest_price.Replace(dollar.Mark, string.Empty).Replace('.', ','));
 
                 foreach (Currency currency in currencies)
                 {
-                    response = await client.GetFromJsonAsync<SteamPriceResponse>(SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, currency.SteamCurrencyId));
+                    response = await client.GetFromJsonAsync<SteamPriceResponse>(
+                        SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
+                            currency.SteamCurrencyId));
 
                     if (response is null)
                         continue;
 
-                    double price = Convert.ToDouble(response.lowest_price.Replace(currency.Mark, string.Empty).Replace('.', ','));
+                    double price = Convert.ToDouble(response.lowest_price.Replace(currency.Mark, string.Empty)
+                        .Replace('.', ','));
 
-                    _context.CurrencyDynamics.Add(new CurrencyDynamic()
+                    _context.CurrencyDynamics.Add(new()
                     {
                         CurrencyId = currency.Id,
                         DateUpdate = DateTime.Now,
@@ -172,9 +196,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion POST
 
         #region PUT
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpPut(Name = "PutCurrencyInfo")]
         public async Task<ActionResult> PutCurrencyInfo(PutCurrencyRequest request)
@@ -228,9 +254,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion PUT
 
         #region DELETE
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpDelete(Name = "DeleteCurrency")]
         public async Task<ActionResult> DeleteCurrency(DeleteCurrencyRequest request)
@@ -255,6 +283,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion DELETE
     }
 }

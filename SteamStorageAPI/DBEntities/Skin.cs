@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class Skin
+public class Skin
 {
     public int Id { get; set; }
 

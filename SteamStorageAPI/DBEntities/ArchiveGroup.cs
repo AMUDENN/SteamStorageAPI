@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class ArchiveGroup
+public class ArchiveGroup
 {
     public int Id { get; set; }
 

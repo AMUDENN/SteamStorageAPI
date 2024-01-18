@@ -2,12 +2,13 @@
 {
     public class ProgramConstants
     {
-        public const string BaseArchiveGroupColour = "FFFFFF";
-        public const string BaseActiveGroupColour = "000000";
+        public const string BASE_ARCHIVE_GROUP_COLOUR = "FFFFFF";
+        public const string BASE_ACTIVE_GROUP_COLOUR = "000000";
 
         public enum Roles
         {
-            Admin, User
+            Admin,
+            User
         }
     }
 }

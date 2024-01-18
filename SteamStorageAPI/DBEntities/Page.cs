@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class Page
+public class Page
 {
     public int Id { get; set; }
 

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Services.UserService;
 using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
@@ -12,26 +11,32 @@ namespace SteamStorageAPI.Controllers
     public class RolesController : ControllerBase
     {
         #region Fields
+
         private readonly ILogger<RolesController> _logger;
-        private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
+
         #endregion Fields
 
         #region Constructor
-        public RolesController(ILogger<RolesController> logger, IUserService userService, SteamStorageContext context)
+
+        public RolesController(ILogger<RolesController> logger, SteamStorageContext context)
         {
             _logger = logger;
-            _userService = userService;
             _context = context;
         }
+
         #endregion Constructor
 
         #region Records
+
         public record RoleResponse(int Id, string Title);
+
         public record SetRoleRequest(int UserId, int RoleId);
+
         #endregion Records
 
         #region GET
+
         [HttpGet(Name = "GetRoles")]
         public ActionResult<IEnumerable<RoleResponse>> GetRoles()
         {
@@ -46,9 +51,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion GET
 
         #region PUT
+
         [HttpPut(Name = "SetRole")]
         public async Task<ActionResult> SetRole(SetRoleRequest request)
         {
@@ -75,6 +82,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion PUT
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class Currency
+public class Currency
 {
     public int Id { get; set; }
 

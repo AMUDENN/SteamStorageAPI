@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class CurrencyDynamic
+public class CurrencyDynamic
 {
     public int Id { get; set; }
 

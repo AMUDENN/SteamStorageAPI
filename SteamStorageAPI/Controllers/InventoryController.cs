@@ -16,13 +16,19 @@ namespace SteamStorageAPI.Controllers
     public class InventoryController : ControllerBase
     {
         #region Enums
+
         public enum InventoryOrderName
         {
-            Title, Count, Price, Sum
+            Title,
+            Count,
+            Price,
+            Sum
         }
+
         #endregion Enums
 
         #region Fields
+
         private readonly ILogger<InventoryController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISkinService _skinService;
@@ -30,10 +36,13 @@ namespace SteamStorageAPI.Controllers
         private readonly SteamStorageContext _context;
 
         private readonly Dictionary<InventoryOrderName, Func<Inventory, object>> _orderNames;
+
         #endregion Fields
 
         #region Constructor
-        public InventoryController(ILogger<InventoryController> logger, IHttpClientFactory httpClientFactory, ISkinService skinService, IUserService userService, SteamStorageContext context)
+
+        public InventoryController(ILogger<InventoryController> logger, IHttpClientFactory httpClientFactory,
+            ISkinService skinService, IUserService userService, SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -49,50 +58,68 @@ namespace SteamStorageAPI.Controllers
                 [InventoryOrderName.Sum] = x => _skinService.GetCurrentPrice(x.Skin) * x.Count
             };
         }
+
         #endregion Constructor
 
         #region Records
+
         public record InventoryResponse(int Id, BaseSkinResponse Skin, int Count);
-        public record InventoryPagesCountRespose(int Count);
+
+        public record InventoryPagesCountResponse(int Count);
+
         public record SavedInventoriesCountResponse(int Count);
-        public record GetInventoryRequest(int? GameId, string? Filter, InventoryOrderName? OrderName, bool? IsAscending, int PageNumber, int PageSize);
+
+        public record GetInventoryRequest(
+            int? GameId,
+            string? Filter,
+            InventoryOrderName? OrderName,
+            bool? IsAscending,
+            int PageNumber,
+            int PageSize);
+
         public record GetInventoryPagesCountRequest(int? GameId, string? Filter, int PageSize);
+
         public record GetSavedInventoriesCountRequest(int? GameId, string? Filter);
+
         public record RefreshInventoryRequest(int GameId);
+
         #endregion Records
 
         #region GET
+
         [HttpGet(Name = "GetInventory")]
         public ActionResult<IEnumerable<InventoryResponse>> GetInventory([FromQuery] GetInventoryRequest request)
         {
             try
             {
                 if (request.PageNumber <= 0 || request.PageSize <= 0)
-                    throw new Exception("Размер и номер страницы не могут быть меньше или равны нулю.");
+                    throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
 
                 if (request.PageSize > 200)
-                    throw new Exception("Размер страницы не может превышать 200 предметов");
+                    throw new("Размер страницы не может превышать 200 предметов");
 
                 User? user = _userService.GetCurrentUser();
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<Inventory>? inventories = _context.Entry(user)
-                                    .Collection(x => x.Inventories)
-                                    .Query()
-                                    .Include(x => x.Skin)
-                                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
+                IEnumerable<Inventory> inventories = _context.Entry(user)
+                    .Collection(x => x.Inventories)
+                    .Query()
+                    .Include(x => x.Skin)
+                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
 
-                if (request.OrderName != null && request.IsAscending != null)
-                    inventories = (bool)request.IsAscending ? inventories.OrderBy(_orderNames[(InventoryOrderName)request.OrderName])
-                                                            : inventories.OrderByDescending(_orderNames[(InventoryOrderName)request.OrderName]);
+                if (request is { OrderName: not null, IsAscending: not null })
+                    inventories = (bool)request.IsAscending
+                        ? inventories.OrderBy(_orderNames[(InventoryOrderName)request.OrderName])
+                        : inventories.OrderByDescending(_orderNames[(InventoryOrderName)request.OrderName]);
 
                 inventories = inventories.Skip((request.PageNumber - 1) * request.PageSize)
-                                         .Take(request.PageSize);
+                    .Take(request.PageSize);
 
-                return Ok(inventories.Select(x => new InventoryResponse(x.Id, _skinService.GetBaseSkinResponse(x.Skin)!, x.Count)));
+                return Ok(inventories.Select(x =>
+                    new InventoryResponse(x.Id, _skinService.GetBaseSkinResponse(x.Skin), x.Count)));
             }
             catch (Exception ex)
             {
@@ -102,29 +129,31 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetInventoryPagesCount")]
-        public ActionResult<InventoryPagesCountRespose> GetInventoryPagesCount([FromQuery] GetInventoryPagesCountRequest request)
+        public ActionResult<InventoryPagesCountResponse> GetInventoryPagesCount(
+            [FromQuery] GetInventoryPagesCountRequest request)
         {
             try
             {
                 if (request.PageSize <= 0)
-                    throw new Exception("Размер страницы не может быть меньше или равен нулю.");
+                    throw new("Размер страницы не может быть меньше или равен нулю.");
 
                 if (request.PageSize > 200)
-                    throw new Exception("Размер страницы не может превышать 200 предметов");
+                    throw new("Размер страницы не может превышать 200 предметов");
 
                 User? user = _userService.GetCurrentUser();
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<Inventory>? inventories = _context.Entry(user)
-                                                            .Collection(x => x.Inventories)
-                                                            .Query()
-                                                            .Include(x => x.Skin)
-                                                            .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                                               && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
+                IEnumerable<Inventory> inventories = _context.Entry(user)
+                    .Collection(x => x.Inventories)
+                    .Query()
+                    .Include(x => x.Skin)
+                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
 
-                return Ok(new InventoryPagesCountRespose((int)Math.Ceiling((double)inventories.Count() / request.PageSize)));
+                return Ok(new InventoryPagesCountResponse(
+                    (int)Math.Ceiling((double)inventories.Count() / request.PageSize)));
             }
             catch (Exception ex)
             {
@@ -134,7 +163,8 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSavedInventoriesCount")]
-        public ActionResult<SavedInventoriesCountResponse> GetSavedInventoriesCount([FromQuery] GetSavedInventoriesCountRequest request)
+        public ActionResult<SavedInventoriesCountResponse> GetSavedInventoriesCount(
+            [FromQuery] GetSavedInventoriesCountRequest request)
         {
             try
             {
@@ -143,13 +173,13 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(new SavedInventoriesCountResponse(_context.Entry(user)
-                                                            .Collection(x => x.Inventories)
-                                                            .Query()
-                                                            .Include(x => x.Skin)
-                                                            .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                                               && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)))
-                                                            .Count()));
+                return Ok(new SavedInventoriesCountResponse(_context
+                    .Entry(user)
+                    .Collection(x => x.Inventories)
+                    .Query()
+                    .Include(x => x.Skin)
+                    .Count(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)))));
             }
             catch (Exception ex)
             {
@@ -157,9 +187,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion GET
 
         #region POST
+
         [HttpPost(Name = "RefreshInventory")]
         public async Task<ActionResult> RefreshInventory(RefreshInventoryRequest request)
         {
@@ -176,21 +208,23 @@ namespace SteamStorageAPI.Controllers
                     return NotFound("Игры с таким Id не существует");
 
                 _context.Inventories.RemoveRange(_context.Entry(user)
-                                                         .Collection(x => x.Inventories)
-                                                         .Query()
-                                                         .Include(x => x.Skin)
-                                                         .Where(x => x.Skin.GameId == game.Id));
+                    .Collection(x => x.Inventories)
+                    .Query()
+                    .Include(x => x.Skin)
+                    .Where(x => x.Skin.GameId == game.Id));
 
 
                 HttpClient client = _httpClientFactory.CreateClient();
-                SteamInventoryResponse? response = await client.GetFromJsonAsync<SteamInventoryResponse>(SteamUrls.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
+                SteamInventoryResponse? response =
+                    await client.GetFromJsonAsync<SteamInventoryResponse>(
+                        SteamUrls.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
 
                 if (response is null)
-                    throw new Exception("При получении данных с сервера Steam произошла ошибка");
+                    throw new("При получении данных с сервера Steam произошла ошибка");
 
-                foreach (var item in response!.descriptions)
+                foreach (InventoryDescription item in response.descriptions)
                 {
-                    if (item.marketable == 0 && item.tradable == 0)
+                    if (item is { marketable: 0, tradable: 0 })
                         continue;
 
                     Skin? skin = _context.Skins.FirstOrDefault(x => x.MarketHashName == item.market_hash_name);
@@ -210,7 +244,7 @@ namespace SteamStorageAPI.Controllers
                     Inventory? inv = _context.Inventories.FirstOrDefault(x => x.SkinId == skin.Id);
 
                     if (inv is null)
-                        _context.Inventories.Add(new Inventory()
+                        _context.Inventories.Add(new()
                         {
                             User = user,
                             Skin = skin,
@@ -231,6 +265,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion POST
     }
 }

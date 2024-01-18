@@ -15,52 +15,66 @@ namespace SteamStorageAPI.Controllers
     public class GamesController : ControllerBase
     {
         #region Fields
+
         private readonly ILogger<GamesController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SteamStorageContext _context;
+
         #endregion Fields
 
         #region Constructor
-        public GamesController(ILogger<GamesController> logger, IHttpClientFactory httpClientFactory, SteamStorageContext context)
+
+        public GamesController(ILogger<GamesController> logger, IHttpClientFactory httpClientFactory,
+            SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _context = context;
         }
+
         #endregion Constructor
 
         #region Records
+
         public record GameResponse(int Id, int SteamGameId, string Title, string GameIconUrl);
+
         public record PostGameRequest(int SteamGameId, string IconUrlHash);
+
         public record PutGameRequest(int GameId, string IconUrlHash, string Title);
+
         public record DeleteGameRequest(int GameId);
+
         #endregion Records
 
         #region Methods
+
         private async Task<bool> IsGameIconExists(int steamGameId, string iconUrlHash)
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            HttpResponseMessage? response = await client.GetAsync(SteamUrls.GetGameIconUrl(steamGameId, iconUrlHash));
+            HttpResponseMessage response = await client.GetAsync(SteamUrls.GetGameIconUrl(steamGameId, iconUrlHash));
             return response.StatusCode == HttpStatusCode.OK;
         }
+
         private async Task<SteamGameResponse?> GetGameResponse(int steamGameId)
         {
             HttpClient client = _httpClientFactory.CreateClient();
             return await client.GetFromJsonAsync<SteamGameResponse>(SteamUrls.GetGameInfoUrl(steamGameId));
         }
+
         #endregion Methods
 
         #region GET
+
         [HttpGet(Name = "GetGames")]
         public ActionResult<IEnumerable<GameResponse>> GetGames()
         {
             try
             {
                 return Ok(_context.Games.Select(x =>
-                                new GameResponse(x.Id,
-                                                 x.SteamGameId,
-                                                 x.Title,
-                                                 SteamUrls.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
+                    new GameResponse(x.Id,
+                        x.SteamGameId,
+                        x.Title,
+                        SteamUrls.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
             }
             catch (Exception ex)
             {
@@ -68,9 +82,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion GET
 
         #region POST
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpPost(Name = "PostGame")]
         public async Task<ActionResult> PostGame(PostGameRequest request)
@@ -85,7 +101,7 @@ namespace SteamStorageAPI.Controllers
                 if (!await IsGameIconExists(request.SteamGameId, request.IconUrlHash))
                     return BadRequest("Указан неверный хэш-код иконки игры");
 
-                _context.Games.Add(new Game()
+                _context.Games.Add(new()
                 {
                     SteamGameId = request.SteamGameId,
                     Title = response.name,
@@ -103,9 +119,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion POST
 
         #region PUT
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpPut(Name = "PutGameInfo")]
         public async Task<ActionResult> PutGameInfo(PutGameRequest request)
@@ -134,9 +152,11 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion PUT
 
         #region DELETE
+
         [Authorize(Roles = nameof(Roles.Admin))]
         [HttpDelete(Name = "DeleteGame")]
         public async Task<ActionResult> DeleteGame(DeleteGameRequest request)
@@ -161,6 +181,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         #endregion DELETE
     }
 }

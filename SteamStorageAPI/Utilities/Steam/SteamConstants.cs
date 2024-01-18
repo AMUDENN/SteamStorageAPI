@@ -2,6 +2,6 @@
 {
     public class SteamConstants
     {
-        public const string SteamAPIKey = "BF900A723E4FFBDF6A73966A794F7768";
+        public const string STEAM_API_KEY = "BF900A723E4FFBDF6A73966A794F7768";
     }
 }

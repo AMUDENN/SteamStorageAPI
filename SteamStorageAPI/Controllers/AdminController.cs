@@ -11,16 +11,20 @@ namespace SteamStorageAPI.Controllers
     public class AdminController : ControllerBase
     {
         #region Fields
+
         private readonly ILogger<AdminController> _logger;
         private readonly SteamStorageContext _context;
+
         #endregion Fields
 
         #region Constructor
+
         public AdminController(ILogger<AdminController> logger, SteamStorageContext context)
         {
             _logger = logger;
             _context = context;
         }
+
         #endregion Constructor
     }
 }

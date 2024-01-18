@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class ActiveGroupsDynamic
+public class ActiveGroupsDynamic
 {
     public int Id { get; set; }
 

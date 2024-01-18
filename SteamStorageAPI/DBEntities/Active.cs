@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.DBEntities;
 
-public partial class Active
+public class Active
 {
     public int Id { get; set; }
 
