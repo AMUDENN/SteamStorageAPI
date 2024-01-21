@@ -14,7 +14,7 @@ namespace SteamStorageAPI.Utilities.JWT
             [
                 new(ClaimTypes.Name, tokenOwner.SteamId.ToString()),
                 new(ClaimTypes.NameIdentifier, tokenOwner.Id.ToString()),
-                new(ClaimTypes.Role, tokenOwner.Role.Title.ToString()),
+                new(ClaimTypes.Role, tokenOwner.Role.Title),
             ];
 
             JwtSecurityToken jwt = new(

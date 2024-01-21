@@ -305,7 +305,7 @@ namespace SteamStorageAPI.Controllers
 
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, 1, 0));
+                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0));
 
                 if (response is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");
@@ -372,7 +372,7 @@ namespace SteamStorageAPI.Controllers
                 int answerCount = 100;
 
                 SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinsUrl(game.SteamGameId, 1, 0));
+                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0));
 
                 if (response is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");
@@ -390,7 +390,7 @@ namespace SteamStorageAPI.Controllers
 
 
                         response = await client.GetFromJsonAsync<SteamSkinResponse>(
-                            SteamUrls.GetSkinsUrl(game.SteamGameId, count, start));
+                            SteamApi.GetSkinsUrl(game.SteamGameId, count, start));
 
                         if (response is null)
                             throw new("При получении данных с сервера Steam произошла ошибка");
@@ -456,7 +456,7 @@ namespace SteamStorageAPI.Controllers
 
 
                 SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamUrls.GetSkinInfo(request.MarketHashName));
+                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfo(request.MarketHashName));
 
                 if (response is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");

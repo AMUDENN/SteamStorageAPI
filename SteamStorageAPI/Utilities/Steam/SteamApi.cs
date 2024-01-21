@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.Utilities.Steam
 {
-    public static class SteamUrls
+    public static class SteamApi
     {
         public static string GetUserInfo(long steamProfileId) =>
             $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamConstants.STEAM_API_KEY}&steamids={steamProfileId}";
@@ -38,18 +38,26 @@
             "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select" +
             "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
 
-        public static string GetAuthCheckUrl(string opEndpoint, string claimedId, string identity, string returnTo,
-            string responseNonce, string assocHandle, string signed, string sig) =>
-            "https://steamcommunity.com/openid/login" +
-            "?openid.ns=http://specs.openid.net/auth/2.0" +
-            "&openid.mode=check_authentication" +
-            $"&openid.op_endpoint={opEndpoint}" +
-            $"&openid.claimed_id={claimedId}" +
-            $"&openid.identity={identity}" +
-            $"&openid.return_to={returnTo}" +
-            $"&openid.response_nonce={responseNonce}" +
-            $"&openid.assoc_handle={assocHandle}" +
-            $"&openid.signed={signed}" +
-            $"&openid.sig={sig}";
+        public static string GetAuthCheckUrl() => "https://steamcommunity.com/openid/login";
+
+        public static HttpContent GetAuthCheckContent(string ns, string opEndpoint, string claimedId, string identity,
+            string returnTo, string responseNonce, string assocHandle, string signed, string sig)
+        {
+            Dictionary<string, string> formData = new()
+            {
+                ["openid.ns"] = ns,
+                ["openid.mode"] = "check_authentication",
+                ["openid.op_endpoint"] = opEndpoint,
+                ["openid.claimed_id"] = claimedId,
+                ["openid.identity"] = identity,
+                ["openid.return_to"] = returnTo,
+                ["openid.response_nonce"] = responseNonce,
+                ["openid.assoc_handle"] = assocHandle,
+                ["openid.signed"] = signed,
+                ["openid.sig"] = sig
+            };
+
+            return new FormUrlEncodedContent(formData);
+        }
     }
 }

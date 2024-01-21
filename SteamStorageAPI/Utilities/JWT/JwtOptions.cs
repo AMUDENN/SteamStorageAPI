@@ -3,7 +3,7 @@ using System.Text;
 
 namespace SteamStorageAPI.Utilities.JWT
 {
-    public class JwtOptions
+    public static class JwtOptions
     {
         public const string ISSUER = "AMUDENN"; // издатель токена
         public const string AUDIENCE = "SteamStorageUser"; // потребитель токена

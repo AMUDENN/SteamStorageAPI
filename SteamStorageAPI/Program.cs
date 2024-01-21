@@ -11,6 +11,7 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.JWT;
 using System.Net.Mime;
+using SteamStorageAPI.Services.CryptographyService;
 
 namespace SteamStorageAPI;
 
@@ -33,6 +34,7 @@ public class Program
 
         //Services
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+        builder.Services.AddScoped<ICryptographyService, CryptographyService>();
         builder.Services.AddTransient<ISkinService, SkinService>();
         builder.Services.AddTransient<IUserService, UserService>();
 
@@ -118,7 +120,6 @@ public class Program
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
             })
             .AddJwtBearer(options =>
             {

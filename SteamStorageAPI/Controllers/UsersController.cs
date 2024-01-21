@@ -39,7 +39,7 @@ namespace SteamStorageAPI.Controllers
 
         public record UserResponse(
             int UserId,
-            long SteamId,
+            string SteamId,
             string? ImageUrl,
             string? ImageUrlMedium,
             string? ImageUrlFull,
@@ -67,7 +67,7 @@ namespace SteamStorageAPI.Controllers
 
             HttpClient client = _httpClientFactory.CreateClient();
             SteamUserResult? steamUserResult =
-                await client.GetFromJsonAsync<SteamUserResult>(SteamUrls.GetUserInfo(user.SteamId));
+                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfo(user.SteamId));
 
             if (steamUserResult is null)
                 return null;
@@ -75,7 +75,7 @@ namespace SteamStorageAPI.Controllers
             SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
 
             return new(user.Id,
-                user.SteamId,
+                user.SteamId.ToString(),
                 steamUser?.avatar, steamUser?.avatarmedium, steamUser?.avatarfull,
                 steamUser?.personaname,
                 user.RoleId,

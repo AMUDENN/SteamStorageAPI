@@ -217,7 +217,7 @@ namespace SteamStorageAPI.Controllers
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamInventoryResponse? response =
                     await client.GetFromJsonAsync<SteamInventoryResponse>(
-                        SteamUrls.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
+                        SteamApi.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
 
                 if (response is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");

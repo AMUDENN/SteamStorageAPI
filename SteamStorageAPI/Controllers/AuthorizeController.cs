@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Utilities.JWT;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
@@ -17,6 +17,7 @@ namespace SteamStorageAPI.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IJwtProvider _jwtProvider;
+        private readonly ICryptographyService _cryptographyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -24,12 +25,14 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public AuthorizeController(ILogger<AuthorizeController> logger, IHttpClientFactory httpClientFactory,
-            IHttpContextAccessor httpContextAccessor, IJwtProvider jwtProvider, SteamStorageContext context)
+            IHttpContextAccessor httpContextAccessor, IJwtProvider jwtProvider,
+            ICryptographyService cryptographyService, SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
             _jwtProvider = jwtProvider;
+            _cryptographyService = cryptographyService;
             _context = context;
         }
 
@@ -39,7 +42,9 @@ namespace SteamStorageAPI.Controllers
 
         public record AuthUrlResponse(string Url);
 
-        public record AuthResponse(string Token);
+        public record SteamAuthResponse(string Token);
+        
+        public record CookieAuthResponse(string Token);
 
         public record SteamAuthRequest(
             [FromQuery(Name = "openid.ns")] string Ns,
@@ -56,6 +61,8 @@ namespace SteamStorageAPI.Controllers
             string AssocHandle,
             [FromQuery(Name = "openid.signed")] string Signed,
             [FromQuery(Name = "openid.sig")] string Sig);
+
+        public record CheckCookieAuthRequest(long SteamId);
 
         #endregion Records
 
@@ -79,13 +86,18 @@ namespace SteamStorageAPI.Controllers
             return user;
         }
 
-        private bool CheckCookieEqual(SteamAuthRequest steamAuthRequest)
+        private string GetSteamAuthUrl()
         {
-            SteamAuthRequest? steamAuthRequestCookie = null;
-            if (HttpContext.Request.Cookies.TryGetValue(nameof(SteamAuthRequest), out string? cookie))
-                steamAuthRequestCookie = JsonConvert.DeserializeObject<SteamAuthRequest>(cookie);
+            string baseUrl =
+                $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/";
+            return SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback", baseUrl);
+        }
 
-            return steamAuthRequestCookie is not null && steamAuthRequest == steamAuthRequestCookie;
+        private bool CheckCookieEqual(long steamId)
+        {
+            HttpContext.Request.Cookies.TryGetValue(nameof(SteamAuthRequest), out string? cookie);
+
+            return _cryptographyService.Sha512(steamId) == cookie;
         }
 
         #endregion Methods
@@ -97,10 +109,7 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                string baseUrl =
-                    $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/";
-                return Ok(new AuthUrlResponse(
-                    SteamUrls.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback", baseUrl)));
+                return Ok(new AuthUrlResponse(GetSteamAuthUrl()));
             }
             catch (Exception ex)
             {
@@ -110,41 +119,84 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "SteamAuthCallback")]
-        public async Task<ActionResult<AuthResponse>> SteamAuthCallback([FromQuery] SteamAuthRequest steamAuthRequest)
+        public async Task<ActionResult<SteamAuthResponse>> SteamAuthCallback(
+            [FromQuery] SteamAuthRequest steamAuthRequest)
         {
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient();
-                string response = await client.GetStringAsync(
-                    SteamUrls.GetAuthCheckUrl(steamAuthRequest.OpEndpoint,
-                        steamAuthRequest.ClaimedId,
-                        steamAuthRequest.Identity,
-                        steamAuthRequest.ReturnTo,
-                        steamAuthRequest.ResponseNonce,
-                        steamAuthRequest.AssocHandle,
-                        steamAuthRequest.Signed,
-                        steamAuthRequest.Sig));
-                bool authResult = Convert.ToBoolean(response[(response.LastIndexOf(':') + 1)..]);
 
-                if (!(authResult || CheckCookieEqual(steamAuthRequest)))
-                    return BadRequest("Авторизация не удалась");
+                HttpRequestMessage request = new(HttpMethod.Post, SteamApi.GetAuthCheckUrl())
+                {
+                    Content = SteamApi.GetAuthCheckContent(steamAuthRequest.Ns, steamAuthRequest.OpEndpoint,
+                        steamAuthRequest.ClaimedId, steamAuthRequest.Identity, steamAuthRequest.ReturnTo,
+                        steamAuthRequest.ResponseNonce, steamAuthRequest.AssocHandle, steamAuthRequest.Signed,
+                        steamAuthRequest.Sig)
+                };
+                
+                HttpResponseMessage response =
+                    await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
+                string strResponse = await response.Content.ReadAsStringAsync();
+                bool authResult = Convert.ToBoolean(strResponse[(strResponse.LastIndexOf(':') + 1)..]);
 
                 long steamId =
                     Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
 
-                User user = _context.Users.FirstOrDefault(x => x.SteamId == steamId) ?? await CreateUser(steamId);
+                if (!(authResult || CheckCookieEqual(steamId)))
+                    return Redirect(GetSteamAuthUrl());
 
-                HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest),
-                    JsonConvert.SerializeObject(steamAuthRequest));
+                if (authResult)
+                    HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), _cryptographyService.Sha512(steamId));
+
+                User user = _context.Users.FirstOrDefault(x => x.SteamId == steamId) ?? await CreateUser(steamId);
 
                 await _context.Entry(user).Reference(u => u.Role).LoadAsync();
 
-                return Ok(new AuthResponse(_jwtProvider.Generate(user)));
+                return Ok(new SteamAuthResponse(_jwtProvider.Generate(user)));
             }
             catch (Exception ex)
             {
                 _context.UndoChanges();
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(Name = "CheckCookieAuth")]
+        public async Task<ActionResult<CookieAuthResponse>> CheckCookieAuth([FromQuery] CheckCookieAuthRequest request)
+        {
+            try
+            {
+                if (!CheckCookieEqual(request.SteamId))
+                    return BadRequest("Необходима новая авторизация через Steam");
+                
+                User? user = _context.Users.FirstOrDefault(x => x.SteamId == request.SteamId);
+
+                if (user is null)
+                    return BadRequest("Пользователя с таким Id не существует, пройдите авторизацию через Steam");
+
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+
+                return Ok(new CookieAuthResponse(_jwtProvider.Generate(user)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(Name = "LogOut")]
+        public ActionResult LogOut()
+        {
+            try
+            {
+                HttpContext.Response.Cookies.Delete(nameof(SteamAuthRequest));
+                return Ok();
+            }
+            catch (Exception ex)
+            {
                 _logger.LogError(ex.Message);
                 return BadRequest(ex.Message);
             }

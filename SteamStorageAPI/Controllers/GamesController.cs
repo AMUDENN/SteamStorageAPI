@@ -51,14 +51,14 @@ namespace SteamStorageAPI.Controllers
         private async Task<bool> IsGameIconExists(int steamGameId, string iconUrlHash)
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            HttpResponseMessage response = await client.GetAsync(SteamUrls.GetGameIconUrl(steamGameId, iconUrlHash));
+            HttpResponseMessage response = await client.GetAsync(SteamApi.GetGameIconUrl(steamGameId, iconUrlHash));
             return response.StatusCode == HttpStatusCode.OK;
         }
 
         private async Task<SteamGameResponse?> GetGameResponse(int steamGameId)
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            return await client.GetFromJsonAsync<SteamGameResponse>(SteamUrls.GetGameInfoUrl(steamGameId));
+            return await client.GetFromJsonAsync<SteamGameResponse>(SteamApi.GetGameInfoUrl(steamGameId));
         }
 
         #endregion Methods
@@ -74,7 +74,7 @@ namespace SteamStorageAPI.Controllers
                     new GameResponse(x.Id,
                         x.SteamGameId,
                         x.Title,
-                        SteamUrls.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
+                        SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
             }
             catch (Exception ex)
             {

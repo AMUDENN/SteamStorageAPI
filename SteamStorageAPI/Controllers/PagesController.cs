@@ -5,7 +5,6 @@ using SteamStorageAPI.Services.UserService;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class PagesController : ControllerBase
@@ -33,6 +32,7 @@ namespace SteamStorageAPI.Controllers
 
         public record PageResponse(int Id, string Title);
 
+        [Authorize]
         public record SetPageRequest(int PageId);
 
         #endregion Records

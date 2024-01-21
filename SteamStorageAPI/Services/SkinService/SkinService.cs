@@ -28,10 +28,10 @@ namespace SteamStorageAPI.Services.SkinService
             _context.Entry(skin).Reference(x => x.Game).Load();
             return new(
                 skin.Id,
-                SteamUrls.GetSkinIconUrl(skin.SkinIconUrl),
+                SteamApi.GetSkinIconUrl(skin.SkinIconUrl),
                 skin.Title,
                 skin.MarketHashName,
-                SteamUrls.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
+                SteamApi.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
         }
 
         public decimal GetCurrentPrice(Skin skin)

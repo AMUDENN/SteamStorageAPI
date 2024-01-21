@@ -156,7 +156,7 @@ namespace SteamStorageAPI.Controllers
 
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                    SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
+                    SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
                 if (response is null || response.lowest_price is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");
 
@@ -166,7 +166,7 @@ namespace SteamStorageAPI.Controllers
                 foreach (Currency currency in currencies)
                 {
                     response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                        SteamUrls.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
+                        SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
                             currency.SteamCurrencyId));
 
                     if (response is null)
