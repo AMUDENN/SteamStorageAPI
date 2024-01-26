@@ -1,6 +1,6 @@
 ﻿using SteamStorageAPI.DBEntities;
 
-namespace SteamStorageAPI.Utilities.JWT
+namespace SteamStorageAPI.Services.JwtProvider
 {
     public interface IJwtProvider
     {

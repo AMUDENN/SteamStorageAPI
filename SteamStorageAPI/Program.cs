@@ -11,11 +11,13 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.JWT;
 using System.Net.Mime;
+using System.Text.Json.Serialization;
 using SteamStorageAPI.Services.CryptographyService;
+using SteamStorageAPI.Services.JwtProvider;
 
 namespace SteamStorageAPI;
 
-public class Program
+public static class Program
 {
     #region Records
 
@@ -29,7 +31,12 @@ public class Program
 
     private static WebApplicationBuilder ConfigureServices(WebApplicationBuilder builder)
     {
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        });
         builder.Services.AddEndpointsApiExplorer();
 
         //Services

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CryptographyService;
-using SteamStorageAPI.Utilities.JWT;
+using SteamStorageAPI.Services.JwtProvider;
+using SteamStorageAPI.Utilities;
+using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
 
@@ -40,13 +42,14 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record AuthUrlResponse(string Url);
+        public record AuthUrlResponse(string Url, string Group);
 
         public record SteamAuthResponse(string Token);
         
         public record CookieAuthResponse(string Token);
 
         public record SteamAuthRequest(
+            [FromQuery(Name = "group")] string Group,
             [FromQuery(Name = "openid.ns")] string Ns,
             [FromQuery(Name = "openid.mode")] string Mode,
             [FromQuery(Name = "openid.op_endpoint")]
@@ -86,11 +89,13 @@ namespace SteamStorageAPI.Controllers
             return user;
         }
 
-        private string GetSteamAuthUrl()
+        private (string Url, string Group) GetSteamAuthInfo(string? group = null)
         {
+            Random rnd = new();
+            group ??= rnd.GenerateString(20);
             string baseUrl =
                 $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/";
-            return SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback", baseUrl);
+            return (SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback?group={group}", baseUrl), group);
         }
 
         private bool CheckCookieEqual(long steamId)
@@ -109,7 +114,8 @@ namespace SteamStorageAPI.Controllers
         {
             try
             {
-                return Ok(new AuthUrlResponse(GetSteamAuthUrl()));
+                (string Url, string Group) steamAuth = GetSteamAuthInfo();
+                return Ok(new AuthUrlResponse(steamAuth.Url, steamAuth.Group));
             }
             catch (Exception ex)
             {
@@ -144,7 +150,7 @@ namespace SteamStorageAPI.Controllers
                     Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
 
                 if (!(authResult || CheckCookieEqual(steamId)))
-                    return Redirect(GetSteamAuthUrl());
+                    return Redirect(GetSteamAuthInfo(steamAuthRequest.Group).Url);
 
                 if (authResult)
                     HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), _cryptographyService.Sha512(steamId));
@@ -152,14 +158,14 @@ namespace SteamStorageAPI.Controllers
                 User user = _context.Users.FirstOrDefault(x => x.SteamId == steamId) ?? await CreateUser(steamId);
 
                 await _context.Entry(user).Reference(u => u.Role).LoadAsync();
-
-                return Ok(new SteamAuthResponse(_jwtProvider.Generate(user)));
+                
+                return Redirect($"http://localhost:5245/Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
             }
             catch (Exception ex)
             {
                 _context.UndoChanges();
                 _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
+                return BadRequest(ex.Message + ex.InnerException);
             }
         }
 

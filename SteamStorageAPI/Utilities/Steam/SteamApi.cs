@@ -2,8 +2,16 @@
 {
     public static class SteamApi
     {
+        #region Constants
+
+        public const string STEAM_API_KEY = "BF900A723E4FFBDF6A73966A794F7768";
+
+        #endregion Constants
+
+        #region Methods
+
         public static string GetUserInfo(long steamProfileId) =>
-            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamConstants.STEAM_API_KEY}&steamids={steamProfileId}";
+            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steamProfileId}";
 
         public static string GetGameIconUrl(int appId, string urlHash) =>
             $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appId}/{urlHash}.jpg";
@@ -59,5 +67,7 @@
 
             return new FormUrlEncodedContent(formData);
         }
+
+        #endregion Methods
     }
 }

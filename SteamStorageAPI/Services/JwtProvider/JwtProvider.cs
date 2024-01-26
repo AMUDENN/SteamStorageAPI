@@ -1,9 +1,10 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using SteamStorageAPI.DBEntities;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Utilities.JWT;
 
-namespace SteamStorageAPI.Utilities.JWT
+namespace SteamStorageAPI.Services.JwtProvider
 {
     public class JwtProvider : IJwtProvider
     {
@@ -21,7 +22,7 @@ namespace SteamStorageAPI.Utilities.JWT
                 issuer: JwtOptions.ISSUER,
                 audience: JwtOptions.AUDIENCE,
                 claims: claims,
-                expires: DateTime.UtcNow.Add(TimeSpan.FromDays(1)),
+                expires: DateTime.UtcNow.Add(TimeSpan.FromDays(JwtOptions.EXPIRES_DAYS)),
                 signingCredentials: new(JwtOptions.GetSymmetricSecurityKey(),
                     SecurityAlgorithms.HmacSha256)
             );
