@@ -32,7 +32,6 @@ namespace SteamStorageAPI.Controllers
 
         public record PageResponse(int Id, string Title);
 
-        [Authorize]
         public record SetPageRequest(int PageId);
 
         #endregion Records
@@ -58,6 +57,7 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
+        [Authorize]
         [HttpPut(Name = "SetStartPage")]
         public async Task<ActionResult> SetStartPage(SetPageRequest request)
         {

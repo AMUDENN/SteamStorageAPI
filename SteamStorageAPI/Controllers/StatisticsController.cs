@@ -48,6 +48,8 @@ namespace SteamStorageAPI.Controllers
 
         public record InventoryGameStatisticResponse(string GameTitle, double Percentage);
 
+        public record ItemsCountResponse(int Count);
+
         #endregion Records
 
         #region GET
@@ -256,6 +258,50 @@ namespace SteamStorageAPI.Controllers
                 }
 
                 return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
+        }
+        
+        [HttpGet(Name = "GetItemsCount")]
+        public ActionResult<ItemsCountResponse> GetItemsCount()
+        {
+            try
+            {
+                User? user = _userService.GetCurrentUser();
+
+                if (user is null)
+                    return NotFound("Пользователя с таким Id не существует");
+                
+                List<Active> actives = _context.Entry(user)
+                    .Collection(u => u.ActiveGroups)
+                    .Query()
+                    .Include(x => x.Actives)
+                    .SelectMany(x => x.Actives)
+                    .ToList();
+
+                int activesCount = actives.Sum(x => x.Count);
+                
+                List<Archive> archives = _context.Entry(user)
+                    .Collection(u => u.ArchiveGroups)
+                    .Query()
+                    .Include(x => x.Archives)
+                    .SelectMany(x => x.Archives)
+                    .ToList();
+
+                int archivesCount = archives.Sum(x => x.Count);
+
+                List<Inventory> inventories = _context.Entry(user)
+                    .Collection(u => u.Inventories)
+                    .Query()
+                    .ToList();
+
+                int inventoriesCount = inventories.Sum(x => x.Count);
+
+                return Ok(new ItemsCountResponse(activesCount + archivesCount + inventoriesCount));
             }
             catch (Exception ex)
             {

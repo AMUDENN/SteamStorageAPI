@@ -110,7 +110,7 @@ public static class Program
                 {
                     Endpoint = "*",
                     Period = "1s",
-                    Limit = 5,
+                    Limit = 20,
                 }
             ];
         });
