@@ -165,7 +165,7 @@ namespace SteamStorageAPI.Controllers
             {
                 _context.UndoChanges();
                 _logger.LogError(ex.Message);
-                return BadRequest(ex.Message + ex.InnerException);
+                return BadRequest(ex.Message);
             }
         }
 
