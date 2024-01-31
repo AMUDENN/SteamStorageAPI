@@ -7,6 +7,6 @@ namespace SteamStorageAPI.Services.SkinService
     {
         BaseSkinResponse GetBaseSkinResponse(Skin skin);
         decimal GetCurrentPrice(Skin skin);
-        IEnumerable<SkinDynamicResponse> GetSkinDynamicsResponse(Skin skin, int days);
+        List<SkinDynamicResponse> GetSkinDynamicsResponse(Skin skin, DateTime startDate, DateTime endDate);
     }
 }

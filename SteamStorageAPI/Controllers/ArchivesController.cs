@@ -71,6 +71,8 @@ namespace SteamStorageAPI.Controllers
             decimal SoldPrice,
             decimal SoldSum,
             double Change);
+        
+        public record ArchivesResponse(int ArchivesCount, int PagesCount, IEnumerable<ArchiveResponse> Skins);
 
         public record ArchivesPagesCountResponse(int Count);
 
@@ -132,7 +134,7 @@ namespace SteamStorageAPI.Controllers
         #region GET
 
         [HttpGet(Name = "GetArchives")]
-        public ActionResult<IEnumerable<ArchiveResponse>> GetArchives([FromQuery] GetArchivesRequest request)
+        public ActionResult<ArchivesResponse> GetArchives([FromQuery] GetArchivesRequest request)
         {
             try
             {
@@ -164,8 +166,22 @@ namespace SteamStorageAPI.Controllers
 
                 archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize);
+                
+                int archivesCount = _context
+                    .Entry(user)
+                    .Collection(x => x.ArchiveGroups)
+                    .Query()
+                    .Include(x => x.Archives)
+                    .ThenInclude(x => x.Skin)
+                    .SelectMany(x => x.Archives).Count(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                                            && (string.IsNullOrEmpty(request.Filter) ||
+                                                                x.Skin.Title.Contains(request.Filter!))
+                                                            && (request.GroupId == null ||
+                                                                x.GroupId == request.GroupId));
 
-                return Ok(archives.Select(GetArchiveResponse));
+                int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
+
+                return Ok(new ArchivesResponse(archivesCount, pagesCount, archives.Select(GetArchiveResponse)));
             }
             catch (Exception ex)
             {
@@ -191,18 +207,21 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<Archive> archives = _context.Entry(user)
+                int count = _context
+                    .Entry(user)
                     .Collection(x => x.ArchiveGroups)
                     .Query()
                     .Include(x => x.Archives)
                     .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Archives)
-                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                && (request.GroupId == null || x.GroupId == request.GroupId));
+                    .SelectMany(x => x.Archives).Count(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                                            && (string.IsNullOrEmpty(request.Filter) ||
+                                                                x.Skin.Title.Contains(request.Filter!))
+                                                            && (request.GroupId == null ||
+                                                                x.GroupId == request.GroupId));
 
-                return Ok(new ArchivesPagesCountResponse(
-                    (int)Math.Ceiling((double)archives.Count() / request.PageSize)));
+                int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+
+                return Ok(new ArchivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
             }
             catch (Exception ex)
             {

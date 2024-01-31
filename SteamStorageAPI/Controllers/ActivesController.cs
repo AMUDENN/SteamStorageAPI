@@ -73,6 +73,8 @@ namespace SteamStorageAPI.Controllers
             decimal CurrentSum,
             double Change);
 
+        public record ActivesResponse(int ActivesCount, int PagesCount, IEnumerable<ActiveResponse> Skins);
+
         public record ActivesPagesCountResponse(int Count);
 
         public record ActivesCountResponse(int Count);
@@ -143,7 +145,7 @@ namespace SteamStorageAPI.Controllers
         #region GET
 
         [HttpGet(Name = "GetActives")]
-        public ActionResult<IEnumerable<ActiveResponse>> GetActives([FromQuery] GetActivesRequest request)
+        public ActionResult<ActivesResponse> GetActives([FromQuery] GetActivesRequest request)
         {
             try
             {
@@ -173,10 +175,25 @@ namespace SteamStorageAPI.Controllers
                         ? actives.OrderBy(_orderNames[(ActiveOrderName)request.OrderName])
                         : actives.OrderByDescending(_orderNames[(ActiveOrderName)request.OrderName]);
 
+                int activesCount = _context
+                    .Entry(user)
+                    .Collection(x => x.ActiveGroups)
+                    .Query()
+                    .Include(x => x.Actives)
+                    .ThenInclude(x => x.Skin)
+                    .SelectMany(x => x.Actives).Count(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                                           && (string.IsNullOrEmpty(request.Filter) ||
+                                                               x.Skin.Title.Contains(request.Filter!))
+                                                           && (request.GroupId == null ||
+                                                               x.GroupId == request.GroupId));
+
+                int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
+
                 actives = actives.Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize);
 
-                return Ok(actives.Select(GetActiveResponse));
+                return Ok(new ActivesResponse(activesCount, pagesCount == 0 ? 1 : pagesCount,
+                    actives.Select(GetActiveResponse)));
             }
             catch (Exception ex)
             {
@@ -202,17 +219,21 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<Active> actives = _context.Entry(user)
+                int count = _context
+                    .Entry(user)
                     .Collection(x => x.ActiveGroups)
                     .Query()
                     .Include(x => x.Actives)
                     .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Actives)
-                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                && (request.GroupId == null || x.GroupId == request.GroupId));
+                    .SelectMany(x => x.Actives).Count(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                                           && (string.IsNullOrEmpty(request.Filter) ||
+                                                               x.Skin.Title.Contains(request.Filter!))
+                                                           && (request.GroupId == null ||
+                                                               x.GroupId == request.GroupId));
 
-                return Ok(new ActivesPagesCountResponse((int)Math.Ceiling((double)actives.Count() / request.PageSize)));
+                int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+
+                return Ok(new ActivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
             }
             catch (Exception ex)
             {

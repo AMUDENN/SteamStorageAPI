@@ -102,6 +102,10 @@ namespace SteamStorageAPI.Controllers
             double Change30D,
             bool IsMarked);
 
+        public record SkinsResponse(int SkinsCount, int PagesCount, IEnumerable<SkinResponse> Skins);
+
+        public record SkinDynamicStatsResponse(double ChangePeriod, IEnumerable<SkinDynamicResponse> Dynamic);
+
         public record SkinDynamicResponse(int Id, DateTime DateUpdate, decimal Price);
 
         public record SkinPagesCountResponse(int Count);
@@ -121,7 +125,7 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
-        public record GetSkinDynamicsRequest(int SkinId, int Days);
+        public record GetSkinDynamicsRequest(int SkinId, DateTime StartDate, DateTime EndDate);
 
         public record GetSkinPagesCountRequest(int? GameId, string? Filter, bool? IsMarked, int PageSize);
 
@@ -137,7 +141,7 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private SkinResponse GetSkinResponse(Skin skin, User user)
+        private SkinResponse GetSkinResponse(Skin skin, IEnumerable<int> markedSkinsId)
         {
             List<SkinsDynamic> dynamics = _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
@@ -157,8 +161,7 @@ namespace SteamStorageAPI.Controllers
                 ? 0
                 : (currentPrice - dynamic30.First().Price) / dynamic30.First().Price);
 
-            bool isMarked = _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                .Any(x => x.SkinId == skin.Id);
+            bool isMarked = markedSkinsId.Any(x => x == skin.Id);
 
             return new(_skinService.GetBaseSkinResponse(skin), currentPrice, change7D, change30D,
                 isMarked);
@@ -182,8 +185,11 @@ namespace SteamStorageAPI.Controllers
 
                 if (skin is null)
                     return NotFound("Скина с таким Id не существует");
+                
+                List<int> markedSkinIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                    .Select(x => x.SkinId).ToList();
 
-                return Ok(GetSkinResponse(skin, user));
+                return Ok(GetSkinResponse(skin, markedSkinIds));
             }
             catch (Exception ex)
             {
@@ -193,7 +199,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSkins")]
-        public ActionResult<IEnumerable<SkinResponse>> GetSkins([FromQuery] GetSkinsRequest request)
+        public ActionResult<SkinsResponse> GetSkins([FromQuery] GetSkinsRequest request)
         {
             try
             {
@@ -208,11 +214,8 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<int> markedSkinIds = Enumerable.Empty<int>();
-
-                if (request.IsMarked is not null)
-                    markedSkinIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId)
-                        .ToList();
+                List<int> markedSkinIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                    .Select(x => x.SkinId).ToList();
 
                 IEnumerable<Skin> skins = _context.Skins.Where(x =>
                     (request.GameId == null || x.GameId == request.GameId)
@@ -224,10 +227,20 @@ namespace SteamStorageAPI.Controllers
                         ? skins.OrderBy(_orderNames[(SkinOrderName)request.OrderName])
                         : skins.OrderByDescending(_orderNames[(SkinOrderName)request.OrderName]);
 
+
+                int skinsCount = _context.Skins.Count(x => (request.GameId == null || x.GameId == request.GameId)
+                                                           && (string.IsNullOrEmpty(request.Filter) ||
+                                                               x.Title.Contains(request.Filter!))
+                                                           && (request.IsMarked == null || request.IsMarked ==
+                                                               markedSkinIds.Any(y => y == x.Id)));
+
+                int pagesCount = (int)Math.Ceiling((double)skinsCount / request.PageSize);
+
                 skins = skins.Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize);
 
-                return Ok(skins.Select(x => GetSkinResponse(x, user)));
+                return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
+                    skins.Select(x => GetSkinResponse(x, markedSkinIds))));
             }
             catch (Exception ex)
             {
@@ -237,7 +250,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "GetSkinDynamics")]
-        public ActionResult<IEnumerable<SkinDynamicResponse>> GetSkinDynamics(
+        public ActionResult<SkinDynamicStatsResponse> GetSkinDynamics(
             [FromQuery] GetSkinDynamicsRequest request)
         {
             try
@@ -247,7 +260,14 @@ namespace SteamStorageAPI.Controllers
                 if (skin is null)
                     return NotFound("Скина с таким Id не существует");
 
-                return Ok(_skinService.GetSkinDynamicsResponse(skin, request.Days));
+                List<SkinDynamicResponse> dynamic =
+                    _skinService.GetSkinDynamicsResponse(skin, request.StartDate, request.EndDate);
+
+                double changePeriod = (double)(dynamic.Count == 0
+                    ? 0
+                    : (dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price);
+
+                return Ok(new SkinDynamicStatsResponse(changePeriod, dynamic));
             }
             catch (Exception ex)
             {
@@ -272,18 +292,21 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<int> markedSkinIds = Enumerable.Empty<int>();
+                List<int> markedSkinIds = [];
 
                 if (request.IsMarked is not null)
                     markedSkinIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId)
                         .ToList();
 
-                IEnumerable<Skin> skins = _context.Skins.Where(x =>
-                    (request.GameId == null || x.GameId == request.GameId)
-                    && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
-                    && (request.IsMarked == null || request.IsMarked == markedSkinIds.Any(y => y == x.Id)));
+                int count = _context.Skins.Count(x => (request.GameId == null || x.GameId == request.GameId)
+                                                      && (string.IsNullOrEmpty(request.Filter) ||
+                                                          x.Title.Contains(request.Filter!))
+                                                      && (request.IsMarked == null || request.IsMarked ==
+                                                          markedSkinIds.Any(y => y == x.Id)));
 
-                return Ok(new SkinPagesCountResponse((int)Math.Ceiling((double)skins.Count() / request.PageSize)));
+                int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+
+                return Ok(new SkinPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
             }
             catch (Exception ex)
             {
@@ -329,18 +352,19 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<int> markedSkinIds = Enumerable.Empty<int>();
+                List<int> markedSkinIds = [];
 
                 if (request.IsMarked is not null)
                     markedSkinIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId)
                         .ToList();
 
-                IEnumerable<Skin> skins = _context.Skins.Where(x =>
-                    (request.GameId == null || x.GameId == request.GameId)
-                    && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
-                    && (request.IsMarked == null || request.IsMarked == markedSkinIds.Any(y => y == x.Id)));
+                int count = _context.Skins.Count(x => (request.GameId == null || x.GameId == request.GameId)
+                                                      && (string.IsNullOrEmpty(request.Filter) ||
+                                                          x.Title.Contains(request.Filter!))
+                                                      && (request.IsMarked == null || request.IsMarked ==
+                                                          markedSkinIds.Any(y => y == x.Id)));
 
-                return Ok(new SavedSkinsCountResponse(skins.Count()));
+                return Ok(new SavedSkinsCountResponse(count));
             }
             catch (Exception ex)
             {

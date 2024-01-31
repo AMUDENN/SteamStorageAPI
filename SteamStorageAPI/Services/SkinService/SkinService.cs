@@ -45,14 +45,15 @@ namespace SteamStorageAPI.Services.SkinService
             return dynamics.Count == 0 ? 0 : dynamics.Last().Price;
         }
 
-        public IEnumerable<SkinDynamicResponse> GetSkinDynamicsResponse(Skin skin, int days)
+        public List<SkinDynamicResponse> GetSkinDynamicsResponse(Skin skin, DateTime startDate, DateTime endDate)
         {
             return _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
                 .OrderBy(x => x.DateUpdate)
-                .Where(x => x.DateUpdate > DateTime.Now.AddDays(-days))
-                .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, x.Price));
+                .Where(x => x.DateUpdate > startDate && x.DateUpdate < endDate)
+                .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, x.Price))
+                .ToList();
         }
 
         #endregion Methods
