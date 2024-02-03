@@ -50,8 +50,8 @@ namespace SteamStorageAPI.Services.SkinService
             return _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
+                .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
                 .OrderBy(x => x.DateUpdate)
-                .Where(x => x.DateUpdate > startDate && x.DateUpdate < endDate)
                 .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, x.Price))
                 .ToList();
         }
