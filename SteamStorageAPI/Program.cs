@@ -39,6 +39,9 @@ public static class Program
         });
         builder.Services.AddEndpointsApiExplorer();
 
+        //JwtOptions Initialize
+        JwtOptions.Initialize(builder.Configuration);
+
         //Services
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
         builder.Services.AddScoped<ICryptographyService, CryptographyService>();
@@ -84,7 +87,7 @@ public static class Program
 
 
         //DataBase
-        string connectionString = builder.Configuration.GetConnectionString("SteamStorageDB")
+        string connectionString = builder.Configuration.GetSection("DataBase").GetValue<string>("ConnectionString")
                                   ?? throw new ArgumentNullException("ConnectionString");
 
         builder.Services.AddDbContext<SteamStorageContext>(opt => opt.UseSqlServer(connectionString));
@@ -133,9 +136,9 @@ public static class Program
                 options.TokenValidationParameters = new()
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = JwtOptions.ISSUER,
+                    ValidIssuer = JwtOptions.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = JwtOptions.AUDIENCE,
+                    ValidAudience = JwtOptions.Audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey()

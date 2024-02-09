@@ -44,8 +44,6 @@ namespace SteamStorageAPI.Controllers
 
         public record AuthUrlResponse(string Url, string Group);
 
-        public record SteamAuthResponse(string Token);
-        
         public record CookieAuthResponse(string Token);
 
         public record SteamAuthRequest(
@@ -125,7 +123,7 @@ namespace SteamStorageAPI.Controllers
         }
 
         [HttpGet(Name = "SteamAuthCallback")]
-        public async Task<ActionResult<SteamAuthResponse>> SteamAuthCallback(
+        public async Task<ActionResult> SteamAuthCallback(
             [FromQuery] SteamAuthRequest steamAuthRequest)
         {
             try
@@ -139,7 +137,7 @@ namespace SteamStorageAPI.Controllers
                         steamAuthRequest.ResponseNonce, steamAuthRequest.AssocHandle, steamAuthRequest.Signed,
                         steamAuthRequest.Sig)
                 };
-                
+
                 HttpResponseMessage response =
                     await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
@@ -158,8 +156,9 @@ namespace SteamStorageAPI.Controllers
                 User user = _context.Users.FirstOrDefault(x => x.SteamId == steamId) ?? await CreateUser(steamId);
 
                 await _context.Entry(user).Reference(u => u.Role).LoadAsync();
-                
-                return Redirect($"http://localhost:5245/Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
+
+                return Redirect(
+                    $"{TOKEN_ADRESS}Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
             }
             catch (Exception ex)
             {
@@ -176,7 +175,7 @@ namespace SteamStorageAPI.Controllers
             {
                 if (!CheckCookieEqual(request.SteamId))
                     return BadRequest("Необходима новая авторизация через Steam");
-                
+
                 User? user = _context.Users.FirstOrDefault(x => x.SteamId == request.SteamId);
 
                 if (user is null)

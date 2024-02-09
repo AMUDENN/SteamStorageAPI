@@ -19,8 +19,8 @@ namespace SteamStorageAPI.Services.JwtProvider
             ];
 
             JwtSecurityToken jwt = new(
-                issuer: JwtOptions.ISSUER,
-                audience: JwtOptions.AUDIENCE,
+                issuer: JwtOptions.Issuer,
+                audience: JwtOptions.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.Add(TimeSpan.FromDays(JwtOptions.EXPIRES_DAYS)),
                 signingCredentials: new(JwtOptions.GetSymmetricSecurityKey(),

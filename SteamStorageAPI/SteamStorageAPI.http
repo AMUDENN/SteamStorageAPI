@@ -1,6 +1,0 @@
-@SteamStorageAPI_HostAddress = http://localhost:5275
-
-GET {{SteamStorageAPI_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

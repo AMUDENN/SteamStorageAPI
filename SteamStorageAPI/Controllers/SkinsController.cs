@@ -102,7 +102,7 @@ namespace SteamStorageAPI.Controllers
         public record PostSkinRequest(int GameId, string MarketHashName);
 
         public record SetMarkedSkinRequest(int SkinId);
-        
+
         public record DeleteMarkedSkinRequest(int SkinId);
 
         #endregion Records
@@ -142,21 +142,21 @@ namespace SteamStorageAPI.Controllers
                     .Select(g => new
                     {
                         SkinID = g.Key,
-                        LastPrice = g.OrderByDescending(sd => sd.DateUpdate).First().Price,
-                        Change7D =
+                        LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0,
+                        Change7D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-7)) > 1 ? 
                             (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                                           .OrderByDescending(sd => sd.DateUpdate).First().Price -
                                       g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                                           .OrderBy(sd => sd.DateUpdate).First().Price) /
                                      g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                         .OrderBy(sd => sd.DateUpdate).First().Price),
-                        Change30D =
+                                         .OrderBy(sd => sd.DateUpdate).First().Price) : 0,
+                        Change30D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-30)) > 1 ? 
                             (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
                                           .OrderByDescending(sd => sd.DateUpdate).First().Price -
                                       g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
                                           .OrderBy(sd => sd.DateUpdate).First().Price) /
                                      g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                         .OrderBy(sd => sd.DateUpdate).First().Price)
+                                         .OrderBy(sd => sd.DateUpdate).First().Price) : 0
                     }), s => s.Id, d => d.SkinID,
                 (s, d) => new
                 {
@@ -188,7 +188,8 @@ namespace SteamStorageAPI.Controllers
                 if (skin is null)
                     return NotFound("Скина с таким Id не существует");
 
-                List<int> markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId).ToList();
+                List<int> markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                    .Select(x => x.SkinId).ToList();
 
                 return Ok(GetSkinResponse(skin, markedSkinsIds));
             }
@@ -215,7 +216,8 @@ namespace SteamStorageAPI.Controllers
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                List<int> markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId).ToList();
+                List<int> markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                    .Select(x => x.SkinId).ToList();
 
                 IQueryable<Skin> skins = _context.Skins.Where(x =>
                     (request.GameId == null || x.GameId == request.GameId)
@@ -236,7 +238,7 @@ namespace SteamStorageAPI.Controllers
                                     .Select(g => new
                                     {
                                         SkinID = g.Key,
-                                        LastPrice = g.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                        LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0
                                     }), s => s.Id, d => d.SkinID,
                                 (s, d) => new { Skin = s, LastPrice = d.Any() ? d.First().LastPrice : 0 });
                             skins = ((bool)request.IsAscending
@@ -253,10 +255,11 @@ namespace SteamStorageAPI.Controllers
                                     .Select(g => new
                                     {
                                         SkinID = g.Key,
-                                        Change7D =
-                                            (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                             g.OrderBy(sd => sd.DateUpdate).First().Price) /
-                                            g.OrderBy(sd => sd.DateUpdate).First().Price
+                                        Change7D = g.Any()
+                                            ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
+                                               g.OrderBy(sd => sd.DateUpdate).First().Price) /
+                                              g.OrderBy(sd => sd.DateUpdate).First().Price
+                                            : 0
                                     }), s => s.Id, d => d.SkinID,
                                 (s, d) => new { Skin = s, Change7D = d.Any() ? d.First().Change7D : 0 });
                             skins = ((bool)request.IsAscending
@@ -273,10 +276,11 @@ namespace SteamStorageAPI.Controllers
                                     .Select(g => new
                                     {
                                         SkinID = g.Key,
-                                        Change30D =
-                                            (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                             g.OrderBy(sd => sd.DateUpdate).First().Price) /
-                                            g.OrderBy(sd => sd.DateUpdate).First().Price
+                                        Change30D = g.Any()
+                                            ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
+                                               g.OrderBy(sd => sd.DateUpdate).First().Price) /
+                                              g.OrderBy(sd => sd.DateUpdate).First().Price
+                                            : 0
                                     }), s => s.Id, d => d.SkinID,
                                 (s, d) => new { Skin = s, Change30D = d.Any() ? d.First().Change30D : 0 });
                             skins = ((bool)request.IsAscending
@@ -292,7 +296,8 @@ namespace SteamStorageAPI.Controllers
 
                 int pagesCount = (int)Math.Ceiling((double)skinsCount / request.PageSize);
 
-                List<Skin> resultSkins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize).ToList();
+                List<Skin> resultSkins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize)
+                    .ToList();
 
                 return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
                     GetSkinResponse(resultSkins, markedSkinsIds)));
@@ -350,7 +355,8 @@ namespace SteamStorageAPI.Controllers
                 List<int> markedSkinsIds = [];
 
                 if (request.IsMarked is not null)
-                    markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId).ToList();
+                    markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId)
+                        .ToList();
 
                 int count = _context.Skins.Count(x => (request.GameId == null || x.GameId == request.GameId)
                                                       && (string.IsNullOrEmpty(request.Filter) ||
@@ -409,7 +415,8 @@ namespace SteamStorageAPI.Controllers
                 List<int> markedSkinsIds = [];
 
                 if (request.IsMarked is not null)
-                    markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId).ToList();
+                    markedSkinsIds = _context.Entry(user).Collection(x => x.MarkedSkins).Query().Select(x => x.SkinId)
+                        .ToList();
 
                 int count = _context.Skins.Count(x => (request.GameId == null || x.GameId == request.GameId)
                                                       && (string.IsNullOrEmpty(request.Filter) ||
@@ -600,9 +607,9 @@ namespace SteamStorageAPI.Controllers
         }
 
         #endregion POST
-        
+
         #region DELETE
-        
+
         [HttpDelete(Name = "DeleteMarkedSkin")]
         public async Task<ActionResult> DeleteMarkedSkin(DeleteMarkedSkinRequest request)
         {
@@ -631,7 +638,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
         #endregion DELETE
     }
 }
