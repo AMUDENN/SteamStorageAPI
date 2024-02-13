@@ -67,7 +67,7 @@ namespace SteamStorageAPI.Controllers
 
             HttpClient client = _httpClientFactory.CreateClient();
             SteamUserResult? steamUserResult =
-                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfo(user.SteamId));
+                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId));
 
             if (steamUserResult is null)
                 return null;

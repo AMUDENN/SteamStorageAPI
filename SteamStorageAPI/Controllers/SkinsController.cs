@@ -541,7 +541,7 @@ namespace SteamStorageAPI.Controllers
 
 
                 SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfo(request.MarketHashName));
+                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfoUrl(request.MarketHashName));
 
                 if (response is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");

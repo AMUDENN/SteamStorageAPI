@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace SteamStorageAPI.Utilities
+namespace SteamStorageAPI.Utilities.HealthCheckers
 {
     public class ApiHealthChecker : IHealthCheck
     {
@@ -31,7 +31,7 @@ namespace SteamStorageAPI.Utilities
             {
                 HttpClient client = _httpClientFactory.CreateClient();
                 string apiUrl =
-                    $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/swagger/index.html";
+                    $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/api/Check/GetApiStatus";
                 HttpResponseMessage response = await client.GetAsync(apiUrl, cancellationToken);
 
                 return response.IsSuccessStatusCode

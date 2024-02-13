@@ -7,10 +7,20 @@
         private const string STEAM_API_KEY = "BF900A723E4FFBDF6A73966A794F7768";
 
         #endregion Constants
+        
+        #region Fields
+
+        private static readonly Dictionary<string, string> _replaceChars = new()
+        {
+            [" "] = "%20",
+            ["'"] = "%27"
+        };
+        
+        #endregion Fields
 
         #region Methods
 
-        public static string GetUserInfo(long steamProfileId) =>
+        public static string GetUserInfoUrl(long steamProfileId) =>
             $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steamProfileId}";
 
         public static string GetGameIconUrl(int appId, string urlHash) =>
@@ -23,19 +33,19 @@
             $"https://community.cloudflare.steamstatic.com/economy/image/{urlHash}";
 
         public static string GetSkinMarketUrl(int appId, string marketHashName) =>
-            $"https://steamcommunity.com/market/listings/{appId}/{marketHashName}";
+            $"https://steamcommunity.com/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
 
         public static string GetSkinsUrl(int appId, int count, int start) =>
             $"https://steamcommunity.com/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}";
 
-        public static string GetSkinInfo(string marketHashName) =>
-            $"https://steamcommunity.com/market/search/render?norender=1&l=russian&start=0&count=1&query={marketHashName}";
+        public static string GetSkinInfoUrl(string marketHashName) =>
+            $"https://steamcommunity.com/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
 
         public static string GetInventoryUrl(long steamProfileId, int appId, int count) =>
-            @$"https://steamcommunity.com/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
+            $"https://steamcommunity.com/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
 
         public static string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId) =>
-            $@"https://steamcommunity.com/market/priceoverview/?appid={appId}&market_hash_name={marketHashName}&currency={steamCurrencyId}";
+            $"https://steamcommunity.com/market/priceoverview/?appid={appId}&market_hash_name={ReplaceMarketHashName(marketHashName)}&currency={steamCurrencyId}";
 
         public static string GetAuthUrl(string returnTo, string realm) =>
             "https://steamcommunity.com/openid/login" +
@@ -66,6 +76,11 @@
             };
 
             return new FormUrlEncodedContent(formData);
+        }
+
+        private static string ReplaceMarketHashName(string marketHashName)
+        {
+            return _replaceChars.Aggregate(marketHashName, (current, replaceChar) => current.Replace(replaceChar.Key, replaceChar.Value));
         }
 
         #endregion Methods

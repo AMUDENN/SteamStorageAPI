@@ -3,30 +3,22 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Middlewares;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
-using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.JWT;
-using System.Net.Mime;
 using System.Text.Json.Serialization;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
+using SteamStorageAPI.Utilities.HealthCheckers;
 
 namespace SteamStorageAPI;
 
 public static class Program
 {
-    #region Records
-
-    private record HealthResponse(string Status, TimeSpan Duration, IEnumerable<MonitorResponse> Monitors);
-
-    private record MonitorResponse(string Name, string? Status);
-
-    #endregion Records
-
     #region Methods
 
     private static WebApplicationBuilder ConfigureServices(WebApplicationBuilder builder)
@@ -87,15 +79,34 @@ public static class Program
 
 
         //DataBase
-        string connectionString = builder.Configuration.GetSection("DataBase").GetValue<string>("ConnectionString")
-                                  ?? throw new ArgumentNullException("ConnectionString");
+        string connectionStringSteamStorage =
+            builder.Configuration.GetSection("DataBase").GetValue<string>("SteamStorage")
+            ?? throw new ArgumentNullException("MainConnectionString");
 
-        builder.Services.AddDbContext<SteamStorageContext>(opt => opt.UseSqlServer(connectionString));
+        string connectionStringHealthChecks =
+            builder.Configuration.GetSection("DataBase").GetValue<string>("SteamStorageHealthChecks")
+            ?? throw new ArgumentNullException("HealthChecksConnectionString");
+
+        builder.Services.AddDbContext<SteamStorageContext>(opt => opt.UseSqlServer(connectionStringSteamStorage));
 
         //HealthCheck
         builder.Services.AddHealthChecks()
-            .AddSqlServer(connectionString)
-            .AddCheck<ApiHealthChecker>(nameof(ApiHealthChecker));
+            .AddSqlServer(name: "SteamStorageDB", connectionString: connectionStringSteamStorage,
+                tags: new[] { "db", "database" })
+            .AddSqlServer(name: "SteamStorageHealthChecksDB", connectionString: connectionStringHealthChecks,
+                tags: new[] { "db", "database" })
+            .AddDbContextCheck<SteamStorageContext>(name: nameof(SteamStorageContext), tags: new[] {"db", "db-context"})
+            .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker), tags: new[] { "api" })
+            .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker), tags: new[] { "steam" })
+            .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker), tags: new[] { "steam" });
+
+        builder.Services.AddHealthChecksUI(setup =>
+            {
+                setup.MaximumHistoryEntriesPerEndpoint(50);
+                setup.SetEvaluationTimeInSeconds(600);
+                setup.SetMinimumSecondsBetweenFailureNotifications(300);
+            })
+            .AddSqlServerStorage(connectionStringHealthChecks);
 
         builder.Services.AddMemoryCache();
 
@@ -160,28 +171,18 @@ public static class Program
             app.UseSwaggerUI();
         }
 
-        app.MapHealthChecks("/health");
-        app.MapHealthChecks("/health-details",
-            new()
-            {
-                ResponseWriter = async (context, report) =>
-                {
-                    string result = JsonConvert.SerializeObject(
-                        new HealthResponse(
-                            report.Status.ToString(),
-                            report.TotalDuration,
-                            report.Entries.Select(e =>
-                                new MonitorResponse(e.Key, Enum.GetName(typeof(HealthStatus), e.Value.Status)))
-                        )
-                    );
-                    context.Response.ContentType = MediaTypeNames.Application.Json;
-                    await context.Response.WriteAsync(result);
-                }
-            }
-        );
+        // HealthChecks
+        app.MapHealthChecks("/health", CreateHealthCheckOptions(_ => true));
+        app.MapHealthChecks("/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
+        app.MapHealthChecks("/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
+        app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")));
 
+        app.MapHealthChecksUI(u => u.UIPath = "/health-ui");
+
+        // RateLimit
         app.UseIpRateLimiting();
 
+        //Middlewares
         app.UseMiddleware<RequestLoggingMiddleware>();
 
         app.UseHttpsRedirection();
@@ -192,6 +193,15 @@ public static class Program
         app.UseAuthorization();
 
         app.Run();
+    }
+
+    private static HealthCheckOptions CreateHealthCheckOptions(Func<HealthCheckRegistration, bool> predicate)
+    {
+        return new()
+        {
+            Predicate = predicate,
+            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+        };
     }
 
     #endregion Methods
