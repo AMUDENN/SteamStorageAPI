@@ -2,6 +2,8 @@
 
 public class Active
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int GroupId { get; set; }
@@ -21,4 +23,6 @@ public class Active
     public virtual ActiveGroup Group { get; set; } = null!;
 
     public virtual Skin Skin { get; set; } = null!;
+
+    #endregion Properties
 }

@@ -2,6 +2,8 @@
 
 public class Currency
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int SteamCurrencyId { get; set; }
@@ -13,4 +15,6 @@ public class Currency
     public virtual ICollection<CurrencyDynamic> CurrencyDynamics { get; set; } = new List<CurrencyDynamic>();
 
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+
+    #endregion Properties
 }

@@ -71,12 +71,17 @@ namespace SteamStorageAPI.Controllers
             decimal SoldPrice,
             decimal SoldSum,
             double Change);
-        
-        public record ArchivesResponse(int ArchivesCount, int PagesCount, IEnumerable<ArchiveResponse> Skins);
 
-        public record ArchivesPagesCountResponse(int Count);
+        public record ArchivesResponse(
+            int ArchivesCount,
+            int PagesCount,
+            IEnumerable<ArchiveResponse> Skins);
 
-        public record ArchivesCountResponse(int Count);
+        public record ArchivesPagesCountResponse(
+            int Count);
+
+        public record ArchivesCountResponse(
+            int Count);
 
         public record GetArchivesRequest(
             int? GroupId,
@@ -87,9 +92,16 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
-        public record GetArchivesPagesCountRequest(int? GroupId, int? GameId, string? Filter, int PageSize);
+        public record GetArchivesPagesCountRequest(
+            int? GroupId,
+            int? GameId,
+            string? Filter,
+            int PageSize);
 
-        public record GetArchivesCountRequest(int? GroupId, int? GameId, string? Filter);
+        public record GetArchivesCountRequest(
+            int? GroupId,
+            int? GameId,
+            string? Filter);
 
         public record PostArchiveRequest(
             int GroupId,
@@ -112,7 +124,8 @@ namespace SteamStorageAPI.Controllers
             DateTime BuyDate,
             DateTime SoldDate);
 
-        public record DeleteArchiveRequest(int Id);
+        public record DeleteArchiveRequest(
+            int Id);
 
         #endregion Records
 
@@ -166,7 +179,7 @@ namespace SteamStorageAPI.Controllers
 
                 archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize);
-                
+
                 int archivesCount = _context
                     .Entry(user)
                     .Collection(x => x.ArchiveGroups)

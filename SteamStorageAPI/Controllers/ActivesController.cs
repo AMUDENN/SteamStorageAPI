@@ -73,11 +73,16 @@ namespace SteamStorageAPI.Controllers
             decimal CurrentSum,
             double Change);
 
-        public record ActivesResponse(int ActivesCount, int PagesCount, IEnumerable<ActiveResponse> Skins);
+        public record ActivesResponse(
+            int ActivesCount,
+            int PagesCount,
+            IEnumerable<ActiveResponse> Skins);
 
-        public record ActivesPagesCountResponse(int Count);
+        public record ActivesPagesCountResponse(
+            int Count);
 
-        public record ActivesCountResponse(int Count);
+        public record ActivesCountResponse(
+            int Count);
 
         public record GetActivesRequest(
             int? GroupId,
@@ -88,9 +93,16 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
-        public record GetActivesPagesCountRequest(int? GroupId, int? GameId, string? Filter, int PageSize);
+        public record GetActivesPagesCountRequest(
+            int? GroupId,
+            int? GameId,
+            string? Filter,
+            int PageSize);
 
-        public record GetActivesCountRequest(int? GroupId, int? GameId, string? Filter);
+        public record GetActivesCountRequest(
+            int? GroupId,
+            int? GameId,
+            string? Filter);
 
         public record PostActiveRequest(
             int GroupId,

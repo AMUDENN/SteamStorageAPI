@@ -2,6 +2,8 @@
 
 public class Archive
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int GroupId { get; set; }
@@ -23,4 +25,6 @@ public class Archive
     public virtual ArchiveGroup Group { get; set; } = null!;
 
     public virtual Skin Skin { get; set; } = null!;
+
+    #endregion Properties
 }

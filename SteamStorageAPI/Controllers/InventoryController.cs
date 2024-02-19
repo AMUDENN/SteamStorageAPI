@@ -63,11 +63,16 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record InventoryResponse(int Id, BaseSkinResponse Skin, int Count);
+        public record InventoryResponse(
+            int Id,
+            BaseSkinResponse Skin,
+            int Count);
 
-        public record InventoryPagesCountResponse(int Count);
+        public record InventoryPagesCountResponse(
+            int Count);
 
-        public record SavedInventoriesCountResponse(int Count);
+        public record SavedInventoriesCountResponse(
+            int Count);
 
         public record GetInventoryRequest(
             int? GameId,
@@ -77,11 +82,17 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
-        public record GetInventoryPagesCountRequest(int? GameId, string? Filter, int PageSize);
+        public record GetInventoryPagesCountRequest(
+            int? GameId,
+            string? Filter,
+            int PageSize);
 
-        public record GetSavedInventoriesCountRequest(int? GameId, string? Filter);
+        public record GetSavedInventoriesCountRequest(
+            int? GameId,
+            string? Filter);
 
-        public record RefreshInventoryRequest(int GameId);
+        public record RefreshInventoryRequest(
+            int GameId);
 
         #endregion Records
 

@@ -2,6 +2,8 @@
 
 public class ActiveGroup
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int UserId { get; set; }
@@ -20,4 +22,6 @@ public class ActiveGroup
     public virtual ICollection<Active> Actives { get; set; } = new List<Active>();
 
     public virtual User User { get; set; } = null!;
+
+    #endregion Properties
 }

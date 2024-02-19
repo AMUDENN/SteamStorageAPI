@@ -4,7 +4,6 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Steam;
-using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -37,19 +36,34 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record CurrencyResponse(int Id, int SteamCurrencyId, string Title, string Mark, double Price);
+        public record CurrencyResponse(
+            int Id,
+            int SteamCurrencyId,
+            string Title,
+            string Mark,
+            double Price);
 
-        public record GetCurrencyRequest(int Id);
+        public record GetCurrencyRequest(
+            int Id);
 
-        public record PostCurrencyRequest(int SteamCurrencyId, string Title, string Mark);
+        public record PostCurrencyRequest(
+            int SteamCurrencyId,
+            string Title,
+            string Mark);
 
-        public record RefreshCurrencyRequest(string MarketHashName);
+        public record RefreshCurrencyRequest(
+            string MarketHashName);
 
-        public record PutCurrencyRequest(int CurrencyId, string Title, string Mark);
+        public record PutCurrencyRequest(
+            int CurrencyId,
+            string Title,
+            string Mark);
 
-        public record SetCurrencyRequest(int CurrencyId);
+        public record SetCurrencyRequest(
+            int CurrencyId);
 
-        public record DeleteCurrencyRequest(int CurrencyId);
+        public record DeleteCurrencyRequest(
+            int CurrencyId);
 
         #endregion Records
 
@@ -111,7 +125,7 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPost(Name = "PostCurrency")]
         public async Task<ActionResult> PostCurrency(PostCurrencyRequest request)
         {
@@ -136,7 +150,7 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPost(Name = "RefreshCurrenciesExchangeRates")]
         public async Task<ActionResult> RefreshCurrenciesExchangeRates(RefreshCurrencyRequest request)
         {
@@ -201,7 +215,7 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPut(Name = "PutCurrencyInfo")]
         public async Task<ActionResult> PutCurrencyInfo(PutCurrencyRequest request)
         {
@@ -259,7 +273,7 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpDelete(Name = "DeleteCurrency")]
         public async Task<ActionResult> DeleteCurrency(DeleteCurrencyRequest request)
         {

@@ -4,7 +4,6 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Games;
 using SteamStorageAPI.Utilities.Steam;
 using System.Net;
-using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -36,13 +35,23 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record GameResponse(int Id, int SteamGameId, string Title, string GameIconUrl);
+        public record GameResponse(
+            int Id,
+            int SteamGameId,
+            string Title,
+            string GameIconUrl);
 
-        public record PostGameRequest(int SteamGameId, string IconUrlHash);
+        public record PostGameRequest(
+            int SteamGameId,
+            string IconUrlHash);
 
-        public record PutGameRequest(int GameId, string IconUrlHash, string Title);
+        public record PutGameRequest(
+            int GameId,
+            string IconUrlHash,
+            string Title);
 
-        public record DeleteGameRequest(int GameId);
+        public record DeleteGameRequest(
+            int GameId);
 
         #endregion Records
 
@@ -87,7 +96,7 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPost(Name = "PostGame")]
         public async Task<ActionResult> PostGame(PostGameRequest request)
         {
@@ -124,7 +133,7 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPut(Name = "PutGameInfo")]
         public async Task<ActionResult> PutGameInfo(PutGameRequest request)
         {
@@ -157,7 +166,7 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpDelete(Name = "DeleteGame")]
         public async Task<ActionResult> DeleteGame(DeleteGameRequest request)
         {

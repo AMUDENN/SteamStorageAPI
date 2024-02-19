@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
-using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Authorize(Roles = nameof(Roles.Admin))]
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
     [Route("api/[controller]/[action]")]
     public class AdminController : ControllerBase
     {

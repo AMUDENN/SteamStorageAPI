@@ -5,7 +5,6 @@ using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Steam;
-using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -66,19 +65,31 @@ namespace SteamStorageAPI.Controllers
             double Change30D,
             bool IsMarked);
 
-        public record SkinsResponse(int SkinsCount, int PagesCount, IEnumerable<SkinResponse> Skins);
+        public record SkinsResponse(
+            int SkinsCount,
+            int PagesCount,
+            IEnumerable<SkinResponse> Skins);
 
-        public record SkinDynamicStatsResponse(double ChangePeriod, IEnumerable<SkinDynamicResponse> Dynamic);
+        public record SkinDynamicStatsResponse(
+            double ChangePeriod,
+            IEnumerable<SkinDynamicResponse> Dynamic);
 
-        public record SkinDynamicResponse(int Id, DateTime DateUpdate, decimal Price);
+        public record SkinDynamicResponse(
+            int Id,
+            DateTime DateUpdate,
+            decimal Price);
 
-        public record SkinPagesCountResponse(int Count);
+        public record SkinPagesCountResponse(
+            int Count);
 
-        public record SteamSkinsCountResponse(int Count);
+        public record SteamSkinsCountResponse(
+            int Count);
 
-        public record SavedSkinsCountResponse(int Count);
+        public record SavedSkinsCountResponse(
+            int Count);
 
-        public record GetSkinRequest(int SkinId);
+        public record GetSkinRequest(
+            int SkinId);
 
         public record GetSkinsRequest(
             int? GameId,
@@ -89,21 +100,37 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
-        public record GetSkinDynamicsRequest(int SkinId, DateTime StartDate, DateTime EndDate);
+        public record GetSkinDynamicsRequest(
+            int SkinId,
+            DateTime StartDate,
+            DateTime EndDate);
 
-        public record GetSkinPagesCountRequest(int? GameId, string? Filter, bool? IsMarked, int PageSize);
+        public record GetSkinPagesCountRequest(
+            int? GameId,
+            string? Filter,
+            bool? IsMarked,
+            int PageSize);
 
-        public record GetSteamSkinsCountRequest(int GameId);
+        public record GetSteamSkinsCountRequest(
+            int GameId);
 
-        public record GetSavedSkinsCountRequest(int? GameId, string? Filter, bool? IsMarked);
+        public record GetSavedSkinsCountRequest(
+            int? GameId,
+            string? Filter,
+            bool? IsMarked);
 
-        public record PostSkinsRequest(int GameId);
+        public record PostSkinsRequest(
+            int GameId);
 
-        public record PostSkinRequest(int GameId, string MarketHashName);
+        public record PostSkinRequest(
+            int GameId,
+            string MarketHashName);
 
-        public record SetMarkedSkinRequest(int SkinId);
+        public record SetMarkedSkinRequest(
+            int SkinId);
 
-        public record DeleteMarkedSkinRequest(int SkinId);
+        public record DeleteMarkedSkinRequest(
+            int SkinId);
 
         #endregion Records
 
@@ -143,20 +170,22 @@ namespace SteamStorageAPI.Controllers
                     {
                         SkinID = g.Key,
                         LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0,
-                        Change7D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-7)) > 1 ? 
-                            (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                          .OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                      g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                          .OrderBy(sd => sd.DateUpdate).First().Price) /
-                                     g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                         .OrderBy(sd => sd.DateUpdate).First().Price) : 0,
-                        Change30D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-30)) > 1 ? 
-                            (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                          .OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                      g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                          .OrderBy(sd => sd.DateUpdate).First().Price) /
-                                     g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                         .OrderBy(sd => sd.DateUpdate).First().Price) : 0
+                        Change7D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-7)) > 1
+                            ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
+                                            .OrderByDescending(sd => sd.DateUpdate).First().Price -
+                                        g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
+                                            .OrderBy(sd => sd.DateUpdate).First().Price) /
+                                       g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
+                                           .OrderBy(sd => sd.DateUpdate).First().Price)
+                            : 0,
+                        Change30D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-30)) > 1
+                            ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
+                                            .OrderByDescending(sd => sd.DateUpdate).First().Price -
+                                        g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
+                                            .OrderBy(sd => sd.DateUpdate).First().Price) /
+                                       g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
+                                           .OrderBy(sd => sd.DateUpdate).First().Price)
+                            : 0
                     }), s => s.Id, d => d.SkinID,
                 (s, d) => new
                 {
@@ -437,7 +466,7 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPost(Name = "PostSkins")]
         public async Task<ActionResult> PostSkins(PostSkinsRequest request)
         {
@@ -526,7 +555,7 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPost(Name = "PostSkin")]
         public async Task<ActionResult> PostSkin(PostSkinRequest request)
         {

@@ -33,22 +33,36 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record InvestmentSumResponse(double TotalSum, double PercentageGrowth);
+        public record InvestmentSumResponse(
+            double TotalSum,
+            double PercentageGrowth);
 
-        public record FinancialGoalResponse(double FinancialGoal, double PercentageCompletion);
+        public record FinancialGoalResponse(
+            double FinancialGoal,
+            double PercentageCompletion);
 
-        public record ActiveStatisticResponse(int Count, double CurrentSum, double PercentageGrowth);
+        public record ActiveStatisticResponse(
+            int Count,
+            double CurrentSum,
+            double PercentageGrowth);
 
-        public record ArchiveStatisticResponse(int Count, double SoldSum, double PercentageGrowth);
+        public record ArchiveStatisticResponse(
+            int Count,
+            double SoldSum,
+            double PercentageGrowth);
 
         public record InventoryStatisticResponse(
             int Count,
             double Sum,
             IEnumerable<InventoryGameStatisticResponse> Games);
 
-        public record InventoryGameStatisticResponse(string GameTitle, double Percentage);
+        public record InventoryGameStatisticResponse(
+            string GameTitle,
+            double Percentage,
+            int Count);
 
-        public record ItemsCountResponse(int Count);
+        public record ItemsCountResponse(
+            int Count);
 
         #endregion Records
 
@@ -251,11 +265,9 @@ namespace SteamStorageAPI.Controllers
                     .ToList();
 
                 List<InventoryGameStatisticResponse> gamesResponse = [];
-                foreach (Game item in games)
-                {
-                    gamesResponse.Add(new(item.Title,
-                        (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count));
-                }
+                gamesResponse.AddRange(games.Select(item => new InventoryGameStatisticResponse(item.Title,
+                    (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count,
+                    inventories.Count(x => x.Skin.Game.Id == item.Id))));
 
                 return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
             }
@@ -265,7 +277,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
         [HttpGet(Name = "GetItemsCount")]
         public ActionResult<ItemsCountResponse> GetItemsCount()
         {
@@ -275,7 +287,7 @@ namespace SteamStorageAPI.Controllers
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
-                
+
                 List<Active> actives = _context.Entry(user)
                     .Collection(u => u.ActiveGroups)
                     .Query()
@@ -284,7 +296,7 @@ namespace SteamStorageAPI.Controllers
                     .ToList();
 
                 int activesCount = actives.Sum(x => x.Count);
-                
+
                 List<Archive> archives = _context.Entry(user)
                     .Collection(u => u.ArchiveGroups)
                     .Query()

@@ -30,9 +30,12 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record PageResponse(int Id, string Title);
+        public record PageResponse(
+            int Id,
+            string Title);
 
-        public record SetPageRequest(int PageId);
+        public record SetPageRequest(
+            int PageId);
 
         #endregion Records
 

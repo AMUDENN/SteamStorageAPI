@@ -4,7 +4,6 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Steam;
-using static SteamStorageAPI.Utilities.ProgramConstants;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -50,11 +49,14 @@ namespace SteamStorageAPI.Controllers
             DateTime DateRegistration,
             decimal? GoalSum);
 
-        public record GetUserRequest(int UserId);
+        public record GetUserRequest(
+            int UserId);
 
-        public record PutGoalSumRequest(decimal? GoalSum);
+        public record PutGoalSumRequest(
+            decimal? GoalSum);
 
-        public record PutStartPageRequest(int StartPageId);
+        public record PutStartPageRequest(
+            int StartPageId);
 
         #endregion Records
 
@@ -89,7 +91,7 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpGet(Name = "GetUsers")]
         public ActionResult<IEnumerable<UserResponse>> GetUsers()
         {
@@ -104,7 +106,7 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(Roles.Admin))]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpGet(Name = "GetUserInfo")]
         public async Task<ActionResult<UserResponse>> GetUserInfo([FromQuery] GetUserRequest request)
         {

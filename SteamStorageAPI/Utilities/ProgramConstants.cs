@@ -10,16 +10,5 @@
         public const string TOKEN_ADRESS = "http://localhost:5245/";
 
         #endregion Constants
-
-        #region Enums
-
-        public enum Roles
-        {
-            Admin,
-            User
-        }
-
-        #endregion Enums
-
     }
 }

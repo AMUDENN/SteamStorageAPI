@@ -2,6 +2,8 @@
 
 public class Game
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int SteamGameId { get; set; }
@@ -11,4 +13,6 @@ public class Game
     public string GameIconUrl { get; set; } = null!;
 
     public virtual ICollection<Skin> Skins { get; set; } = new List<Skin>();
+
+    #endregion Properties
 }

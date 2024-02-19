@@ -2,6 +2,8 @@
 
 public class CurrencyDynamic
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int CurrencyId { get; set; }
@@ -11,4 +13,6 @@ public class CurrencyDynamic
     public double Price { get; set; }
 
     public virtual Currency Currency { get; set; } = null!;
+
+    #endregion Properties
 }

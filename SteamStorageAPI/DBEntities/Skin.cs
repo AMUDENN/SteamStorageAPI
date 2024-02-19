@@ -2,6 +2,8 @@
 
 public class Skin
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public int GameId { get; set; }
@@ -23,4 +25,6 @@ public class Skin
     public virtual ICollection<MarkedSkin> MarkedSkins { get; set; } = new List<MarkedSkin>();
 
     public virtual ICollection<SkinsDynamic> SkinsDynamics { get; set; } = new List<SkinsDynamic>();
+
+    #endregion Properties
 }

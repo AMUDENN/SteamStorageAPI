@@ -2,6 +2,8 @@
 
 public class User
 {
+    #region Properties
+
     public int Id { get; set; }
 
     public long SteamId { get; set; }
@@ -29,4 +31,6 @@ public class User
     public virtual Role Role { get; set; } = null!;
 
     public virtual Page StartPage { get; set; } = null!;
+
+    #endregion Properties
 }

@@ -2,7 +2,6 @@
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
-using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
@@ -42,9 +41,12 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record AuthUrlResponse(string Url, string Group);
+        public record AuthUrlResponse(
+            string Url,
+            string Group);
 
-        public record CookieAuthResponse(string Token);
+        public record CookieAuthResponse(
+            string Token);
 
         public record SteamAuthRequest(
             [FromQuery(Name = "group")] string Group,
@@ -63,7 +65,8 @@ namespace SteamStorageAPI.Controllers
             [FromQuery(Name = "openid.signed")] string Signed,
             [FromQuery(Name = "openid.sig")] string Sig);
 
-        public record CheckCookieAuthRequest(long SteamId);
+        public record CheckCookieAuthRequest(
+            long SteamId);
 
         #endregion Records
 
@@ -71,7 +74,7 @@ namespace SteamStorageAPI.Controllers
 
         private async Task<User> CreateUser(long steamId, int currencyId = 1, int startPageId = 1)
         {
-            Role role = _context.Roles.First(x => x.Title == nameof(Roles.User));
+            Role role = _context.Roles.First(x => x.Title == nameof(Role.Roles.User));
             User user = new()
             {
                 SteamId = steamId,

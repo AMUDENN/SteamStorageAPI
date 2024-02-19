@@ -68,17 +68,32 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record ArchiveGroupsResponse(int Id, string Title, string Description, string Colour);
+        public record ArchiveGroupsResponse(
+            int Id,
+            string Title,
+            string Description,
+            string Colour);
 
-        public record ArchiveGroupsCountResponse(int Count);
+        public record ArchiveGroupsCountResponse(
+            int Count);
 
-        public record GetArchiveGroupsRequest(ArchiveGroupOrderName? OrderName, bool? IsAscending);
+        public record GetArchiveGroupsRequest(
+            ArchiveGroupOrderName? OrderName,
+            bool? IsAscending);
 
-        public record PostArchiveGroupRequest(string Title, string? Description, string? Colour);
+        public record PostArchiveGroupRequest(
+            string Title,
+            string? Description,
+            string? Colour);
 
-        public record PutArchiveGroupRequest(int GroupId, string Title, string? Description, string? Colour);
+        public record PutArchiveGroupRequest(
+            int GroupId,
+            string Title,
+            string? Description,
+            string? Colour);
 
-        public record DeleteArchiveGroupRequest(int GroupId);
+        public record DeleteArchiveGroupRequest(
+            int GroupId);
 
         #endregion Records
 

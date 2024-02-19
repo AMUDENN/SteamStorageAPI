@@ -9,10 +9,10 @@ using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
-using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
+using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.HealthCheckers;
 
 namespace SteamStorageAPI;
@@ -95,7 +95,8 @@ public static class Program
                 tags: new[] { "db", "database" })
             .AddSqlServer(name: "SteamStorageHealthChecksDB", connectionString: connectionStringHealthChecks,
                 tags: new[] { "db", "database" })
-            .AddDbContextCheck<SteamStorageContext>(name: nameof(SteamStorageContext), tags: new[] {"db", "db-context"})
+            .AddDbContextCheck<SteamStorageContext>(name: nameof(SteamStorageContext),
+                tags: new[] { "db", "db-context" })
             .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker), tags: new[] { "api" })
             .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker), tags: new[] { "steam" })
             .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker), tags: new[] { "steam" });
@@ -172,10 +173,14 @@ public static class Program
         }
 
         // HealthChecks
-        app.MapHealthChecks("/health", CreateHealthCheckOptions(_ => true));
-        app.MapHealthChecks("/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
+        app.MapHealthChecks("/health", CreateHealthCheckOptions(_ => true))
+            .RequireAuthorization(opt => opt.RequireRole(nameof(Role.Roles.Admin)));
+        
         app.MapHealthChecks("/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
-        app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")));
+        app.MapHealthChecks("/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
+        
+        app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
+            .RequireAuthorization(opt => opt.RequireRole(nameof(Role.Roles.Admin)));
 
         app.MapHealthChecksUI(u => u.UIPath = "/health-ui");
 
@@ -200,7 +205,7 @@ public static class Program
         return new()
         {
             Predicate = predicate,
-            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            ResponseWriter = HealthCheckResponseWriter.WriteResponse
         };
     }
 

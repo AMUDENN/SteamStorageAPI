@@ -72,17 +72,34 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
-        public record ActiveGroupsResponse(int Id, string Title, string Description, string Colour, decimal? GoalSum);
+        public record ActiveGroupsResponse(
+            int Id,
+            string Title,
+            string Description,
+            string Colour,
+            decimal? GoalSum);
 
-        public record ActiveGroupDynamicsResponse(int Id, DateTime DateUpdate, decimal Sum);
+        public record ActiveGroupDynamicsResponse(
+            int Id,
+            DateTime DateUpdate,
+            decimal Sum);
 
-        public record ActiveGroupsCountResponse(int Count);
+        public record ActiveGroupsCountResponse(
+            int Count);
 
-        public record GetActiveGroupsRequest(ActiveGroupOrderName? OrderName, bool? IsAscending);
+        public record GetActiveGroupsRequest(
+            ActiveGroupOrderName? OrderName,
+            bool? IsAscending);
 
-        public record GetActiveGroupDynamicRequest(int GroupId, int DaysDynamic);
+        public record GetActiveGroupDynamicRequest(
+            int GroupId,
+            int DaysDynamic);
 
-        public record PostActiveGroupRequest(string Title, string? Description, string? Colour, decimal? GoalSum);
+        public record PostActiveGroupRequest(
+            string Title,
+            string? Description,
+            string? Colour,
+            decimal? GoalSum);
 
         public record PutActiveGroupRequest(
             int GroupId,
@@ -91,7 +108,8 @@ namespace SteamStorageAPI.Controllers
             string? Colour,
             decimal? GoalSum);
 
-        public record DeleteActiveGroupRequest(int GroupId);
+        public record DeleteActiveGroupRequest(
+            int GroupId);
 
         #endregion Records
 
