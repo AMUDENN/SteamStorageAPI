@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
@@ -68,7 +69,19 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение суммы инвестиций
+        /// </summary>
+        /// <remarks>
+        /// Текущая сумма инвестиций рассчитывается по формуле: "Сумма текущей стоимости активов" + "Сумма продажи элементов архива".<br/> 
+        /// Процент роста инвестиций рассчитывается по формуле: ("Текущая сумма" - ("Сумма покупки активов" + "Сумма покупки элементов архива")) / ("Сумма покупки активов" + "Сумма покупки элементов архива")
+        /// </remarks>
+        /// <response code="200">Возвращает сумму инвестиций</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInvestmentSum")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<InvestmentSumResponse> GetInvestmentSum()
         {
             try
@@ -116,7 +129,18 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение информации о финансовой цели
+        /// </summary>
+        /// <remarks>
+        /// Процент достижения финансовой целе рассчитывается по формуле: ("Сумма текущей стоимости активов" + "Сумма продажи элементов архива") / "Финансовая цель"
+        /// </remarks>
+        /// <response code="200">Возвращает информацию о финансовой цели</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetFinancialGoal")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<FinancialGoalResponse> GetFinancialGoal()
         {
             try
@@ -163,7 +187,18 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение информации об активах
+        /// </summary>
+        /// <remarks>
+        /// Процент роста стоимости активов рассчитывается по формуле: ("Сумма текущей стоимости активов" - "Сумма покупки активов") / "Сумма покупки активов"
+        /// </remarks>
+        /// <response code="200">Возвращает информацию об активах</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActiveStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ActiveStatisticResponse> GetActiveStatistic()
         {
             try
@@ -201,7 +236,18 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение информации об архива
+        /// </summary>
+        /// <remarks>
+        /// Процент роста стоимости элементов архива рассчитывается по формуле: ("Сумма продажи элементов арихва" - "Сумма покупки элементов архива") / "Сумма покупки элементов архива"
+        /// </remarks>
+        /// <response code="200">Возвращает информацию об архиве</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetArchiveStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ArchiveStatisticResponse> GetArchiveStatistic()
         {
             try
@@ -235,7 +281,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение информации об инветаре
+        /// </summary>
+        /// <response code="200">Возвращает информацию об инвентаре</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInventoryStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<InventoryStatisticResponse> GetInventoryStatistic()
         {
             try
@@ -278,7 +332,18 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение общего количества предметов
+        /// </summary>
+        /// <remarks>
+        /// Количество предметов рассчитывается по формуле: "Количество активов" + "Количество элементов архива" + "Количество предметов в инвентаре"
+        /// </remarks>
+        /// <response code="200">Возвращает общее количество предметов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetItemsCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ItemsCountResponse> GetItemsCount()
         {
             try

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.User;
@@ -90,9 +91,16 @@ namespace SteamStorageAPI.Controllers
         #endregion Methods
 
         #region GET
-
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        
+        /// <summary>
+        /// Получение списка пользователей
+        /// </summary>
+        /// <response code="200">Возвращает список пользователей</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetUsers")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<UserResponse>> GetUsers()
         {
             try
@@ -105,9 +113,17 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        
+        /// <summary>
+        /// Получение информацию о пользователе
+        /// </summary>
+        /// <response code="200">Возвращает информацию о пользователе</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetUserInfo")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UserResponse>> GetUserInfo([FromQuery] GetUserRequest request)
         {
             try
@@ -126,7 +142,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение информацию о текущем пользователе
+        /// </summary>
+        /// <response code="200">Возвращает информацию о текущем пользователе</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetCurrentUserInfo")]
+        [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UserResponse>> GetCurrentUserInfo()
         {
             try
@@ -149,6 +173,13 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
+        /// <summary>
+        /// Установка финансовой цели
+        /// </summary>
+        /// <response code="200">Финансовая цель успешно установлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpPut(Name = "PutGoalSum")]
         public async Task<ActionResult> PutGoalSum(PutGoalSumRequest request)
         {
@@ -177,6 +208,13 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
+        /// <summary>
+        /// Удаление текущего пользователя
+        /// </summary>
+        /// <response code="200">Пользователь успешно удалена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpDelete(Name = "DeleteUser")]
         public async Task<ActionResult> DeleteUser()
         {

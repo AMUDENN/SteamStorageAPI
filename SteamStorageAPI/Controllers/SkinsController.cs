@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
@@ -201,8 +202,16 @@ namespace SteamStorageAPI.Controllers
         #endregion Methods
 
         #region GET
-
+        
+        /// <summary>
+        /// Получение информации об одном предмете
+        /// </summary>
+        /// <response code="200">Возвращает подробную информацию о предмете</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
         [HttpGet(Name = "GetSkinInfo")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<SkinResponse> GetSkinInfo([FromQuery] GetSkinRequest request)
         {
             try
@@ -229,7 +238,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение списка предметов
+        /// </summary>
+        /// <response code="200">Возвращает список предметов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetSkins")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<SkinsResponse> GetSkins([FromQuery] GetSkinsRequest request)
         {
             try
@@ -338,7 +355,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение динамики стоимости предмета
+        /// </summary>
+        /// <response code="200">Возвращает динамику стоимости предмета</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
         [HttpGet(Name = "GetSkinDynamics")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<SkinDynamicStatsResponse> GetSkinDynamics(
             [FromQuery] GetSkinDynamicsRequest request)
         {
@@ -365,7 +390,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества страниц предметов
+        /// </summary>
+        /// <response code="200">Возвращает количество страниц определённого размера</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetSkinPagesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<SkinPagesCountResponse> GetSkinPagesCount([FromQuery] GetSkinPagesCountRequest request)
         {
             try
@@ -404,7 +437,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение общего количества предметов в Steam
+        /// </summary>
+        /// <response code="200">Возвращает количество предметов в Steam</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
         [HttpGet(Name = "GetSteamSkinsCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount(
             [FromQuery] GetSteamSkinsCountRequest request)
         {
@@ -431,7 +472,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества сохранённых предметов
+        /// </summary>
+        /// <response code="200">Возвращает количество сохранённых предметов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetSavedSkinsCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<SavedSkinsCountResponse> GetSavedSkinsCount([FromQuery] GetSavedSkinsCountRequest request)
         {
             try
@@ -466,8 +515,15 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Занесение списка предметов из Steam
+        /// </summary>
+        /// <response code="200">Предметы успешно добавлены</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Игры с таким Id не существует</response>
         [HttpPost(Name = "PostSkins")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostSkins(PostSkinsRequest request)
         {
             try
@@ -555,8 +611,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Занесение одного предмета из Steam
+        /// </summary>
+        /// <response code="200">Предмет успешно добавлен</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Игры с таким Id не существует</response>
         [HttpPost(Name = "PostSkin")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostSkin(PostSkinRequest request)
         {
             try
@@ -567,7 +630,6 @@ namespace SteamStorageAPI.Controllers
                     return NotFound("Игры с таким Id не существует");
 
                 HttpClient client = _httpClientFactory.CreateClient();
-
 
                 SteamSkinResponse? response =
                     await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfoUrl(request.MarketHashName));
@@ -597,6 +659,13 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Добавление предмета в отмеченные
+        /// </summary>
+        /// <response code="200">Предмет отмечен</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
         [HttpPost(Name = "SetMarkedSkin")]
         public async Task<ActionResult> SetMarkedSkin(SetMarkedSkinRequest request)
         {
@@ -639,6 +708,13 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
+        /// <summary>
+        /// Удаление отмеченного предмета
+        /// </summary>
+        /// <response code="200">Отметка предмета снята</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Предмета с таким Id в таблице отмеченных предметов нет или пользователь не найден</response>
         [HttpDelete(Name = "DeleteMarkedSkin")]
         public async Task<ActionResult> DeleteMarkedSkin(DeleteMarkedSkinRequest request)
         {

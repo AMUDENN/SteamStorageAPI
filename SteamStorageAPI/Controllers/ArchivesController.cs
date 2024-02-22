@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
@@ -146,7 +147,15 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка элементов архива
+        /// </summary>
+        /// <response code="200">Возвращает список элементов архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetArchives")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ArchivesResponse> GetArchives([FromQuery] GetArchivesRequest request)
         {
             try
@@ -203,7 +212,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества страниц архива
+        /// </summary>
+        /// <response code="200">Возвращает количество страниц архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetArchivesPagesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ArchivesPagesCountResponse> GetArchivesPagesCount(
             [FromQuery] GetArchivesPagesCountRequest request)
         {
@@ -243,7 +260,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества элементов архива
+        /// </summary>
+        /// <response code="200">Возвращает количество элементов архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetArchivesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ArchivesCountResponse> GetArchivesCount([FromQuery] GetArchivesCountRequest request)
         {
             try
@@ -275,6 +300,13 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
+        /// <summary>
+        /// Добавление элемента архива
+        /// </summary>
+        /// <response code="200">Элемент архива успешно добавлен</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         [HttpPost(Name = "PostArchive")]
         public async Task<ActionResult> PostArchive(PostArchiveRequest request)
         {
@@ -319,6 +351,13 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
+        /// <summary>
+        /// Изменение элемента архива
+        /// </summary>
+        /// <response code="200">Элемент архива успешно изменён</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Элемента архива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "PutArchive")]
         public async Task<ActionResult> PutArchive(PutArchiveRequest request)
         {
@@ -370,6 +409,13 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
+        /// <summary>
+        /// Удаление элемента архива
+        /// </summary>
+        /// <response code="200">Элемент архива успешно удалён</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Элемента архива с таким Id не существует или пользователь не найден</response>
         [HttpDelete(Name = "DeleteArchive")]
         public async Task<ActionResult> DeleteArchive(DeleteArchiveRequest request)
         {

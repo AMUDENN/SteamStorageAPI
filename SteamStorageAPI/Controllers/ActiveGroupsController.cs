@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
@@ -115,7 +116,15 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка групп активов
+        /// </summary>
+        /// <response code="200">Возвращает список групп активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActiveGroups")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<ActiveGroupsResponse>> GetActiveGroups(
             [FromQuery] GetActiveGroupsRequest request)
         {
@@ -147,7 +156,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение динамики стоимости группы активов
+        /// </summary>
+        /// <response code="200">Возвращает динамику группы активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         [HttpGet(Name = "GetActiveGroupDynamics")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<ActiveGroupDynamicsResponse>> GetActiveGroupDynamics(
             [FromQuery] GetActiveGroupDynamicRequest request)
         {
@@ -185,7 +202,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества групп активов
+        /// </summary>
+        /// <response code="200">Возвращает количество групп активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActiveGroupsCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ActiveGroupsCountResponse> GetActiveGroupsCount()
         {
             try
@@ -209,6 +234,13 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
+        /// <summary>
+        /// Добавление новой группы активов
+        /// </summary>
+        /// <response code="200">Группа успешно добавлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpPost(Name = "PostActiveGroup")]
         public async Task<ActionResult> PostActiveGroup(PostActiveGroupRequest request)
         {
@@ -244,6 +276,13 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
+        /// <summary>
+        /// Изменение группы активов
+        /// </summary>
+        /// <response code="200">Группа успешно изменена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "PutActiveGroup")]
         public async Task<ActionResult> PutActiveGroup(PutActiveGroupRequest request)
         {
@@ -281,6 +320,13 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
+        /// <summary>
+        /// Удаление группы активов
+        /// </summary>
+        /// <response code="200">Группа успешно удалена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         [HttpDelete(Name = "DeleteActiveGroup")]
         public async Task<ActionResult> DeleteActiveGroup(DeleteActiveGroupRequest request)
         {

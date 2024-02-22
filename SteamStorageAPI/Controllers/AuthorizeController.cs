@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
@@ -110,7 +111,13 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение ссылки на авторизацию и названия группы SignalR
+        /// </summary>
+        /// <response code="200">Возвращает ссылку на авторизацию и название группы SignalR</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpGet(Name = "GetAuthUrl")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<AuthUrlResponse> GetAuthUrl()
         {
             try
@@ -125,6 +132,10 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Callback авторизации в Steam
+        /// </summary>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpGet(Name = "SteamAuthCallback")]
         public async Task<ActionResult> SteamAuthCallback(
             [FromQuery] SteamAuthRequest steamAuthRequest)
@@ -171,7 +182,14 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Проверка сохранённых cookie авторизации (только для отладки!)
+        /// </summary>
+        /// <response code="200">Возвращает новый JWT</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "CheckCookieAuth")]
+        [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<CookieAuthResponse>> CheckCookieAuth([FromQuery] CheckCookieAuthRequest request)
         {
             try
@@ -194,9 +212,18 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        [HttpGet(Name = "LogOut")]
-        public ActionResult LogOut()
+        
+        #endregion GET
+        
+        #region POST
+        
+        /// <summary>
+        /// Удаление сохранённых cookie авторизации (только для отладки!)
+        /// </summary>
+        /// <response code="200">Удаление успешно</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        [HttpPost(Name = "LogOut")]
+        public async Task<ActionResult> LogOut()
         {
             try
             {
@@ -209,7 +236,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        #endregion GET
+        
+        #endregion POST
     }
 }

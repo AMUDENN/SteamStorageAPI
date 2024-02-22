@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
@@ -98,7 +99,15 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка инвенторя
+        /// </summary>
+        /// <response code="200">Возвращает список предметов в инвентаре</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInventory")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<InventoryResponse>> GetInventory([FromQuery] GetInventoryRequest request)
         {
             try
@@ -139,7 +148,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества страниц инвенторя
+        /// </summary>
+        /// <response code="200">Возвращает количество страниц инвенторя</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInventoryPagesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<InventoryPagesCountResponse> GetInventoryPagesCount(
             [FromQuery] GetInventoryPagesCountRequest request)
         {
@@ -173,7 +190,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества элементов в инвентаре
+        /// </summary>
+        /// <response code="200">Возвращает количество элементов в инвентаре</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetSavedInventoriesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<SavedInventoriesCountResponse> GetSavedInventoriesCount(
             [FromQuery] GetSavedInventoriesCountRequest request)
         {
@@ -203,6 +228,13 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
+        /// <summary>
+        /// Обновление инвенторя
+        /// </summary>
+        /// <response code="200">Инвентарь успешно обновлён</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
         [HttpPost(Name = "RefreshInventory")]
         public async Task<ActionResult> RefreshInventory(RefreshInventoryRequest request)
         {
@@ -252,9 +284,9 @@ namespace SteamStorageAPI.Controllers
                     }
 
 
-                    Inventory? inv = _context.Inventories.FirstOrDefault(x => x.SkinId == skin.Id);
+                    Inventory? inventory = _context.Inventories.FirstOrDefault(x => x.SkinId == skin.Id);
 
-                    if (inv is null)
+                    if (inventory is null)
                         _context.Inventories.Add(new()
                         {
                             User = user,
@@ -262,7 +294,7 @@ namespace SteamStorageAPI.Controllers
                             Count = 1
                         });
                     else
-                        inv.Count++;
+                        inventory.Count++;
                 }
 
                 await _context.SaveChangesAsync();

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
@@ -156,7 +157,15 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка активов
+        /// </summary>
+        /// <response code="200">Возвращает список активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActives")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ActivesResponse> GetActives([FromQuery] GetActivesRequest request)
         {
             try
@@ -214,7 +223,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества страниц активов
+        /// </summary>
+        /// <response code="200">Возвращает количество страниц активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActivesPagesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ActivesPagesCountResponse> GetActivesPagesCount(
             [FromQuery] GetActivesPagesCountRequest request)
         {
@@ -254,7 +271,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение количества активов
+        /// </summary>
+        /// <response code="200">Возвращает количество активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActivesCount")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<ActivesCountResponse> GetActivesCount([FromQuery] GetActivesCountRequest request)
         {
             try
@@ -286,6 +311,13 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
+        /// <summary>
+        /// Добавление актива
+        /// </summary>
+        /// <response code="200">Актив успешно добавлен</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         [HttpPost(Name = "PostActive")]
         public async Task<ActionResult> PostActive(PostActiveRequest request)
         {
@@ -297,7 +329,7 @@ namespace SteamStorageAPI.Controllers
                     return NotFound("Пользователя с таким Id не существует");
 
                 if (!_context.Entry(user).Collection(x => x.ActiveGroups).Query().Any(x => x.Id == request.GroupId))
-                    return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+                    return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
                 if (!_context.Skins.Any(x => x.Id == request.SkinId))
                     return NotFound("Скина с таким Id не существует");
@@ -329,6 +361,13 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
+        /// <summary>
+        /// Изменение актива
+        /// </summary>
+        /// <response code="200">Актив успешно изменён</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Актива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "PutActive")]
         public async Task<ActionResult> PutActive(PutActiveRequest request)
         {
@@ -375,6 +414,13 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Продажа актива
+        /// </summary>
+        /// <response code="200">Актив успешно продан</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Актива с таким Id не существует, группы архива с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SoldActive")]
         public async Task<ActionResult> SoldActive(SoldActiveRequest request)
         {
@@ -430,6 +476,13 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
+        /// <summary>
+        /// Удаление актива
+        /// </summary>
+        /// <response code="200">Актив успешно удалён</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
         [HttpDelete(Name = "DeleteActive")]
         public async Task<ActionResult> DeleteActive(DeleteActiveRequest request)
         {

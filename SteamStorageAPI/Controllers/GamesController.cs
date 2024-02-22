@@ -4,6 +4,7 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Games;
 using SteamStorageAPI.Utilities.Steam;
 using System.Net;
+using System.Net.Mime;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -74,7 +75,14 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка игр
+        /// </summary>
+        /// <response code="200">Возвращает список игр</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetGames")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<GameResponse>> GetGames()
         {
             try
@@ -96,8 +104,14 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Добавление новой игры
+        /// </summary>
+        /// <response code="200">Игра успешно добавлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpPost(Name = "PostGame")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostGame(PostGameRequest request)
         {
             try
@@ -133,8 +147,15 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Изменение игры
+        /// </summary>
+        /// <response code="200">Игры успешно изменена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Игры с таким Id не существует</response>
         [HttpPut(Name = "PutGameInfo")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PutGameInfo(PutGameRequest request)
         {
             try
@@ -145,7 +166,7 @@ namespace SteamStorageAPI.Controllers
                     return NotFound("Игры с таким Id не существует");
 
                 if (!await IsGameIconExists(game.SteamGameId, request.IconUrlHash))
-                    return NotFound("Указан неверный хэш-код иконки игры");
+                    return BadRequest("Указан неверный хэш-код иконки игры");
                 game.GameIconUrl = request.IconUrlHash;
 
                 game.Title = request.Title;
@@ -166,8 +187,15 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Удаление игры
+        /// </summary>
+        /// <response code="200">Игры успешно удалена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Игры с таким Id не существует</response>
         [HttpDelete(Name = "DeleteGame")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> DeleteGame(DeleteGameRequest request)
         {
             try

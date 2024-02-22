@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
@@ -88,7 +89,14 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка валют
+        /// </summary>
+        /// <response code="200">Возвращает список валют</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetCurrencies")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<CurrencyResponse>> GetCurrencies()
         {
             try
@@ -102,7 +110,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Получение информации о валюте
+        /// </summary>
+        /// <response code="200">Возвращает информацию о валюте</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Валюты с таким Id не существует</response>
         [HttpGet(Name = "GetCurrency")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<CurrencyResponse> GetCurrency([FromQuery] GetCurrencyRequest request)
         {
             try
@@ -125,12 +141,21 @@ namespace SteamStorageAPI.Controllers
 
         #region POST
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Добавление новой валюты
+        /// </summary>
+        /// <response code="200">Валюта успешно добавлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpPost(Name = "PostCurrency")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostCurrency(PostCurrencyRequest request)
         {
             try
             {
+                
+                //TODO: Проверка на существование валюты с таким Id в Steam
+                
                 _context.Currencies.Add(new()
                 {
                     SteamCurrencyId = request.SteamCurrencyId,
@@ -150,8 +175,15 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Обновление курса валют
+        /// </summary>
+        /// <response code="200">Курс валют успешно обновлён</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Базовая валюта (американский доллар) не найдена или предмета с таким MarketHashName не существует</response>
         [HttpPost(Name = "RefreshCurrenciesExchangeRates")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> RefreshCurrenciesExchangeRates(RefreshCurrencyRequest request)
         {
             try
@@ -171,7 +203,7 @@ namespace SteamStorageAPI.Controllers
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
                     SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
-                if (response is null || response.lowest_price is null)
+                if (response?.lowest_price is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");
 
                 double dollarPrice =
@@ -215,8 +247,15 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Изменение валюты
+        /// </summary>
+        /// <response code="200">Валюта успешно изменена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Валюты с таким Id не существует</response>
         [HttpPut(Name = "PutCurrencyInfo")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PutCurrencyInfo(PutCurrencyRequest request)
         {
             try
@@ -242,6 +281,13 @@ namespace SteamStorageAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Установка валюты пользователя
+        /// </summary>
+        /// <response code="200">Валюта успешно установлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SetCurrency")]
         public async Task<ActionResult> SetCurrency(SetCurrencyRequest request)
         {
@@ -273,8 +319,15 @@ namespace SteamStorageAPI.Controllers
 
         #region DELETE
 
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        /// <summary>
+        /// Удаление валюты
+        /// </summary>
+        /// <response code="200">Валюта успешно удалена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Валюты с таким Id не существует</response>
         [HttpDelete(Name = "DeleteCurrency")]
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> DeleteCurrency(DeleteCurrencyRequest request)
         {
             try

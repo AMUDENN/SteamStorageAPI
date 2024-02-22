@@ -1,3 +1,4 @@
+using System.Reflection;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -41,15 +42,15 @@ public static class Program
         builder.Services.AddTransient<IUserService, UserService>();
 
         //Swagger
-        builder.Services.AddSwaggerGen(c =>
+        builder.Services.AddSwaggerGen(options =>
         {
-            c.SwaggerDoc("v1", new()
+            options.SwaggerDoc("v1", new()
             {
                 Title = "SteamStorage API",
                 Version = "v1",
                 Description = "API для SteamStorage"
             });
-            c.AddSecurityDefinition("Bearer", new()
+            options.AddSecurityDefinition("Bearer", new()
             {
                 In = ParameterLocation.Header,
                 Description = "Авторизация происходит в формате: Bearer {token}",
@@ -58,7 +59,7 @@ public static class Program
                 Scheme = JwtBearerDefaults.AuthenticationScheme,
                 BearerFormat = "JWT"
             });
-            c.AddSecurityRequirement(new()
+            options.AddSecurityRequirement(new()
             {
                 {
                     new()
@@ -72,6 +73,8 @@ public static class Program
                     Array.Empty<string>()
                 }
             });
+            string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
         });
 
         builder.Services.AddHttpClient();
@@ -79,15 +82,14 @@ public static class Program
 
 
         //DataBase
-        string connectionStringSteamStorage =
-            builder.Configuration.GetSection("DataBase").GetValue<string>("SteamStorage")
-            ?? throw new ArgumentNullException("MainConnectionString");
+        string connectionStringSteamStorage = builder.Configuration.GetConnectionString("SteamStorage")
+                                              ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
 
-        string connectionStringHealthChecks =
-            builder.Configuration.GetSection("DataBase").GetValue<string>("SteamStorageHealthChecks")
-            ?? throw new ArgumentNullException("HealthChecksConnectionString");
+        string connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks") 
+                                              ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
 
-        builder.Services.AddDbContext<SteamStorageContext>(opt => opt.UseSqlServer(connectionStringSteamStorage));
+        builder.Services.AddDbContext<SteamStorageContext>(
+            options => options.UseSqlServer(connectionStringSteamStorage));
 
         //HealthCheck
         builder.Services.AddHealthChecks()
@@ -174,15 +176,15 @@ public static class Program
 
         // HealthChecks
         app.MapHealthChecks("/health", CreateHealthCheckOptions(_ => true))
-            .RequireAuthorization(opt => opt.RequireRole(nameof(Role.Roles.Admin)));
-        
+            .RequireAuthorization(policyBuilder => policyBuilder.RequireRole(nameof(Role.Roles.Admin)));
+
         app.MapHealthChecks("/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
         app.MapHealthChecks("/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
-        
-        app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
-            .RequireAuthorization(opt => opt.RequireRole(nameof(Role.Roles.Admin)));
 
-        app.MapHealthChecksUI(u => u.UIPath = "/health-ui");
+        app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
+            .RequireAuthorization(policyBuilder => policyBuilder.RequireRole(nameof(Role.Roles.Admin)));
+
+        app.MapHealthChecksUI(options => options.UIPath = "/health-ui");
 
         // RateLimit
         app.UseIpRateLimiting();

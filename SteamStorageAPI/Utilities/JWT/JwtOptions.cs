@@ -30,15 +30,17 @@ namespace SteamStorageAPI.Utilities.JWT
             const string jwtOptions = nameof(JwtOptions);
 
             Key = jwtOptionsSection.GetValue<string>(nameof(Key)) ??
-                  throw new ArgumentNullException($"{jwtOptions} {nameof(Key)}");
+                    throw new ArgumentNullException($"{jwtOptions} {nameof(Key)}");
             Issuer = jwtOptionsSection.GetValue<string>(nameof(Issuer)) ??
-                     throw new ArgumentNullException($"{jwtOptions} {nameof(Issuer)}");
+                    throw new ArgumentNullException($"{jwtOptions} {nameof(Issuer)}");
             Audience = jwtOptionsSection.GetValue<string>(nameof(Audience)) ??
-                       throw new ArgumentNullException($"{jwtOptions} {nameof(Audience)}");
+                    throw new ArgumentNullException($"{jwtOptions} {nameof(Audience)}");
         }
 
-        public static SymmetricSecurityKey GetSymmetricSecurityKey() =>
-            new(Encoding.UTF8.GetBytes(Key));
+        public static SymmetricSecurityKey GetSymmetricSecurityKey()
+        {
+            return new(Encoding.UTF8.GetBytes(Key));
+        }
 
         #endregion Methods
     }

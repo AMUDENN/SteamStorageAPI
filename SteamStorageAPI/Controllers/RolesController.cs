@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 
@@ -40,7 +41,14 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка ролей
+        /// </summary>
+        /// <response code="200">Возвращает список ролей</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetRoles")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<RoleResponse>> GetRoles()
         {
             try
@@ -59,6 +67,13 @@ namespace SteamStorageAPI.Controllers
 
         #region PUT
 
+        /// <summary>
+        /// Установка роли пользователю
+        /// </summary>
+        /// <response code="200">Роль успешно установлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Роли с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SetRole")]
         public async Task<ActionResult> SetRole(SetRoleRequest request)
         {

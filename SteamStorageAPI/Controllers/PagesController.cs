@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
@@ -41,7 +42,13 @@ namespace SteamStorageAPI.Controllers
 
         #region GET
 
+        /// <summary>
+        /// Получение списка страниц
+        /// </summary>
+        /// <response code="200">Возвращает список страниц</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpGet(Name = "GetPages")]
+        [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<PageResponse>> GetPages()
         {
             try
@@ -59,9 +66,16 @@ namespace SteamStorageAPI.Controllers
         #endregion GET
 
         #region PUT
-
-        [Authorize]
+        
+        /// <summary>
+        /// Установка стартовой страницы
+        /// </summary>
+        /// <response code="200">Стартовая страница успешно установлена</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SetStartPage")]
+        [Authorize]
         public async Task<ActionResult> SetStartPage(SetPageRequest request)
         {
             try
@@ -74,7 +88,7 @@ namespace SteamStorageAPI.Controllers
                 if (!_context.Pages.Any(x => x.Id == request.PageId))
                     return NotFound("Страницы с таким Id не существует");
 
-                user.RoleId = request.PageId;
+                user.StartPageId = request.PageId;
 
                 await _context.SaveChangesAsync();
 
