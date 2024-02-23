@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
+using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
@@ -15,7 +16,7 @@ namespace SteamStorageAPI.Controllers
     public class AuthorizeController : ControllerBase
     {
         #region Fields
-        
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IJwtProvider _jwtProvider;
@@ -124,6 +125,7 @@ namespace SteamStorageAPI.Controllers
         /// </summary>
         /// <response code="200">Возвращает ссылку на авторизацию и название группы SignalR</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetAuthUrl")]
         [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<AuthUrlResponse> GetAuthUrl(
@@ -137,6 +139,7 @@ namespace SteamStorageAPI.Controllers
         /// Callback авторизации в Steam
         /// </summary>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "SteamAuthCallback")]
         public async Task<ActionResult> SteamAuthCallback(
             [FromQuery] SteamAuthRequest steamAuthRequest,
@@ -182,6 +185,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="200">Возвращает новый JWT</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "CheckCookieAuth")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<CookieAuthResponse>> CheckCookieAuth(
@@ -189,13 +193,13 @@ namespace SteamStorageAPI.Controllers
             CancellationToken cancellationToken = default)
         {
             if (!CheckCookieEqual(request.SteamId))
-                return BadRequest("Необходима новая авторизация через Steam");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "Необходима новая авторизация через Steam");
 
-            User? user =
-                await _context.Users.FirstOrDefaultAsync(x => x.SteamId == request.SteamId, cancellationToken);
-
-            if (user is null)
-                return BadRequest("Пользователя с таким Id не существует, пройдите авторизацию через Steam");
+            User user =
+                await _context.Users.FirstOrDefaultAsync(x => x.SteamId == request.SteamId, cancellationToken) ??
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "Пользователя с таким Id не найдено, пройдите авторизацию через Steam");
 
             await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
@@ -211,6 +215,7 @@ namespace SteamStorageAPI.Controllers
         /// </summary>
         /// <response code="200">Удаление успешно</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "LogOut")]
         public ActionResult LogOut(
             CancellationToken cancellationToken = default)

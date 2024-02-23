@@ -323,7 +323,7 @@ public partial class SteamStorageContext : DbContext
         UndoChanges();
     }
 
-    public void UndoChanges()
+    private void UndoChanges()
     {
         foreach (EntityEntry entry in ChangeTracker.Entries())
         {

@@ -95,6 +95,7 @@ public static class Program
         
         //ExceptionHandlers
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+        builder.Services.AddProblemDetails();
 
         //HealthCheck
         builder.Services.AddHealthChecks()
@@ -201,8 +202,12 @@ public static class Program
 
         app.MapControllers();
 
+        //Authorization
         app.UseAuthentication();
         app.UseAuthorization();
+        
+        //ExceptionHandler
+        app.UseExceptionHandler();
 
         app.Run();
     }

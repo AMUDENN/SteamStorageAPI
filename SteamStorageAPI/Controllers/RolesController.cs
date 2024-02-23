@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -12,7 +13,7 @@ namespace SteamStorageAPI.Controllers
     public class RolesController : ControllerBase
     {
         #region Fields
-        
+
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -47,6 +48,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="200">Возвращает список ролей</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetRoles")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<IEnumerable<RoleResponse>>> GetRoles(
@@ -68,18 +70,18 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Роли с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "SetRole")]
         public async Task<ActionResult> SetRole(
             SetRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
-                return NotFound("Роли с таким Id не существует");
+                throw new HttpResponseException(StatusCodes.Status404NotFound, "Роли с таким Id не существует");
 
             user.RoleId = request.RoleId;
 

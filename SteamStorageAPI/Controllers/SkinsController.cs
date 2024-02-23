@@ -6,6 +6,7 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Controllers
@@ -223,21 +224,20 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSkinInfo")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinResponse>> GetSkinInfo(
             [FromQuery] GetSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
-
-            if (skin is null)
-                return NotFound("Скина с таким Id не существует");
+            Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Предмета с таким Id не существует");
 
             List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
                 .Select(x => x.SkinId).ToListAsync(cancellationToken);
@@ -252,6 +252,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSkins")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinsResponse>> GetSkins(
@@ -264,10 +265,9 @@ namespace SteamStorageAPI.Controllers
             if (request.PageSize > 200)
                 throw new("Размер страницы не может превышать 200 предметов");
 
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
                 .Select(x => x.SkinId).ToListAsync(cancellationToken);
@@ -363,16 +363,17 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSkinDynamics")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinDynamicStatsResponse>> GetSkinDynamics(
             [FromQuery] GetSkinDynamicsRequest request,
             CancellationToken cancellationToken = default)
         {
-            Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
-
-            if (skin is null)
-                return NotFound("Скина с таким Id не существует");
+            Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Предмета с таким Id не существует");
+            ;
 
             List<SkinDynamicResponse> dynamic = await
                 _skinService.GetSkinDynamicsResponseAsync(skin, request.StartDate, request.EndDate,
@@ -392,6 +393,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSkinPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinPagesCountResponse>> GetSkinPagesCount(
@@ -404,10 +406,9 @@ namespace SteamStorageAPI.Controllers
             if (request.PageSize > 200)
                 throw new("Размер страницы не может превышать 200 предметов");
 
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             List<int> markedSkinsIds = [];
 
@@ -435,24 +436,22 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSteamSkinsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount(
             [FromQuery] GetSteamSkinsCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
-
-            if (game is null)
-                return NotFound("Игры с таким Id не существует");
+            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "Игры с таким Id не существует");
 
             HttpClient client = _httpClientFactory.CreateClient();
-            SteamSkinResponse? response =
+            SteamSkinResponse response =
                 await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
-                    cancellationToken);
-
-            if (response is null)
-                throw new("При получении данных с сервера Steam произошла ошибка");
+                    cancellationToken) ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "При получении данных с сервера Steam произошла ошибка");
 
             return Ok(new SteamSkinsCountResponse(response.total_count));
         }
@@ -464,16 +463,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSavedSkinsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SavedSkinsCountResponse>> GetSavedSkinsCount(
             [FromQuery] GetSavedSkinsCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             List<int> markedSkinsIds = [];
 
@@ -503,16 +502,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "PostSkins")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostSkins(
             PostSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
-
-            if (game is null)
-                return NotFound("Игры с таким Id не существует");
+            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "Игры с таким Id не существует");
 
             HttpClient client = _httpClientFactory.CreateClient();
 
@@ -526,7 +525,8 @@ namespace SteamStorageAPI.Controllers
                     cancellationToken);
 
             if (response is null)
-                throw new("При получении данных с сервера Steam произошла ошибка");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "При получении данных с сервера Steam произошла ошибка");
 
             int totalCount = response.total_count;
 
@@ -543,7 +543,8 @@ namespace SteamStorageAPI.Controllers
                         SteamApi.GetSkinsUrl(game.SteamGameId, count, start), cancellationToken);
 
                     if (response is null)
-                        throw new("При получении данных с сервера Steam произошла ошибка");
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "При получении данных с сервера Steam произошла ошибка");
 
                     List<Skin> skins = [];
 
@@ -592,16 +593,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "PostSkin")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostSkin(
             PostSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
-
-            if (game is null)
-                return NotFound("Игры с таким Id не существует");
+            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "Игры с таким Id не существует");
 
             HttpClient client = _httpClientFactory.CreateClient();
 
@@ -610,7 +611,8 @@ namespace SteamStorageAPI.Controllers
                     cancellationToken);
 
             if (response is null)
-                throw new("При получении данных с сервера Steam произошла ошибка");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "При получении данных с сервера Steam произошла ошибка");
 
             SkinResult result = response.results.First();
 
@@ -634,26 +636,26 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "SetMarkedSkin")]
         public async Task<ActionResult> SetMarkedSkin(
             SetMarkedSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
-
-            if (skin is null)
-                return NotFound("Скина с таким Id не существует");
+            Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Предмета с таким Id не существует");
 
             MarkedSkin? markedSkin =
                 await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
 
             if (markedSkin is not null)
-                return NotFound("Скин с таким Id уже добавлен в избранное");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "Скин с таким Id уже добавлен в избранное");
 
             await _context.MarkedSkins.AddAsync(new()
             {
@@ -677,21 +679,18 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id в таблице отмеченных предметов нет или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpDelete(Name = "DeleteMarkedSkin")]
         public async Task<ActionResult> DeleteMarkedSkin(
             DeleteMarkedSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
             MarkedSkin? markedSkin =
                 await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
 
             if (markedSkin is null)
-                return NotFound("Скина с таким Id в таблице отмеченных скинов нет");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "Скина с таким Id в таблице отмеченных скинов нет");
 
             _context.MarkedSkins.Remove(markedSkin);
 

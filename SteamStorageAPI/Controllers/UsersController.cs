@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Controllers
@@ -102,6 +103,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="200">Возвращает список пользователей</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetUsers")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         [Produces(MediaTypeNames.Application.Json)]
@@ -120,6 +122,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetUserInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         [Produces(MediaTypeNames.Application.Json)]
@@ -127,10 +130,9 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetUserRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             return Ok(await GetUserResponseAsync(user, cancellationToken));
         }
@@ -142,15 +144,15 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetCurrentUserInfo")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UserResponse>> GetCurrentUserInfo(
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             return Ok(await GetUserResponseAsync(user, cancellationToken));
         }
@@ -166,15 +168,15 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "PutGoalSum")]
         public async Task<ActionResult> PutGoalSum(
             PutGoalSumRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             user.GoalSum = request.GoalSum;
 
@@ -194,14 +196,14 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpDelete(Name = "DeleteUser")]
         public async Task<ActionResult> DeleteUser(
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             _context.Users.Remove(user);
 

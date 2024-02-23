@@ -6,6 +6,7 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Inventory;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Controllers.SkinsController;
 
@@ -29,7 +30,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-        
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
@@ -104,6 +105,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetInventory")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory(
@@ -116,10 +118,9 @@ namespace SteamStorageAPI.Controllers
             if (request.PageSize > 200)
                 throw new("Размер страницы не может превышать 200 предметов");
 
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             IEnumerable<Inventory> inventories = _context.Entry(user)
                 .Collection(x => x.Inventories)
@@ -148,6 +149,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetInventoryPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<InventoryPagesCountResponse>> GetInventoryPagesCount(
@@ -160,10 +162,9 @@ namespace SteamStorageAPI.Controllers
             if (request.PageSize > 200)
                 throw new("Размер страницы не может превышать 200 предметов");
 
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             IEnumerable<Inventory> inventories = _context.Entry(user)
                 .Collection(x => x.Inventories)
@@ -183,16 +184,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetSavedInventoriesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SavedInventoriesCountResponse>> GetSavedInventoriesCount(
             [FromQuery] GetSavedInventoriesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             return Ok(new SavedInventoriesCountResponse(await _context
                 .Entry(user)
@@ -200,8 +201,8 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .Include(x => x.Skin)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) ||
-                                     x.Skin.Title.Contains(request.Filter!)), cancellationToken)));
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)),
+                    cancellationToken)));
         }
 
         #endregion GET
@@ -215,20 +216,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "RefreshInventory")]
         public async Task<ActionResult> RefreshInventory(
             RefreshInventoryRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
-
-            if (game is null)
-                return NotFound("Игры с таким Id не существует");
+            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "Игры с таким Id не существует");
 
             _context.Inventories.RemoveRange(_context.Entry(user)
                 .Collection(x => x.Inventories)
@@ -243,7 +243,8 @@ namespace SteamStorageAPI.Controllers
                     SteamApi.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000), cancellationToken);
 
             if (response is null)
-                throw new("При получении данных с сервера Steam произошла ошибка");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                    "При получении данных с сервера Steam произошла ошибка");
 
             foreach (InventoryDescription item in response.descriptions)
             {

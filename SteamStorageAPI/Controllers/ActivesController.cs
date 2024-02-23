@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Utilities.Exceptions;
 using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
@@ -29,7 +30,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-        
+
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
@@ -161,6 +162,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetActives")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesResponse>> GetActives(
@@ -173,10 +175,9 @@ namespace SteamStorageAPI.Controllers
             if (request.PageSize > 200)
                 throw new("Размер страницы не может превышать 200 предметов");
 
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             IEnumerable<Active> actives = _context.Entry(user)
                 .Collection(x => x.ActiveGroups)
@@ -199,12 +200,10 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives).CountAsync(x =>
-                    (request.GameId == null || x.Skin.GameId == request.GameId)
-                    && (string.IsNullOrEmpty(request.Filter) ||
-                        x.Skin.Title.Contains(request.Filter!))
-                    && (request.GroupId == null ||
-                        x.GroupId == request.GroupId), cancellationToken);
+                .SelectMany(x => x.Actives)
+                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
 
@@ -222,6 +221,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetActivesPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesPagesCountResponse>> GetActivesPagesCount(
@@ -234,10 +234,9 @@ namespace SteamStorageAPI.Controllers
             if (request.PageSize > 200)
                 throw new("Размер страницы не может превышать 200 предметов");
 
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             int count = await _context
                 .Entry(user)
@@ -245,12 +244,10 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives).CountAsync(x =>
-                    (request.GameId == null || x.Skin.GameId == request.GameId)
-                    && (string.IsNullOrEmpty(request.Filter) ||
-                        x.Skin.Title.Contains(request.Filter!))
-                    && (request.GroupId == null ||
-                        x.GroupId == request.GroupId), cancellationToken);
+                .SelectMany(x => x.Actives)
+                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
@@ -264,16 +261,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetActivesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesCountResponse>> GetActivesCount(
             [FromQuery] GetActivesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             return Ok(new ActivesCountResponse(await _context
                 .Entry(user)
@@ -298,24 +295,25 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "PostActive")]
         public async Task<ActionResult> PostActive(
             PostActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
                     .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                throw new HttpResponseException(StatusCodes.Status404NotFound,
+                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
             if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                return NotFound("Скина с таким Id не существует");
+                throw new HttpResponseException(StatusCodes.Status404NotFound, "Предмета с таким Id не существует");
 
-            _context.Actives.Add(new()
+            await _context.Actives.AddAsync(new()
             {
                 GroupId = request.GroupId,
                 Count = request.Count,
@@ -324,7 +322,7 @@ namespace SteamStorageAPI.Controllers
                 SkinId = request.SkinId,
                 Description = request.Description,
                 BuyDate = request.BuyDate
-            });
+            }, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -342,32 +340,32 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Актива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "PutActive")]
         public async Task<ActionResult> PutActive(
             PutActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            Active? active = await _context.Entry(user)
-                .Collection(u => u.ActiveGroups)
-                .Query()
-                .Include(x => x.Actives)
-                .SelectMany(x => x.Actives)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
-
-            if (active is null)
-                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            Active active = await _context.Entry(user)
+                                .Collection(u => u.ActiveGroups)
+                                .Query()
+                                .Include(x => x.Actives)
+                                .SelectMany(x => x.Actives)
+                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                            throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
             if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken: cancellationToken))
-                return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
+                throw new HttpResponseException(StatusCodes.Status404NotFound,
+                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
             if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                return NotFound("Скина с таким Id не существует");
+                throw new HttpResponseException(StatusCodes.Status404NotFound, "Предмета с таким Id не существует");
 
             active.GroupId = request.GroupId;
             active.Count = request.Count;
@@ -389,29 +387,29 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Актива с таким Id не существует, группы архива с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "SoldActive")]
         public async Task<ActionResult> SoldActive(
             SoldActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            Active? active = await _context.Entry(user)
-                .Collection(u => u.ActiveGroups)
-                .Query()
-                .Include(x => x.Actives)
-                .SelectMany(x => x.Actives)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
-
-            if (active is null)
-                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            Active active = await _context.Entry(user)
+                                .Collection(u => u.ActiveGroups)
+                                .Query()
+                                .Include(x => x.Actives)
+                                .SelectMany(x => x.Actives)
+                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                            throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
             if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
                     .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+                throw new HttpResponseException(StatusCodes.Status404NotFound,
+                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
             await _context.Archives.AddAsync(new()
             {
@@ -445,22 +443,24 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpDelete(Name = "DeleteActive")]
         public async Task<ActionResult> DeleteActive(
             DeleteActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            Active? active = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
-                .Include(x => x.Actives)
-                .SelectMany(x => x.Actives).FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
-
-            if (active is null)
-                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            Active active = await _context.Entry(user)
+                                .Collection(u => u.ActiveGroups)
+                                .Query()
+                                .Include(x => x.Actives)
+                                .SelectMany(x => x.Actives)
+                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                            throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
             _context.Actives.Remove(active);
 

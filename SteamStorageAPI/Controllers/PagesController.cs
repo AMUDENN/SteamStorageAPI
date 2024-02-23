@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -12,7 +13,7 @@ namespace SteamStorageAPI.Controllers
     public class PagesController : ControllerBase
     {
         #region Fields
-        
+
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
@@ -48,6 +49,7 @@ namespace SteamStorageAPI.Controllers
         /// </summary>
         /// <response code="200">Возвращает список страниц</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetPages")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<IEnumerable<PageResponse>>> GetPages(
@@ -69,19 +71,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "SetStartPage")]
         [Authorize]
         public async Task<ActionResult> SetStartPage(
             SetPageRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
-                return NotFound("Страницы с таким Id не существует");
+                throw new HttpResponseException(StatusCodes.Status404NotFound, "Страницы с таким Id не существует");
 
             user.StartPageId = request.PageId;
 

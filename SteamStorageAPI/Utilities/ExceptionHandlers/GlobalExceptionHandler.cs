@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Utilities.ExceptionHandlers;
 
@@ -21,6 +22,12 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     #endregion Constructor
 
+    #region Records
+
+    public record ErrorResponse(string Message);
+
+    #endregion Records
+
     #region Methods
 
     public async ValueTask<bool> TryHandleAsync(
@@ -32,19 +39,34 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         ProblemDetails problemDetails = new()
         {
-            Title = "BadRequest",
-            Status = StatusCodes.Status400BadRequest,
             Detail = exception.Message
         };
 
-        if (exception is OperationCanceledException)
+        switch (exception)
         {
-            problemDetails.Status = StatusCodes.Status499ClientClosedRequest;
-            problemDetails.Title = "Client Closed Request";
+            case OperationCanceledException:
+                problemDetails.Status = StatusCodes.Status499ClientClosedRequest;
+                problemDetails.Title = "Client Closed Request";
+                break;
+            case HttpResponseException ex:
+                problemDetails.Status = ex.StatusCode;
+                problemDetails.Title = ex.StatusCode.ToString();
+                break;
+            default:
+                problemDetails.Status = StatusCodes.Status400BadRequest;
+                problemDetails.Title = "BadRequest";
+                break;
         }
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
-        await httpContext.Response.WriteAsJsonAsync(problemDetails.Detail, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(
+            new ErrorResponse(problemDetails.Detail),
+            new()
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = null
+            },
+            cancellationToken);
 
         return true;
     }

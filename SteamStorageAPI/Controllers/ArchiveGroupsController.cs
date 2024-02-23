@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -27,7 +28,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-        
+
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
@@ -47,21 +48,7 @@ namespace SteamStorageAPI.Controllers
 
             _orderNames = new()
             {
-                [ArchiveGroupOrderName.Title] = x => x.Title,
-                [ArchiveGroupOrderName.Count] = x => _context.Entry(x).Collection(y => y.Archives).Query().Count(),
-                [ArchiveGroupOrderName.BuySum] = x =>
-                    _context.Entry(x).Collection(y => y.Archives).Query().Sum(z => z.Count * z.BuyPrice),
-                [ArchiveGroupOrderName.SoldSum] = x =>
-                    _context.Entry(x).Collection(y => y.Archives).Query().Sum(z => z.Count * z.SoldPrice),
-                [ArchiveGroupOrderName.Change] = x =>
-                {
-                    decimal buySum = _context.Entry(x).Collection(y => y.Archives).Query()
-                        .Sum(z => z.Count * z.BuyPrice);
-                    decimal soldSum = _context.Entry(x).Collection(y => y.Archives).Query()
-                        .Sum(z => z.Count * z.SoldPrice);
-
-                    return buySum == 0 ? 0 : (soldSum - buySum) / buySum;
-                }
+                // TODO: Сортировка по параметрам!
             };
         }
 
@@ -107,16 +94,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetArchiveGroups")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<IEnumerable<ArchiveGroupsResponse>>> GetArchiveGroups(
             [FromQuery] GetArchiveGroupsRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             IEnumerable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query();
 
@@ -139,15 +126,15 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetArchiveGroupsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchiveGroupsCountResponse>> GetArchiveGroupsCount(
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             return Ok(new ArchiveGroupsCountResponse(await _context.Entry(user).Collection(x => x.ArchiveGroups)
                 .Query().CountAsync(cancellationToken)));
@@ -164,15 +151,15 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "PostArchiveGroup")]
         public async Task<ActionResult> PostArchiveGroup(
             PostArchiveGroupRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
-
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
             await _context.ArchiveGroups.AddAsync(new()
             {
@@ -198,21 +185,20 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "PutArchiveGroup")]
         public async Task<ActionResult> PutArchiveGroup(
             PutArchiveGroupRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            ArchiveGroup? group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
-                .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
-
-            if (group is null)
-                return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+            ArchiveGroup group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
+                                     .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
+                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                     "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
             group.Title = request.Title;
             group.Description = request.Description;
@@ -234,21 +220,20 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
         [HttpDelete(Name = "DeleteArchiveGroup")]
         public async Task<ActionResult> DeleteArchiveGroup(
             DeleteArchiveGroupRequest request,
             CancellationToken cancellationToken = default)
         {
-            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            if (user is null)
-                return NotFound("Пользователя с таким Id не существует");
-
-            ArchiveGroup? group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
-                .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
-
-            if (group is null)
-                return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+            ArchiveGroup group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
+                                     .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
+                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                     "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
             _context.ArchiveGroups.Remove(group);
 

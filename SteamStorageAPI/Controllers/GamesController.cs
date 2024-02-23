@@ -6,6 +6,7 @@ using SteamStorageAPI.Utilities.Steam;
 using System.Net;
 using System.Net.Mime;
 using Microsoft.EntityFrameworkCore;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -16,7 +17,7 @@ namespace SteamStorageAPI.Controllers
     public class GamesController : ControllerBase
     {
         #region Fields
-        
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SteamStorageContext _context;
 
@@ -88,6 +89,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="200">Возвращает список игр</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetGames")]
         [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<IEnumerable<GameResponse>> GetGames(
@@ -110,19 +112,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="200">Игра успешно добавлена</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPost(Name = "PostGame")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PostGame(
             PostGameRequest request,
             CancellationToken cancellationToken = default)
         {
-            SteamGameResponse? response = await GetGameResponseAsync(request.SteamGameId, cancellationToken);
-
-            if (response is null)
-                return BadRequest("Указан неверный id игры");
+            SteamGameResponse response = await GetGameResponseAsync(request.SteamGameId, cancellationToken) ??
+                                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                                             "Указан неверный id игры");
 
             if (!await IsGameIconExistsAsync(request.SteamGameId, request.IconUrlHash, cancellationToken))
-                return BadRequest("Указан неверный хэш-код иконки игры");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest, "Указан неверный хэш-код иконки игры");
 
             await _context.Games.AddAsync(new()
             {
@@ -147,20 +149,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
+        /// <response code="499">Операция отменена</response>
         [HttpPut(Name = "PutGameInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> PutGameInfo(
             PutGameRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
-                cancellationToken: cancellationToken);
-
-            if (game is null)
-                return NotFound("Игры с таким Id не существует");
+            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "Игры с таким Id не существует");
 
             if (!await IsGameIconExistsAsync(game.SteamGameId, request.IconUrlHash, cancellationToken))
-                return BadRequest("Указан неверный хэш-код иконки игры");
+                throw new HttpResponseException(StatusCodes.Status400BadRequest, "Указан неверный хэш-код иконки игры");
 
             game.GameIconUrl = request.IconUrlHash;
             game.Title = request.Title;
@@ -181,17 +182,16 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
+        /// <response code="499">Операция отменена</response>
         [HttpDelete(Name = "DeleteGame")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         public async Task<ActionResult> DeleteGame(
             DeleteGameRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
-                cancellationToken: cancellationToken);
-
-            if (game is null)
-                return NotFound("Игры с таким Id не существует");
+            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                            "Игры с таким Id не существует");
 
             _context.Games.Remove(game);
 
