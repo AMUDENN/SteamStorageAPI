@@ -1,4 +1,5 @@
-﻿using SteamStorageAPI.DBEntities;
+﻿using Microsoft.EntityFrameworkCore;
+using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Controllers.SkinsController;
 
@@ -23,9 +24,11 @@ namespace SteamStorageAPI.Services.SkinService
 
         #region Methods
 
-        public BaseSkinResponse GetBaseSkinResponse(Skin skin)
+        public async Task<BaseSkinResponse> GetBaseSkinResponseAsync(
+            Skin skin,
+            CancellationToken cancellationToken = default)
         {
-            _context.Entry(skin).Reference(x => x.Game).Load();
+            await _context.Entry(skin).Reference(x => x.Game).LoadAsync(cancellationToken);
             return new(
                 skin.Id,
                 SteamApi.GetSkinIconUrl(skin.SkinIconUrl),
@@ -34,26 +37,32 @@ namespace SteamStorageAPI.Services.SkinService
                 SteamApi.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
         }
 
-        public decimal GetCurrentPrice(Skin skin)
+        public async Task<decimal> GetCurrentPriceAsync(
+            Skin skin, 
+            CancellationToken cancellationToken = default)
         {
-            List<SkinsDynamic> dynamics = _context.Entry(skin)
+            List<SkinsDynamic> dynamics = await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
                 .OrderBy(x => x.DateUpdate)
-                .ToList();
+                .ToListAsync(cancellationToken);
 
             return dynamics.Count == 0 ? 0 : dynamics.Last().Price;
         }
 
-        public List<SkinDynamicResponse> GetSkinDynamicsResponse(Skin skin, DateTime startDate, DateTime endDate)
+        public async Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(
+            Skin skin, 
+            DateTime startDate,
+            DateTime endDate, 
+            CancellationToken cancellationToken = default)
         {
-            return _context.Entry(skin)
+            return await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
                 .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
                 .OrderBy(x => x.DateUpdate)
                 .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, x.Price))
-                .ToList();
+                .ToListAsync(cancellationToken);
         }
 
         #endregion Methods

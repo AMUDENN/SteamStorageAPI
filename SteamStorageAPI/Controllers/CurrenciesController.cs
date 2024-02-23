@@ -1,6 +1,7 @@
 ﻿using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Services.UserService;
@@ -24,8 +25,11 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public CurrenciesController(ILogger<CurrenciesController> logger, IHttpClientFactory httpClientFactory,
-            IUserService userService, SteamStorageContext context)
+        public CurrenciesController(
+            ILogger<CurrenciesController> logger, 
+            IHttpClientFactory httpClientFactory,
+            IUserService userService, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -70,13 +74,15 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private CurrencyResponse? GetCurrencyResponse(Currency? currency)
+        private async Task<CurrencyResponse?> GetCurrencyResponseAsync(
+            Currency? currency,
+            CancellationToken cancellationToken = default)
         {
             if (currency is null)
                 return null;
 
-            List<CurrencyDynamic> currencyDynamics =
-                _context.Entry(currency).Collection(s => s.CurrencyDynamics).Query().ToList();
+            List<CurrencyDynamic> currencyDynamics = await _context.Entry(currency).Collection(s => s.CurrencyDynamics)
+                .Query().ToListAsync(cancellationToken);
 
             return new(currency.Id,
                 currency.SteamCurrencyId,
@@ -97,11 +103,14 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetCurrencies")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<CurrencyResponse>> GetCurrencies()
+        public async Task<ActionResult<IEnumerable<CurrencyResponse>>> GetCurrencies(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return Ok(_context.Currencies.Select(GetCurrencyResponse));
+                List<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
+                
+                return Ok(currencies.Select(async x => await GetCurrencyResponseAsync(x, cancellationToken)));
             }
             catch (Exception ex)
             {
@@ -119,16 +128,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Валюты с таким Id не существует</response>
         [HttpGet(Name = "GetCurrency")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<CurrencyResponse> GetCurrency([FromQuery] GetCurrencyRequest request)
+        public async Task<ActionResult<CurrencyResponse>> GetCurrency(
+            [FromQuery] GetCurrencyRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                Currency? currency = _context.Currencies.FirstOrDefault(x => x.Id == request.Id);
+                Currency? currency =
+                    await _context.Currencies.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
                 if (currency is null)
                     return NotFound("Валюты с таким Id не существует");
 
-                return Ok(GetCurrencyResponse(currency));
+                return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));
             }
             catch (Exception ex)
             {
@@ -149,21 +161,23 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpPost(Name = "PostCurrency")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> PostCurrency(PostCurrencyRequest request)
+        public async Task<ActionResult> PostCurrency(
+            PostCurrencyRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                
+
                 //TODO: Проверка на существование валюты с таким Id в Steam
-                
-                _context.Currencies.Add(new()
+
+                await _context.Currencies.AddAsync(new()
                 {
                     SteamCurrencyId = request.SteamCurrencyId,
                     Title = request.Title,
                     Mark = request.Mark
-                });
+                }, cancellationToken);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -184,25 +198,30 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Базовая валюта (американский доллар) не найдена или предмета с таким MarketHashName не существует</response>
         [HttpPost(Name = "RefreshCurrenciesExchangeRates")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> RefreshCurrenciesExchangeRates(RefreshCurrencyRequest request)
+        public async Task<ActionResult> RefreshCurrenciesExchangeRates(
+            RefreshCurrencyRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                IEnumerable<Currency> currencies = _context.Currencies.ToList();
+                IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
 
-                Currency? dollar = _context.Currencies.FirstOrDefault(x => x.SteamCurrencyId == 1);
+                Currency? dollar =
+                    await _context.Currencies.FirstOrDefaultAsync(x => x.SteamCurrencyId == 1, cancellationToken);
                 if (dollar is null)
                     return NotFound("В базе данных отсутствует базовая валюта (американский доллар)");
 
-                Skin? skin = _context.Skins.FirstOrDefault(x => x.MarketHashName == request.MarketHashName);
+                Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == request.MarketHashName,
+                    cancellationToken);
                 if (skin is null)
                     return NotFound("В базе данных отсутствует скин с таким MarketHashName");
 
-                await _context.Entry(skin).Reference(s => s.Game).LoadAsync();
+                await _context.Entry(skin).Reference(s => s.Game).LoadAsync(cancellationToken);
 
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                    SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId));
+                    SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId),
+                    cancellationToken);
                 if (response?.lowest_price is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");
 
@@ -213,7 +232,7 @@ namespace SteamStorageAPI.Controllers
                 {
                     response = await client.GetFromJsonAsync<SteamPriceResponse>(
                         SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
-                            currency.SteamCurrencyId));
+                            currency.SteamCurrencyId), cancellationToken);
 
                     if (response is null)
                         continue;
@@ -228,10 +247,10 @@ namespace SteamStorageAPI.Controllers
                         Price = price / dollarPrice
                     });
 
-                    await Task.Delay(2000);
+                    await Task.Delay(2000, cancellationToken);
                 }
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -256,20 +275,22 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Валюты с таким Id не существует</response>
         [HttpPut(Name = "PutCurrencyInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> PutCurrencyInfo(PutCurrencyRequest request)
+        public async Task<ActionResult> PutCurrencyInfo(
+            PutCurrencyRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                Currency? currency = _context.Currencies.FirstOrDefault(x => x.Id == request.CurrencyId);
+                Currency? currency =
+                    await _context.Currencies.FirstOrDefaultAsync(x => x.Id == request.CurrencyId, cancellationToken);
 
                 if (currency is null)
                     return NotFound("Валюты с таким Id не существует");
 
                 currency.Title = request.Title;
-
                 currency.Mark = request.Mark;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -289,21 +310,23 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SetCurrency")]
-        public async Task<ActionResult> SetCurrency(SetCurrencyRequest request)
+        public async Task<ActionResult> SetCurrency(
+            SetCurrencyRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Currencies.Any(x => x.Id == request.CurrencyId))
+                if (!await _context.Currencies.AnyAsync(x => x.Id == request.CurrencyId, cancellationToken))
                     return NotFound("Валюты с таким Id не существует");
 
                 user.CurrencyId = request.CurrencyId;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -328,18 +351,21 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Валюты с таким Id не существует</response>
         [HttpDelete(Name = "DeleteCurrency")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> DeleteCurrency(DeleteCurrencyRequest request)
+        public async Task<ActionResult> DeleteCurrency(
+            DeleteCurrencyRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                Currency? currency = _context.Currencies.FirstOrDefault(x => x.Id == request.CurrencyId);
+                Currency? currency =
+                    await _context.Currencies.FirstOrDefaultAsync(x => x.Id == request.CurrencyId, cancellationToken);
 
                 if (currency is null)
                     return NotFound("Валюты с таким Id не существует");
 
                 _context.Currencies.Remove(currency);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }

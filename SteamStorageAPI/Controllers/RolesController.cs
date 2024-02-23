@@ -1,6 +1,7 @@
 ﻿using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 
 namespace SteamStorageAPI.Controllers
@@ -19,7 +20,9 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public RolesController(ILogger<RolesController> logger, SteamStorageContext context)
+        public RolesController(
+            ILogger<RolesController> logger, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _context = context;
@@ -49,12 +52,14 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetRoles")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<RoleResponse>> GetRoles()
+        public async Task<ActionResult<IEnumerable<RoleResponse>>> GetRoles(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return Ok(_context.Roles.ToList().Select(x =>
-                    new RoleResponse(x.Id, x.Title)));
+                List<Role> roles = await _context.Roles.ToListAsync(cancellationToken);
+
+                return Ok(roles.Select(x => new RoleResponse(x.Id, x.Title)));
             }
             catch (Exception ex)
             {
@@ -75,21 +80,23 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Роли с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SetRole")]
-        public async Task<ActionResult> SetRole(SetRoleRequest request)
+        public async Task<ActionResult> SetRole(
+            SetRoleRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _context.Users.FirstOrDefault(x => x.Id == request.UserId);
+                User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Roles.Any(x => x.Id == request.RoleId))
+                if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
                     return NotFound("Роли с таким Id не существует");
 
                 user.RoleId = request.RoleId;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }

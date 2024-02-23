@@ -22,7 +22,9 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public StatisticsController(ILogger<StatisticsController> logger, IUserService userService,
+        public StatisticsController(
+            ILogger<StatisticsController> logger, 
+            IUserService userService,
             SteamStorageContext context)
         {
             _logger = logger;
@@ -82,29 +84,30 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInvestmentSum")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<InvestmentSumResponse> GetInvestmentSum()
+        public async Task<ActionResult<InvestmentSumResponse>> GetInvestmentSum(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                List<Active> actives = _context.Entry(user)
+                List<Active> actives = await _context.Entry(user)
                     .Collection(u => u.ActiveGroups)
                     .Query()
                     .Include(x => x.Actives)
                     .ThenInclude(x => x.Skin.SkinsDynamics)
                     .SelectMany(x => x.Actives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
-                List<Archive> archives = _context.Entry(user)
+                List<Archive> archives = await _context.Entry(user)
                     .Collection(u => u.ArchiveGroups)
                     .Query()
                     .Include(x => x.Archives)
                     .SelectMany(x => x.Archives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 double investedSum =
                     (double)(actives.Sum(y => y.BuyPrice * y.Count) + archives.Sum(y => y.BuyPrice * y.Count));
@@ -141,31 +144,32 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetFinancialGoal")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<FinancialGoalResponse> GetFinancialGoal()
+        public async Task<ActionResult<FinancialGoalResponse>> GetFinancialGoal(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
                 double financialGoal = (double)(user.GoalSum ?? 0);
 
-                List<Active> actives = _context.Entry(user)
+                List<Active> actives = await _context.Entry(user)
                     .Collection(u => u.ActiveGroups)
                     .Query()
                     .Include(x => x.Actives)
                     .ThenInclude(x => x.Skin.SkinsDynamics)
                     .SelectMany(x => x.Actives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
-                List<Archive> archives = _context.Entry(user)
+                List<Archive> archives = await _context.Entry(user)
                     .Collection(u => u.ArchiveGroups)
                     .Query()
                     .Include(x => x.Archives)
                     .SelectMany(x => x.Archives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 double currentSum = (double)
                 (
@@ -199,22 +203,23 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActiveStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<ActiveStatisticResponse> GetActiveStatistic()
+        public async Task<ActionResult<ActiveStatisticResponse>> GetActiveStatistic(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                List<Active> actives = _context.Entry(user)
+                List<Active> actives = await _context.Entry(user)
                     .Collection(u => u.ActiveGroups)
                     .Query()
                     .Include(x => x.Actives)
                     .ThenInclude(x => x.Skin.SkinsDynamics)
                     .SelectMany(x => x.Actives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 int count = actives.Sum(x => x.Count);
 
@@ -248,21 +253,22 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetArchiveStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<ArchiveStatisticResponse> GetArchiveStatistic()
+        public async Task<ActionResult<ArchiveStatisticResponse>> GetArchiveStatistic(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                List<Archive> archives = _context.Entry(user)
+                List<Archive> archives = await _context.Entry(user)
                     .Collection(u => u.ArchiveGroups)
                     .Query()
                     .Include(x => x.Archives)
                     .SelectMany(x => x.Archives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 int count = archives.Sum(x => x.Count);
 
@@ -290,21 +296,22 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInventoryStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<InventoryStatisticResponse> GetInventoryStatistic()
+        public async Task<ActionResult<InventoryStatisticResponse>> GetInventoryStatistic(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                List<Inventory> inventories = _context.Entry(user)
+                List<Inventory> inventories = await _context.Entry(user)
                     .Collection(u => u.Inventories)
                     .Query()
                     .Include(x => x.Skin.SkinsDynamics)
                     .Include(x => x.Skin.Game)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 int count = inventories.Sum(x => x.Count);
 
@@ -321,7 +328,7 @@ namespace SteamStorageAPI.Controllers
                 List<InventoryGameStatisticResponse> gamesResponse = [];
                 gamesResponse.AddRange(games.Select(item => new InventoryGameStatisticResponse(item.Title,
                     (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count,
-                    inventories.Count(x => x.Skin.Game.Id == item.Id))));
+                    inventories.Count)));
 
                 return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
             }
@@ -344,37 +351,38 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetItemsCount")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<ItemsCountResponse> GetItemsCount()
+        public async Task<ActionResult<ItemsCountResponse>> GetItemsCount(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                List<Active> actives = _context.Entry(user)
+                List<Active> actives = await _context.Entry(user)
                     .Collection(u => u.ActiveGroups)
                     .Query()
                     .Include(x => x.Actives)
                     .SelectMany(x => x.Actives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 int activesCount = actives.Sum(x => x.Count);
 
-                List<Archive> archives = _context.Entry(user)
+                List<Archive> archives = await _context.Entry(user)
                     .Collection(u => u.ArchiveGroups)
                     .Query()
                     .Include(x => x.Archives)
                     .SelectMany(x => x.Archives)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 int archivesCount = archives.Sum(x => x.Count);
 
-                List<Inventory> inventories = _context.Entry(user)
+                List<Inventory> inventories = await _context.Entry(user)
                     .Collection(u => u.Inventories)
                     .Query()
-                    .ToList();
+                    .ToListAsync(cancellationToken: cancellationToken);
 
                 int inventoriesCount = inventories.Sum(x => x.Count);
 

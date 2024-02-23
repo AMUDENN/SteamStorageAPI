@@ -3,7 +3,7 @@
 namespace SteamStorageAPI.Services.UserService
 {
     public interface IUserService
-    {
-        User? GetCurrentUser();
+    { 
+        Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.UserService;
@@ -24,8 +25,11 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public UsersController(ILogger<UsersController> logger, IHttpClientFactory httpClientFactory,
-            IUserService userService, SteamStorageContext context)
+        public UsersController(
+            ILogger<UsersController> logger,
+            IHttpClientFactory httpClientFactory,
+            IUserService userService,
+            SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -63,14 +67,17 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<UserResponse?> GetUserResponse(User? user)
+        private async Task<UserResponse?> GetUserResponseAsync(
+            User? user,
+            CancellationToken cancellationToken = default)
         {
             if (user is null)
                 return null;
 
             HttpClient client = _httpClientFactory.CreateClient();
             SteamUserResult? steamUserResult =
-                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId));
+                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId),
+                    cancellationToken);
 
             if (steamUserResult is null)
                 return null;
@@ -91,7 +98,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Methods
 
         #region GET
-        
+
         /// <summary>
         /// Получение списка пользователей
         /// </summary>
@@ -101,11 +108,14 @@ namespace SteamStorageAPI.Controllers
         [HttpGet(Name = "GetUsers")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<UserResponse>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return Ok(_context.Users.ToList().Select(async x => await GetUserResponse(x)));
+                List<User> users = await _context.Users.ToListAsync(cancellationToken);
+
+                return Ok(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)));
             }
             catch (Exception ex)
             {
@@ -113,7 +123,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
         /// <summary>
         /// Получение информацию о пользователе
         /// </summary>
@@ -124,16 +134,18 @@ namespace SteamStorageAPI.Controllers
         [HttpGet(Name = "GetUserInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<UserResponse>> GetUserInfo([FromQuery] GetUserRequest request)
+        public async Task<ActionResult<UserResponse>> GetUserInfo(
+            [FromQuery] GetUserRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _context.Users.FirstOrDefault(x => x.Id == request.UserId);
+                User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(await GetUserResponse(user));
+                return Ok(await GetUserResponseAsync(user, cancellationToken));
             }
             catch (Exception ex)
             {
@@ -151,16 +163,17 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetCurrentUserInfo")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<UserResponse>> GetCurrentUserInfo()
+        public async Task<ActionResult<UserResponse>> GetCurrentUserInfo(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(await GetUserResponse(user));
+                return Ok(await GetUserResponseAsync(user, cancellationToken));
             }
             catch (Exception ex)
             {
@@ -181,18 +194,20 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         [HttpPut(Name = "PutGoalSum")]
-        public async Task<ActionResult> PutGoalSum(PutGoalSumRequest request)
+        public async Task<ActionResult> PutGoalSum(
+            PutGoalSumRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
                 user.GoalSum = request.GoalSum;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -216,18 +231,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         [HttpDelete(Name = "DeleteUser")]
-        public async Task<ActionResult> DeleteUser()
+        public async Task<ActionResult> DeleteUser(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
                 _context.Users.Remove(user);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }

@@ -18,7 +18,9 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public AdminController(ILogger<AdminController> logger, SteamStorageContext context)
+        public AdminController(
+            ILogger<AdminController> logger, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _context = context;

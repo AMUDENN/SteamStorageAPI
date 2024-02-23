@@ -40,8 +40,11 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public ActiveGroupsController(ILogger<ActiveGroupsController> logger, ISkinService skinService,
-            IUserService userService, SteamStorageContext context)
+        public ActiveGroupsController(
+            ILogger<ActiveGroupsController> logger, 
+            ISkinService skinService,
+            IUserService userService, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _skinService = skinService;
@@ -50,22 +53,7 @@ namespace SteamStorageAPI.Controllers
 
             _orderNames = new()
             {
-                [ActiveGroupOrderName.Title] = x => x.Title,
-                [ActiveGroupOrderName.Count] = x => _context.Entry(x).Collection(y => y.Actives).Query().Count(),
-                [ActiveGroupOrderName.BuySum] = x =>
-                    _context.Entry(x).Collection(y => y.Actives).Query().Sum(z => z.Count * z.BuyPrice),
-                [ActiveGroupOrderName.CurrentSum] = x =>
-                    _context.Entry(x).Collection(y => y.Actives).Query().Include(z => z.Skin)
-                        .Sum(w => w.Count * _skinService.GetCurrentPrice(w.Skin)),
-                [ActiveGroupOrderName.Change] = x =>
-                {
-                    decimal buySum = _context.Entry(x).Collection(y => y.Actives).Query()
-                        .Sum(z => z.Count * z.BuyPrice);
-                    decimal currentSum = _context.Entry(x).Collection(y => y.Actives).Query().Include(z => z.Skin)
-                        .Sum(w => w.Count * _skinService.GetCurrentPrice(w.Skin));
-
-                    return buySum == 0 ? 0 : (currentSum - buySum) / buySum;
-                }
+                // TODO: Сортировка по параметрам!
             };
         }
 
@@ -125,12 +113,13 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActiveGroups")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<ActiveGroupsResponse>> GetActiveGroups(
-            [FromQuery] GetActiveGroupsRequest request)
+        public async Task<ActionResult<IEnumerable<ActiveGroupsResponse>>> GetActiveGroups(
+            [FromQuery] GetActiveGroupsRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
@@ -165,20 +154,21 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         [HttpGet(Name = "GetActiveGroupDynamics")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<ActiveGroupDynamicsResponse>> GetActiveGroupDynamics(
-            [FromQuery] GetActiveGroupDynamicRequest request)
+        public async Task<ActionResult<IEnumerable<ActiveGroupDynamicsResponse>>> GetActiveGroupDynamics(
+            [FromQuery] GetActiveGroupDynamicRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                ActiveGroup? group = _context.Entry(user)
+                ActiveGroup? group = await _context.Entry(user)
                     .Collection(u => u.ActiveGroups)
                     .Query()
-                    .FirstOrDefault(x => x.Id == request.GroupId);
+                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
 
                 if (group is null)
                     return NotFound(
@@ -211,17 +201,18 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetActiveGroupsCount")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<ActiveGroupsCountResponse> GetActiveGroupsCount()
+        public async Task<ActionResult<ActiveGroupsCountResponse>> GetActiveGroupsCount(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(new ActiveGroupsCountResponse(_context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                    .Count()));
+                return Ok(new ActiveGroupsCountResponse(await _context.Entry(user).Collection(x => x.ActiveGroups)
+                    .Query().CountAsync(cancellationToken)));
             }
             catch (Exception ex)
             {
@@ -242,25 +233,27 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         [HttpPost(Name = "PostActiveGroup")]
-        public async Task<ActionResult> PostActiveGroup(PostActiveGroupRequest request)
+        public async Task<ActionResult> PostActiveGroup(
+            PostActiveGroupRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                _context.ActiveGroups.Add(new()
+                await _context.ActiveGroups.AddAsync(new()
                 {
                     UserId = user.Id,
                     Title = request.Title,
                     Description = request.Description,
                     Colour = request.Colour,
                     GoalSum = request.GoalSum
-                });
+                }, cancellationToken);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -284,17 +277,19 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "PutActiveGroup")]
-        public async Task<ActionResult> PutActiveGroup(PutActiveGroupRequest request)
+        public async Task<ActionResult> PutActiveGroup(
+            PutActiveGroupRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                ActiveGroup? group = _context.Entry(user).Collection(u => u.ActiveGroups).Query()
-                    .FirstOrDefault(x => x.Id == request.GroupId);
+                ActiveGroup? group = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
+                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
@@ -304,7 +299,7 @@ namespace SteamStorageAPI.Controllers
                 group.Colour = request.Colour;
                 group.GoalSum = request.GoalSum;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -328,24 +323,26 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         [HttpDelete(Name = "DeleteActiveGroup")]
-        public async Task<ActionResult> DeleteActiveGroup(DeleteActiveGroupRequest request)
+        public async Task<ActionResult> DeleteActiveGroup(
+            DeleteActiveGroupRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                ActiveGroup? group = _context.Entry(user).Collection(u => u.ActiveGroups).Query()
-                    .FirstOrDefault(x => x.Id == request.GroupId);
+                ActiveGroup? group = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
+                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
 
                 if (group is null)
                     return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
                 _context.ActiveGroups.Remove(group);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }

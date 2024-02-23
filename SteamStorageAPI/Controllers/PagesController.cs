@@ -1,6 +1,7 @@
 ﻿using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
 
@@ -20,7 +21,10 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public PagesController(ILogger<PagesController> logger, IUserService userService, SteamStorageContext context)
+        public PagesController(
+            ILogger<PagesController> logger, 
+            IUserService userService, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _userService = userService;
@@ -49,12 +53,14 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpGet(Name = "GetPages")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<PageResponse>> GetPages()
+        public async Task<ActionResult<IEnumerable<PageResponse>>> GetPages(
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return Ok(_context.Pages.ToList().Select(x =>
-                    new PageResponse(x.Id, x.Title)));
+                List<Page> pages = await _context.Pages.ToListAsync(cancellationToken);
+
+                return Ok(pages.Select(x => new PageResponse(x.Id, x.Title)));
             }
             catch (Exception ex)
             {
@@ -66,7 +72,7 @@ namespace SteamStorageAPI.Controllers
         #endregion GET
 
         #region PUT
-        
+
         /// <summary>
         /// Установка стартовой страницы
         /// </summary>
@@ -76,21 +82,23 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
         [HttpPut(Name = "SetStartPage")]
         [Authorize]
-        public async Task<ActionResult> SetStartPage(SetPageRequest request)
+        public async Task<ActionResult> SetStartPage(
+            SetPageRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                if (!_context.Pages.Any(x => x.Id == request.PageId))
+                if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
                     return NotFound("Страницы с таким Id не существует");
 
                 user.StartPageId = request.PageId;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }

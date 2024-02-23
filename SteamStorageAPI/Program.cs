@@ -24,6 +24,7 @@ public static class Program
 
     private static WebApplicationBuilder ConfigureServices(WebApplicationBuilder builder)
     {
+        //Controllers
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.WriteIndented = true;

@@ -1,5 +1,6 @@
 ﻿using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
@@ -26,9 +27,13 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public AuthorizeController(ILogger<AuthorizeController> logger, IHttpClientFactory httpClientFactory,
-            IHttpContextAccessor httpContextAccessor, IJwtProvider jwtProvider,
-            ICryptographyService cryptographyService, SteamStorageContext context)
+        public AuthorizeController(
+            ILogger<AuthorizeController> logger, 
+            IHttpClientFactory httpClientFactory,
+            IHttpContextAccessor httpContextAccessor, 
+            IJwtProvider jwtProvider,
+            ICryptographyService cryptographyService, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -73,9 +78,15 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<User> CreateUser(long steamId, int currencyId = 1, int startPageId = 1)
+        private async Task<User> CreateUserAsync(
+            long steamId,
+            CancellationToken cancellationToken = default)
         {
-            Role role = _context.Roles.First(x => x.Title == nameof(Role.Roles.User));
+            Role role = await _context.Roles.FirstAsync(x => x.Title == nameof(Role.Roles.User), cancellationToken);
+
+            const int startPageId = 1;
+            const int currencyId = 1;
+
             User user = new()
             {
                 SteamId = steamId,
@@ -84,9 +95,9 @@ namespace SteamStorageAPI.Controllers
                 CurrencyId = currencyId,
                 DateRegistration = DateTime.Now
             };
-            _context.Users.Add(user);
+            await _context.Users.AddAsync(user, cancellationToken);
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return user;
         }
@@ -118,7 +129,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpGet(Name = "GetAuthUrl")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<AuthUrlResponse> GetAuthUrl()
+        public ActionResult<AuthUrlResponse> GetAuthUrl(
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -138,7 +150,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpGet(Name = "SteamAuthCallback")]
         public async Task<ActionResult> SteamAuthCallback(
-            [FromQuery] SteamAuthRequest steamAuthRequest)
+            [FromQuery] SteamAuthRequest steamAuthRequest,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -153,9 +166,9 @@ namespace SteamStorageAPI.Controllers
                 };
 
                 HttpResponseMessage response =
-                    await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                    await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-                string strResponse = await response.Content.ReadAsStringAsync();
+                string strResponse = await response.Content.ReadAsStringAsync(cancellationToken);
                 bool authResult = Convert.ToBoolean(strResponse[(strResponse.LastIndexOf(':') + 1)..]);
 
                 long steamId =
@@ -167,9 +180,10 @@ namespace SteamStorageAPI.Controllers
                 if (authResult)
                     HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), _cryptographyService.Sha512(steamId));
 
-                User user = _context.Users.FirstOrDefault(x => x.SteamId == steamId) ?? await CreateUser(steamId);
+                User user = await _context.Users.FirstOrDefaultAsync(x => x.SteamId == steamId, cancellationToken) ??
+                            await CreateUserAsync(steamId, cancellationToken);
 
-                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
                 return Redirect(
                     $"{TOKEN_ADRESS}Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
@@ -190,19 +204,22 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "CheckCookieAuth")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<CookieAuthResponse>> CheckCookieAuth([FromQuery] CheckCookieAuthRequest request)
+        public async Task<ActionResult<CookieAuthResponse>> CheckCookieAuth(
+            [FromQuery] CheckCookieAuthRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
                 if (!CheckCookieEqual(request.SteamId))
                     return BadRequest("Необходима новая авторизация через Steam");
 
-                User? user = _context.Users.FirstOrDefault(x => x.SteamId == request.SteamId);
+                User? user =
+                    await _context.Users.FirstOrDefaultAsync(x => x.SteamId == request.SteamId, cancellationToken);
 
                 if (user is null)
                     return BadRequest("Пользователя с таким Id не существует, пройдите авторизацию через Steam");
 
-                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
                 return Ok(new CookieAuthResponse(_jwtProvider.Generate(user)));
             }
@@ -212,18 +229,19 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
         #endregion GET
-        
+
         #region POST
-        
+
         /// <summary>
         /// Удаление сохранённых cookie авторизации (только для отладки!)
         /// </summary>
         /// <response code="200">Удаление успешно</response>
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         [HttpPost(Name = "LogOut")]
-        public async Task<ActionResult> LogOut()
+        public ActionResult LogOut(
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -236,7 +254,7 @@ namespace SteamStorageAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
         #endregion POST
     }
 }

@@ -5,6 +5,7 @@ using SteamStorageAPI.Models.SteamAPIModels.Games;
 using SteamStorageAPI.Utilities.Steam;
 using System.Net;
 using System.Net.Mime;
+using Microsoft.EntityFrameworkCore;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -24,7 +25,9 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public GamesController(ILogger<GamesController> logger, IHttpClientFactory httpClientFactory,
+        public GamesController(
+            ILogger<GamesController> logger, 
+            IHttpClientFactory httpClientFactory,
             SteamStorageContext context)
         {
             _logger = logger;
@@ -58,17 +61,24 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<bool> IsGameIconExists(int steamGameId, string iconUrlHash)
+        private async Task<bool> IsGameIconExistsAsync(
+            int steamGameId,
+            string iconUrlHash,
+            CancellationToken cancellationToken = default)
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            HttpResponseMessage response = await client.GetAsync(SteamApi.GetGameIconUrl(steamGameId, iconUrlHash));
+            HttpResponseMessage response =
+                await client.GetAsync(SteamApi.GetGameIconUrl(steamGameId, iconUrlHash), cancellationToken);
             return response.StatusCode == HttpStatusCode.OK;
         }
 
-        private async Task<SteamGameResponse?> GetGameResponse(int steamGameId)
+        private async Task<SteamGameResponse?> GetGameResponseAsync(
+            int steamGameId,
+            CancellationToken cancellationToken = default)
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            return await client.GetFromJsonAsync<SteamGameResponse>(SteamApi.GetGameInfoUrl(steamGameId));
+            return await client.GetFromJsonAsync<SteamGameResponse>(SteamApi.GetGameInfoUrl(steamGameId),
+                cancellationToken);
         }
 
         #endregion Methods
@@ -83,7 +93,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpGet(Name = "GetGames")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<GameResponse>> GetGames()
+        public ActionResult<IEnumerable<GameResponse>> GetGames(
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -112,26 +123,28 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         [HttpPost(Name = "PostGame")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> PostGame(PostGameRequest request)
+        public async Task<ActionResult> PostGame(
+            PostGameRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                SteamGameResponse? response = await GetGameResponse(request.SteamGameId);
+                SteamGameResponse? response = await GetGameResponseAsync(request.SteamGameId, cancellationToken);
 
                 if (response is null)
                     return BadRequest("Указан неверный id игры");
 
-                if (!await IsGameIconExists(request.SteamGameId, request.IconUrlHash))
+                if (!await IsGameIconExistsAsync(request.SteamGameId, request.IconUrlHash, cancellationToken))
                     return BadRequest("Указан неверный хэш-код иконки игры");
 
-                _context.Games.Add(new()
+                await _context.Games.AddAsync(new()
                 {
                     SteamGameId = request.SteamGameId,
                     Title = response.name,
                     GameIconUrl = request.IconUrlHash
-                });
+                }, cancellationToken);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -156,22 +169,25 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Игры с таким Id не существует</response>
         [HttpPut(Name = "PutGameInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> PutGameInfo(PutGameRequest request)
+        public async Task<ActionResult> PutGameInfo(
+            PutGameRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                Game? game = _context.Games.FirstOrDefault(x => x.Id == request.GameId);
+                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
+                    cancellationToken: cancellationToken);
 
                 if (game is null)
                     return NotFound("Игры с таким Id не существует");
 
-                if (!await IsGameIconExists(game.SteamGameId, request.IconUrlHash))
+                if (!await IsGameIconExistsAsync(game.SteamGameId, request.IconUrlHash, cancellationToken))
                     return BadRequest("Указан неверный хэш-код иконки игры");
-                game.GameIconUrl = request.IconUrlHash;
 
+                game.GameIconUrl = request.IconUrlHash;
                 game.Title = request.Title;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
@@ -196,18 +212,21 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Игры с таким Id не существует</response>
         [HttpDelete(Name = "DeleteGame")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> DeleteGame(DeleteGameRequest request)
+        public async Task<ActionResult> DeleteGame(
+            DeleteGameRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                Game? game = _context.Games.FirstOrDefault(x => x.Id == request.GameId);
+                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
+                    cancellationToken: cancellationToken);
 
                 if (game is null)
                     return NotFound("Игры с таким Id не существует");
 
                 _context.Games.Remove(game);
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }

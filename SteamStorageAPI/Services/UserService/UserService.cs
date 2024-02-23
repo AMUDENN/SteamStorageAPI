@@ -1,5 +1,6 @@
 ﻿using SteamStorageAPI.DBEntities;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace SteamStorageAPI.Services.UserService
 {
@@ -24,12 +25,12 @@ namespace SteamStorageAPI.Services.UserService
 
         #region Methods
 
-        public User? GetCurrentUser()
+        public async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
         {
             string? nameIdentifier = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             return nameIdentifier is null
                 ? null
-                : _context.Users.FirstOrDefault(x => x.Id == int.Parse(nameIdentifier));
+                : await _context.Users.FirstOrDefaultAsync(x => x.Id == int.Parse(nameIdentifier), cancellationToken);
         }
 
         #endregion Methods

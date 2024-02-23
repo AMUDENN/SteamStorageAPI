@@ -42,8 +42,12 @@ namespace SteamStorageAPI.Controllers
 
         #region Constructor
 
-        public InventoryController(ILogger<InventoryController> logger, IHttpClientFactory httpClientFactory,
-            ISkinService skinService, IUserService userService, SteamStorageContext context)
+        public InventoryController(
+            ILogger<InventoryController> logger, 
+            IHttpClientFactory httpClientFactory,
+            ISkinService skinService, 
+            IUserService userService, 
+            SteamStorageContext context)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -53,10 +57,7 @@ namespace SteamStorageAPI.Controllers
 
             _orderNames = new()
             {
-                [InventoryOrderName.Title] = x => x.Skin.Title,
-                [InventoryOrderName.Count] = x => x.Count,
-                [InventoryOrderName.Price] = x => _skinService.GetCurrentPrice(x.Skin),
-                [InventoryOrderName.Sum] = x => _skinService.GetCurrentPrice(x.Skin) * x.Count
+                // TODO: Сортировка по параметрам!
             };
         }
 
@@ -108,7 +109,9 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInventory")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<InventoryResponse>> GetInventory([FromQuery] GetInventoryRequest request)
+        public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory(
+            [FromQuery] GetInventoryRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -118,7 +121,7 @@ namespace SteamStorageAPI.Controllers
                 if (request.PageSize > 200)
                     throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
@@ -138,8 +141,9 @@ namespace SteamStorageAPI.Controllers
                 inventories = inventories.Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize);
 
-                return Ok(inventories.Select(x =>
-                    new InventoryResponse(x.Id, _skinService.GetBaseSkinResponse(x.Skin), x.Count)));
+                return Ok(inventories.Select(async x =>
+                    new InventoryResponse(x.Id, await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                        x.Count)));
             }
             catch (Exception ex)
             {
@@ -157,8 +161,9 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetInventoryPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<InventoryPagesCountResponse> GetInventoryPagesCount(
-            [FromQuery] GetInventoryPagesCountRequest request)
+        public async Task<ActionResult<InventoryPagesCountResponse>> GetInventoryPagesCount(
+            [FromQuery] GetInventoryPagesCountRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -168,7 +173,7 @@ namespace SteamStorageAPI.Controllers
                 if (request.PageSize > 200)
                     throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
@@ -199,23 +204,25 @@ namespace SteamStorageAPI.Controllers
         /// <response code="404">Пользователь не найден</response>
         [HttpGet(Name = "GetSavedInventoriesCount")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<SavedInventoriesCountResponse> GetSavedInventoriesCount(
-            [FromQuery] GetSavedInventoriesCountRequest request)
+        public async Task<ActionResult<SavedInventoriesCountResponse>> GetSavedInventoriesCount(
+            [FromQuery] GetSavedInventoriesCountRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(new SavedInventoriesCountResponse(_context
+                return Ok(new SavedInventoriesCountResponse(await _context
                     .Entry(user)
                     .Collection(x => x.Inventories)
                     .Query()
                     .Include(x => x.Skin)
-                    .Count(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)))));
+                    .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                     && (string.IsNullOrEmpty(request.Filter) ||
+                                         x.Skin.Title.Contains(request.Filter!)), cancellationToken)));
             }
             catch (Exception ex)
             {
@@ -236,16 +243,18 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
         [HttpPost(Name = "RefreshInventory")]
-        public async Task<ActionResult> RefreshInventory(RefreshInventoryRequest request)
+        public async Task<ActionResult> RefreshInventory(
+            RefreshInventoryRequest request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                User? user = _userService.GetCurrentUser();
+                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
                 if (user is null)
                     return NotFound("Пользователя с таким Id не существует");
 
-                Game? game = _context.Games.FirstOrDefault(x => x.Id == request.GameId);
+                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
 
                 if (game is null)
                     return NotFound("Игры с таким Id не существует");
@@ -260,7 +269,7 @@ namespace SteamStorageAPI.Controllers
                 HttpClient client = _httpClientFactory.CreateClient();
                 SteamInventoryResponse? response =
                     await client.GetFromJsonAsync<SteamInventoryResponse>(
-                        SteamApi.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000));
+                        SteamApi.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000), cancellationToken);
 
                 if (response is null)
                     throw new("При получении данных с сервера Steam произошла ошибка");
@@ -270,7 +279,9 @@ namespace SteamStorageAPI.Controllers
                     if (item is { marketable: 0, tradable: 0 })
                         continue;
 
-                    Skin? skin = _context.Skins.FirstOrDefault(x => x.MarketHashName == item.market_hash_name);
+                    Skin? skin =
+                        await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name,
+                            cancellationToken);
                     if (skin is null)
                     {
                         skin = new()
@@ -280,24 +291,25 @@ namespace SteamStorageAPI.Controllers
                             Title = item.name,
                             SkinIconUrl = item.icon_url
                         };
-                        _context.Skins.Add(skin);
+                        await _context.Skins.AddAsync(skin, cancellationToken);
                     }
 
 
-                    Inventory? inventory = _context.Inventories.FirstOrDefault(x => x.SkinId == skin.Id);
+                    Inventory? inventory =
+                        await _context.Inventories.FirstOrDefaultAsync(x => x.SkinId == skin.Id, cancellationToken);
 
                     if (inventory is null)
-                        _context.Inventories.Add(new()
+                        await _context.Inventories.AddAsync(new()
                         {
                             User = user,
                             Skin = skin,
                             Count = 1
-                        });
+                        }, cancellationToken);
                     else
                         inventory.Count++;
                 }
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok();
             }
