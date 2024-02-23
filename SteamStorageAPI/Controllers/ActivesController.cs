@@ -29,8 +29,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-
-        private readonly ILogger<ActivesController> _logger;
+        
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
@@ -42,12 +41,10 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public ActivesController(
-            ILogger<ActivesController> logger, 
-            ISkinService skinService, 
+            ISkinService skinService,
             IUserService userService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _skinService = skinService;
             _userService = userService;
             _context = context;
@@ -170,60 +167,52 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetActivesRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (request.PageNumber <= 0 || request.PageSize <= 0)
-                    throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
+            if (request.PageNumber <= 0 || request.PageSize <= 0)
+                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
 
-                if (request.PageSize > 200)
-                    throw new("Размер страницы не может превышать 200 предметов");
+            if (request.PageSize > 200)
+                throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<Active> actives = _context.Entry(user)
-                    .Collection(x => x.ActiveGroups)
-                    .Query()
-                    .Include(x => x.Actives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Actives)
-                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                && (request.GroupId == null || x.GroupId == request.GroupId));
+            IEnumerable<Active> actives = _context.Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Actives)
+                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                            && (request.GroupId == null || x.GroupId == request.GroupId));
 
-                if (request is { OrderName: not null, IsAscending: not null })
-                    actives = (bool)request.IsAscending
-                        ? actives.OrderBy(_orderNames[(ActiveOrderName)request.OrderName])
-                        : actives.OrderByDescending(_orderNames[(ActiveOrderName)request.OrderName]);
+            if (request is { OrderName: not null, IsAscending: not null })
+                actives = (bool)request.IsAscending
+                    ? actives.OrderBy(_orderNames[(ActiveOrderName)request.OrderName])
+                    : actives.OrderByDescending(_orderNames[(ActiveOrderName)request.OrderName]);
 
-                int activesCount = await _context
-                    .Entry(user)
-                    .Collection(x => x.ActiveGroups)
-                    .Query()
-                    .Include(x => x.Actives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Actives).CountAsync(x =>
-                        (request.GameId == null || x.Skin.GameId == request.GameId)
-                        && (string.IsNullOrEmpty(request.Filter) ||
-                            x.Skin.Title.Contains(request.Filter!))
-                        && (request.GroupId == null ||
-                            x.GroupId == request.GroupId), cancellationToken);
+            int activesCount = await _context
+                .Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Actives).CountAsync(x =>
+                    (request.GameId == null || x.Skin.GameId == request.GameId)
+                    && (string.IsNullOrEmpty(request.Filter) ||
+                        x.Skin.Title.Contains(request.Filter!))
+                    && (request.GroupId == null ||
+                        x.GroupId == request.GroupId), cancellationToken);
 
-                int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
+            int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
 
-                actives = actives.Skip((request.PageNumber - 1) * request.PageSize)
-                    .Take(request.PageSize);
+            actives = actives.Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize);
 
-                return Ok(new ActivesResponse(activesCount, pagesCount == 0 ? 1 : pagesCount,
-                    actives.Select(x => GetActiveResponseAsync(x, cancellationToken).Result)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ActivesResponse(activesCount, pagesCount == 0 ? 1 : pagesCount,
+                actives.Select(x => GetActiveResponseAsync(x, cancellationToken).Result)));
         }
 
         /// <summary>
@@ -239,41 +228,33 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetActivesPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (request.PageSize <= 0)
-                    throw new("Размер страницы не может быть меньше или равен нулю.");
+            if (request.PageSize <= 0)
+                throw new("Размер страницы не может быть меньше или равен нулю.");
 
-                if (request.PageSize > 200)
-                    throw new("Размер страницы не может превышать 200 предметов");
+            if (request.PageSize > 200)
+                throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                int count = await _context
-                    .Entry(user)
-                    .Collection(x => x.ActiveGroups)
-                    .Query()
-                    .Include(x => x.Actives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Actives).CountAsync(x =>
-                        (request.GameId == null || x.Skin.GameId == request.GameId)
-                        && (string.IsNullOrEmpty(request.Filter) ||
-                            x.Skin.Title.Contains(request.Filter!))
-                        && (request.GroupId == null ||
-                            x.GroupId == request.GroupId), cancellationToken);
+            int count = await _context
+                .Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Actives).CountAsync(x =>
+                    (request.GameId == null || x.Skin.GameId == request.GameId)
+                    && (string.IsNullOrEmpty(request.Filter) ||
+                        x.Skin.Title.Contains(request.Filter!))
+                    && (request.GroupId == null ||
+                        x.GroupId == request.GroupId), cancellationToken);
 
-                int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+            int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
-                return Ok(new ActivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ActivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
         }
 
         /// <summary>
@@ -289,29 +270,21 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetActivesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(new ActivesCountResponse(await _context
-                    .Entry(user)
-                    .Collection(x => x.ActiveGroups)
-                    .Query()
-                    .Include(x => x.Actives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Actives)
-                    .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                     && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                     && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ActivesCountResponse(await _context
+                .Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Actives)
+                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
         }
 
         #endregion GET
@@ -330,41 +303,32 @@ namespace SteamStorageAPI.Controllers
             PostActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
+
+            if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
+                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
+                return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+
+            if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
+                return NotFound("Скина с таким Id не существует");
+
+            _context.Actives.Add(new()
             {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+                GroupId = request.GroupId,
+                Count = request.Count,
+                BuyPrice = request.BuyPrice,
+                GoalPrice = request.GoalPrice,
+                SkinId = request.SkinId,
+                Description = request.Description,
+                BuyDate = request.BuyDate
+            });
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            await _context.SaveChangesAsync(cancellationToken);
 
-                if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                        .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                    return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
-
-                if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                    return NotFound("Скина с таким Id не существует");
-
-                _context.Actives.Add(new()
-                {
-                    GroupId = request.GroupId,
-                    Count = request.Count,
-                    BuyPrice = request.BuyPrice,
-                    GoalPrice = request.GoalPrice,
-                    SkinId = request.SkinId,
-                    Description = request.Description,
-                    BuyDate = request.BuyDate
-                });
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion POST
@@ -383,48 +347,39 @@ namespace SteamStorageAPI.Controllers
             PutActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                Active? active = await _context.Entry(user)
-                    .Collection(u => u.ActiveGroups)
-                    .Query()
-                    .Include(x => x.Actives)
-                    .SelectMany(x => x.Actives)
-                    .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+            Active? active = await _context.Entry(user)
+                .Collection(u => u.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .SelectMany(x => x.Actives)
+                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-                if (active is null)
-                    return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            if (active is null)
+                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
-                if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                        .AnyAsync(x => x.Id == request.GroupId, cancellationToken: cancellationToken))
-                    return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+            if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
+                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken: cancellationToken))
+                return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
 
-                if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                    return NotFound("Скина с таким Id не существует");
+            if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
+                return NotFound("Скина с таким Id не существует");
 
-                active.GroupId = request.GroupId;
-                active.Count = request.Count;
-                active.BuyPrice = request.BuyPrice;
-                active.GoalPrice = request.GoalPrice;
-                active.SkinId = request.SkinId;
-                active.Description = request.Description;
-                active.BuyDate = request.BuyDate;
+            active.GroupId = request.GroupId;
+            active.Count = request.Count;
+            active.BuyPrice = request.BuyPrice;
+            active.GoalPrice = request.GoalPrice;
+            active.SkinId = request.SkinId;
+            active.Description = request.Description;
+            active.BuyDate = request.BuyDate;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         /// <summary>
@@ -439,53 +394,44 @@ namespace SteamStorageAPI.Controllers
             SoldActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
+
+            Active? active = await _context.Entry(user)
+                .Collection(u => u.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .SelectMany(x => x.Actives)
+                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+
+            if (active is null)
+                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+
+            if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
+                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
+                return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+
+            await _context.Archives.AddAsync(new()
             {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+                GroupId = request.GroupId,
+                SkinId = active.SkinId,
+                Count = request.Count > active.Count ? active.Count : request.Count,
+                BuyDate = active.BuyDate,
+                BuyPrice = active.BuyPrice,
+                SoldDate = request.SoldDate,
+                SoldPrice = request.SoldPrice
+            }, cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (request.Count >= active.Count)
+                _context.Actives.Remove(active);
+            else
+                active.Count -= request.Count;
 
-                Active? active = await _context.Entry(user)
-                    .Collection(u => u.ActiveGroups)
-                    .Query()
-                    .Include(x => x.Actives)
-                    .SelectMany(x => x.Actives)
-                    .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                if (active is null)
-                    return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
-
-                if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
-                        .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                    return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
-
-                await _context.Archives.AddAsync(new()
-                {
-                    GroupId = request.GroupId,
-                    SkinId = active.SkinId,
-                    Count = request.Count > active.Count ? active.Count : request.Count,
-                    BuyDate = active.BuyDate,
-                    BuyPrice = active.BuyPrice,
-                    SoldDate = request.SoldDate,
-                    SoldPrice = request.SoldPrice
-                }, cancellationToken);
-
-                if (request.Count >= active.Count)
-                    _context.Actives.Remove(active);
-                else
-                    active.Count -= request.Count;
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT
@@ -504,32 +450,23 @@ namespace SteamStorageAPI.Controllers
             DeleteActiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                Active? active = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
-                    .Include(x => x.Actives)
-                    .SelectMany(x => x.Actives).FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+            Active? active = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
+                .Include(x => x.Actives)
+                .SelectMany(x => x.Actives).FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-                if (active is null)
-                    return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            if (active is null)
+                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
-                _context.Actives.Remove(active);
+            _context.Actives.Remove(active);
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion DELETE

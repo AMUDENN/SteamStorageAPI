@@ -12,8 +12,7 @@ namespace SteamStorageAPI.Controllers
     public class PagesController : ControllerBase
     {
         #region Fields
-
-        private readonly ILogger<PagesController> _logger;
+        
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
@@ -22,11 +21,9 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public PagesController(
-            ILogger<PagesController> logger, 
-            IUserService userService, 
+            IUserService userService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _userService = userService;
             _context = context;
         }
@@ -56,17 +53,9 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<IEnumerable<PageResponse>>> GetPages(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                List<Page> pages = await _context.Pages.ToListAsync(cancellationToken);
+            List<Page> pages = await _context.Pages.ToListAsync(cancellationToken);
 
-                return Ok(pages.Select(x => new PageResponse(x.Id, x.Title)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(pages.Select(x => new PageResponse(x.Id, x.Title)));
         }
 
         #endregion GET
@@ -86,28 +75,19 @@ namespace SteamStorageAPI.Controllers
             SetPageRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
-                    return NotFound("Страницы с таким Id не существует");
+            if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
+                return NotFound("Страницы с таким Id не существует");
 
-                user.StartPageId = request.PageId;
+            user.StartPageId = request.PageId;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT

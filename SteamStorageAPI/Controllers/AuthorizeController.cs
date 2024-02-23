@@ -15,8 +15,7 @@ namespace SteamStorageAPI.Controllers
     public class AuthorizeController : ControllerBase
     {
         #region Fields
-
-        private readonly ILogger<AuthorizeController> _logger;
+        
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IJwtProvider _jwtProvider;
@@ -28,14 +27,12 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public AuthorizeController(
-            ILogger<AuthorizeController> logger, 
             IHttpClientFactory httpClientFactory,
-            IHttpContextAccessor httpContextAccessor, 
+            IHttpContextAccessor httpContextAccessor,
             IJwtProvider jwtProvider,
-            ICryptographyService cryptographyService, 
+            ICryptographyService cryptographyService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
             _jwtProvider = jwtProvider;
@@ -132,16 +129,8 @@ namespace SteamStorageAPI.Controllers
         public ActionResult<AuthUrlResponse> GetAuthUrl(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                (string Url, string Group) steamAuth = GetSteamAuthInfo();
-                return Ok(new AuthUrlResponse(steamAuth.Url, steamAuth.Group));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            (string Url, string Group) steamAuth = GetSteamAuthInfo();
+            return Ok(new AuthUrlResponse(steamAuth.Url, steamAuth.Group));
         }
 
         /// <summary>
@@ -153,47 +142,38 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] SteamAuthRequest steamAuthRequest,
             CancellationToken cancellationToken = default)
         {
-            try
+            HttpClient client = _httpClientFactory.CreateClient();
+
+            HttpRequestMessage request = new(HttpMethod.Post, SteamApi.GetAuthCheckUrl())
             {
-                HttpClient client = _httpClientFactory.CreateClient();
+                Content = SteamApi.GetAuthCheckContent(steamAuthRequest.Ns, steamAuthRequest.OpEndpoint,
+                    steamAuthRequest.ClaimedId, steamAuthRequest.Identity, steamAuthRequest.ReturnTo,
+                    steamAuthRequest.ResponseNonce, steamAuthRequest.AssocHandle, steamAuthRequest.Signed,
+                    steamAuthRequest.Sig)
+            };
 
-                HttpRequestMessage request = new(HttpMethod.Post, SteamApi.GetAuthCheckUrl())
-                {
-                    Content = SteamApi.GetAuthCheckContent(steamAuthRequest.Ns, steamAuthRequest.OpEndpoint,
-                        steamAuthRequest.ClaimedId, steamAuthRequest.Identity, steamAuthRequest.ReturnTo,
-                        steamAuthRequest.ResponseNonce, steamAuthRequest.AssocHandle, steamAuthRequest.Signed,
-                        steamAuthRequest.Sig)
-                };
+            HttpResponseMessage response =
+                await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-                HttpResponseMessage response =
-                    await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            string strResponse = await response.Content.ReadAsStringAsync(cancellationToken);
+            bool authResult = Convert.ToBoolean(strResponse[(strResponse.LastIndexOf(':') + 1)..]);
 
-                string strResponse = await response.Content.ReadAsStringAsync(cancellationToken);
-                bool authResult = Convert.ToBoolean(strResponse[(strResponse.LastIndexOf(':') + 1)..]);
+            long steamId =
+                Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
 
-                long steamId =
-                    Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
+            if (!(authResult || CheckCookieEqual(steamId)))
+                return Redirect(GetSteamAuthInfo(steamAuthRequest.Group).Url);
 
-                if (!(authResult || CheckCookieEqual(steamId)))
-                    return Redirect(GetSteamAuthInfo(steamAuthRequest.Group).Url);
+            if (authResult)
+                HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), _cryptographyService.Sha512(steamId));
 
-                if (authResult)
-                    HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), _cryptographyService.Sha512(steamId));
+            User user = await _context.Users.FirstOrDefaultAsync(x => x.SteamId == steamId, cancellationToken) ??
+                        await CreateUserAsync(steamId, cancellationToken);
 
-                User user = await _context.Users.FirstOrDefaultAsync(x => x.SteamId == steamId, cancellationToken) ??
-                            await CreateUserAsync(steamId, cancellationToken);
+            await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
-                await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
-
-                return Redirect(
-                    $"{TOKEN_ADRESS}Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Redirect(
+                $"{TOKEN_ADRESS}Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
         }
 
         /// <summary>
@@ -208,26 +188,18 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] CheckCookieAuthRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (!CheckCookieEqual(request.SteamId))
-                    return BadRequest("Необходима новая авторизация через Steam");
+            if (!CheckCookieEqual(request.SteamId))
+                return BadRequest("Необходима новая авторизация через Steam");
 
-                User? user =
-                    await _context.Users.FirstOrDefaultAsync(x => x.SteamId == request.SteamId, cancellationToken);
+            User? user =
+                await _context.Users.FirstOrDefaultAsync(x => x.SteamId == request.SteamId, cancellationToken);
 
-                if (user is null)
-                    return BadRequest("Пользователя с таким Id не существует, пройдите авторизацию через Steam");
+            if (user is null)
+                return BadRequest("Пользователя с таким Id не существует, пройдите авторизацию через Steam");
 
-                await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
+            await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
-                return Ok(new CookieAuthResponse(_jwtProvider.Generate(user)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new CookieAuthResponse(_jwtProvider.Generate(user)));
         }
 
         #endregion GET
@@ -243,16 +215,8 @@ namespace SteamStorageAPI.Controllers
         public ActionResult LogOut(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                HttpContext.Response.Cookies.Delete(nameof(SteamAuthRequest));
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            HttpContext.Response.Cookies.Delete(nameof(SteamAuthRequest));
+            return Ok();
         }
 
         #endregion POST

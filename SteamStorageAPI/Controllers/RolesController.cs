@@ -12,8 +12,7 @@ namespace SteamStorageAPI.Controllers
     public class RolesController : ControllerBase
     {
         #region Fields
-
-        private readonly ILogger<RolesController> _logger;
+        
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -21,10 +20,8 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public RolesController(
-            ILogger<RolesController> logger, 
             SteamStorageContext context)
         {
-            _logger = logger;
             _context = context;
         }
 
@@ -55,17 +52,9 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<IEnumerable<RoleResponse>>> GetRoles(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                List<Role> roles = await _context.Roles.ToListAsync(cancellationToken);
+            List<Role> roles = await _context.Roles.ToListAsync(cancellationToken);
 
-                return Ok(roles.Select(x => new RoleResponse(x.Id, x.Title)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(roles.Select(x => new RoleResponse(x.Id, x.Title)));
         }
 
         #endregion GET
@@ -84,28 +73,19 @@ namespace SteamStorageAPI.Controllers
             SetRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
+            User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
-                    return NotFound("Роли с таким Id не существует");
+            if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
+                return NotFound("Роли с таким Id не существует");
 
-                user.RoleId = request.RoleId;
+            user.RoleId = request.RoleId;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT

@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
 using SteamStorageAPI.Utilities;
+using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.HealthCheckers;
 
 namespace SteamStorageAPI;
@@ -74,6 +75,7 @@ public static class Program
                     Array.Empty<string>()
                 }
             });
+            
             string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
         });
@@ -89,8 +91,10 @@ public static class Program
         string connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks") 
                                               ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
 
-        builder.Services.AddDbContext<SteamStorageContext>(
-            options => options.UseSqlServer(connectionStringSteamStorage));
+        builder.Services.AddDbContext<SteamStorageContext>(options => options.UseSqlServer(connectionStringSteamStorage));
+        
+        //ExceptionHandlers
+        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
         //HealthCheck
         builder.Services.AddHealthChecks()

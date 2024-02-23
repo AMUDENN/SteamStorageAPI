@@ -29,8 +29,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-
-        private readonly ILogger<ArchivesController> _logger;
+        
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
@@ -42,12 +41,10 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public ArchivesController(
-            ILogger<ArchivesController> logger, 
             ISkinService skinService,
-            IUserService userService, 
+            IUserService userService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _skinService = skinService;
             _userService = userService;
             _context = context;
@@ -165,60 +162,52 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetArchivesRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (request.PageNumber <= 0 || request.PageSize <= 0)
-                    throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
+            if (request.PageNumber <= 0 || request.PageSize <= 0)
+                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
 
-                if (request.PageSize > 200)
-                    throw new("Размер страницы не может превышать 200 предметов");
+            if (request.PageSize > 200)
+                throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<Archive> archives = _context.Entry(user)
-                    .Collection(x => x.ArchiveGroups)
-                    .Query()
-                    .Include(x => x.Archives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Archives)
-                    .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                && (request.GroupId == null || x.GroupId == request.GroupId));
+            IEnumerable<Archive> archives = _context.Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Archives)
+                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                            && (request.GroupId == null || x.GroupId == request.GroupId));
 
-                if (request is { OrderName: not null, IsAscending: not null })
-                    archives = (bool)request.IsAscending
-                        ? archives.OrderBy(_orderNames[(ArchiveOrderName)request.OrderName])
-                        : archives.OrderByDescending(_orderNames[(ArchiveOrderName)request.OrderName]);
+            if (request is { OrderName: not null, IsAscending: not null })
+                archives = (bool)request.IsAscending
+                    ? archives.OrderBy(_orderNames[(ArchiveOrderName)request.OrderName])
+                    : archives.OrderByDescending(_orderNames[(ArchiveOrderName)request.OrderName]);
 
-                archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
-                    .Take(request.PageSize);
+            archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize);
 
-                int archivesCount = await _context
-                    .Entry(user)
-                    .Collection(x => x.ArchiveGroups)
-                    .Query()
-                    .Include(x => x.Archives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Archives).CountAsync(x =>
-                        (request.GameId == null || x.Skin.GameId == request.GameId)
-                        && (string.IsNullOrEmpty(request.Filter) ||
-                            x.Skin.Title.Contains(request.Filter!))
-                        && (request.GroupId == null ||
-                            x.GroupId == request.GroupId), cancellationToken);
+            int archivesCount = await _context
+                .Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Archives).CountAsync(x =>
+                    (request.GameId == null || x.Skin.GameId == request.GameId)
+                    && (string.IsNullOrEmpty(request.Filter) ||
+                        x.Skin.Title.Contains(request.Filter!))
+                    && (request.GroupId == null ||
+                        x.GroupId == request.GroupId), cancellationToken);
 
-                int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
+            int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
 
-                return Ok(new ArchivesResponse(archivesCount, pagesCount,
-                    archives.Select(x => GetArchiveResponseAsync(x, cancellationToken).Result)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ArchivesResponse(archivesCount, pagesCount,
+                archives.Select(x => GetArchiveResponseAsync(x, cancellationToken).Result)));
         }
 
         /// <summary>
@@ -234,41 +223,33 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetArchivesPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (request.PageSize <= 0)
-                    throw new("Размер страницы не может быть меньше или равен нулю.");
+            if (request.PageSize <= 0)
+                throw new("Размер страницы не может быть меньше или равен нулю.");
 
-                if (request.PageSize > 200)
-                    throw new("Размер страницы не может превышать 200 предметов");
+            if (request.PageSize > 200)
+                throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                int count = await _context
-                    .Entry(user)
-                    .Collection(x => x.ArchiveGroups)
-                    .Query()
-                    .Include(x => x.Archives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Archives).CountAsync(x =>
-                        (request.GameId == null || x.Skin.GameId == request.GameId)
-                        && (string.IsNullOrEmpty(request.Filter) ||
-                            x.Skin.Title.Contains(request.Filter!))
-                        && (request.GroupId == null ||
-                            x.GroupId == request.GroupId), cancellationToken);
+            int count = await _context
+                .Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Archives).CountAsync(x =>
+                    (request.GameId == null || x.Skin.GameId == request.GameId)
+                    && (string.IsNullOrEmpty(request.Filter) ||
+                        x.Skin.Title.Contains(request.Filter!))
+                    && (request.GroupId == null ||
+                        x.GroupId == request.GroupId), cancellationToken);
 
-                int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+            int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
-                return Ok(new ArchivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ArchivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
         }
 
         /// <summary>
@@ -284,29 +265,21 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetArchivesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(new ArchivesCountResponse(await _context
-                    .Entry(user)
-                    .Collection(x => x.ArchiveGroups)
-                    .Query()
-                    .Include(x => x.Archives)
-                    .ThenInclude(x => x.Skin)
-                    .SelectMany(x => x.Archives)
-                    .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                     && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                     && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ArchivesCountResponse(await _context
+                .Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Archives)
+                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
         }
 
         #endregion GET
@@ -325,42 +298,33 @@ namespace SteamStorageAPI.Controllers
             PostArchiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
+
+            if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
+                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
+                return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+
+            if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
+                return NotFound("Скина с таким Id не существует");
+
+            await _context.Archives.AddAsync(new()
             {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+                GroupId = request.GroupId,
+                Count = request.Count,
+                BuyPrice = request.BuyPrice,
+                SoldPrice = request.SoldPrice,
+                SkinId = request.SkinId,
+                Description = request.Description,
+                BuyDate = request.BuyDate,
+                SoldDate = request.SoldDate
+            }, cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            await _context.SaveChangesAsync(cancellationToken);
 
-                if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
-                        .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                    return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
-
-                if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                    return NotFound("Скина с таким Id не существует");
-
-                await _context.Archives.AddAsync(new()
-                {
-                    GroupId = request.GroupId,
-                    Count = request.Count,
-                    BuyPrice = request.BuyPrice,
-                    SoldPrice = request.SoldPrice,
-                    SkinId = request.SkinId,
-                    Description = request.Description,
-                    BuyDate = request.BuyDate,
-                    SoldDate = request.SoldDate
-                }, cancellationToken);
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion POST
@@ -379,49 +343,40 @@ namespace SteamStorageAPI.Controllers
             PutArchiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                Archive? archive = await _context.Entry(user)
-                    .Collection(u => u.ArchiveGroups)
-                    .Query()
-                    .Include(x => x.Archives)
-                    .SelectMany(x => x.Archives)
-                    .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+            Archive? archive = await _context.Entry(user)
+                .Collection(u => u.ArchiveGroups)
+                .Query()
+                .Include(x => x.Archives)
+                .SelectMany(x => x.Archives)
+                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-                if (archive is null)
-                    return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            if (archive is null)
+                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
-                if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                        .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                    return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
+            if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
+                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
+                return NotFound("У вас нет доступа к этой группе или группы с таким Id не существует");
 
-                if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                    return NotFound("Скина с таким Id не существует");
+            if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
+                return NotFound("Скина с таким Id не существует");
 
-                archive.GroupId = request.GroupId;
-                archive.Count = request.Count;
-                archive.BuyPrice = request.BuyPrice;
-                archive.SoldPrice = request.SoldPrice;
-                archive.SkinId = request.SkinId;
-                archive.Description = request.Description;
-                archive.BuyDate = request.BuyDate;
-                archive.SoldDate = request.SoldDate;
+            archive.GroupId = request.GroupId;
+            archive.Count = request.Count;
+            archive.BuyPrice = request.BuyPrice;
+            archive.SoldPrice = request.SoldPrice;
+            archive.SkinId = request.SkinId;
+            archive.Description = request.Description;
+            archive.BuyDate = request.BuyDate;
+            archive.SoldDate = request.SoldDate;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT
@@ -440,32 +395,23 @@ namespace SteamStorageAPI.Controllers
             DeleteArchiveRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                Archive? archive = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
-                    .Include(x => x.Archives).SelectMany(x => x.Archives)
-                    .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+            Archive? archive = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
+                .Include(x => x.Archives).SelectMany(x => x.Archives)
+                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-                if (archive is null)
-                    return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+            if (archive is null)
+                return NotFound("У вас нет доступа к изменению этого актива или актива с таким Id не существует");
 
-                _context.Archives.Remove(archive);
+            _context.Archives.Remove(archive);
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion DELETE

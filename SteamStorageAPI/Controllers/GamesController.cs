@@ -16,8 +16,7 @@ namespace SteamStorageAPI.Controllers
     public class GamesController : ControllerBase
     {
         #region Fields
-
-        private readonly ILogger<GamesController> _logger;
+        
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SteamStorageContext _context;
 
@@ -26,11 +25,9 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public GamesController(
-            ILogger<GamesController> logger, 
             IHttpClientFactory httpClientFactory,
             SteamStorageContext context)
         {
-            _logger = logger;
             _httpClientFactory = httpClientFactory;
             _context = context;
         }
@@ -96,19 +93,11 @@ namespace SteamStorageAPI.Controllers
         public ActionResult<IEnumerable<GameResponse>> GetGames(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                return Ok(_context.Games.Select(x =>
-                    new GameResponse(x.Id,
-                        x.SteamGameId,
-                        x.Title,
-                        SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(_context.Games.Select(x =>
+                new GameResponse(x.Id,
+                    x.SteamGameId,
+                    x.Title,
+                    SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
         }
 
         #endregion GET
@@ -127,33 +116,24 @@ namespace SteamStorageAPI.Controllers
             PostGameRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            SteamGameResponse? response = await GetGameResponseAsync(request.SteamGameId, cancellationToken);
+
+            if (response is null)
+                return BadRequest("Указан неверный id игры");
+
+            if (!await IsGameIconExistsAsync(request.SteamGameId, request.IconUrlHash, cancellationToken))
+                return BadRequest("Указан неверный хэш-код иконки игры");
+
+            await _context.Games.AddAsync(new()
             {
-                SteamGameResponse? response = await GetGameResponseAsync(request.SteamGameId, cancellationToken);
+                SteamGameId = request.SteamGameId,
+                Title = response.name,
+                GameIconUrl = request.IconUrlHash
+            }, cancellationToken);
 
-                if (response is null)
-                    return BadRequest("Указан неверный id игры");
+            await _context.SaveChangesAsync(cancellationToken);
 
-                if (!await IsGameIconExistsAsync(request.SteamGameId, request.IconUrlHash, cancellationToken))
-                    return BadRequest("Указан неверный хэш-код иконки игры");
-
-                await _context.Games.AddAsync(new()
-                {
-                    SteamGameId = request.SteamGameId,
-                    Title = response.name,
-                    GameIconUrl = request.IconUrlHash
-                }, cancellationToken);
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion POST
@@ -173,30 +153,21 @@ namespace SteamStorageAPI.Controllers
             PutGameRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
-                    cancellationToken: cancellationToken);
+            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
+                cancellationToken: cancellationToken);
 
-                if (game is null)
-                    return NotFound("Игры с таким Id не существует");
+            if (game is null)
+                return NotFound("Игры с таким Id не существует");
 
-                if (!await IsGameIconExistsAsync(game.SteamGameId, request.IconUrlHash, cancellationToken))
-                    return BadRequest("Указан неверный хэш-код иконки игры");
+            if (!await IsGameIconExistsAsync(game.SteamGameId, request.IconUrlHash, cancellationToken))
+                return BadRequest("Указан неверный хэш-код иконки игры");
 
-                game.GameIconUrl = request.IconUrlHash;
-                game.Title = request.Title;
+            game.GameIconUrl = request.IconUrlHash;
+            game.Title = request.Title;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT
@@ -216,26 +187,17 @@ namespace SteamStorageAPI.Controllers
             DeleteGameRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
-                    cancellationToken: cancellationToken);
+            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId,
+                cancellationToken: cancellationToken);
 
-                if (game is null)
-                    return NotFound("Игры с таким Id не существует");
+            if (game is null)
+                return NotFound("Игры с таким Id не существует");
 
-                _context.Games.Remove(game);
+            _context.Games.Remove(game);
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion DELETE

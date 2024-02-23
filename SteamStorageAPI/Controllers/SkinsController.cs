@@ -40,10 +40,10 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public SkinsController(
-            ILogger<SkinsController> logger, 
+            ILogger<SkinsController> logger,
             IHttpClientFactory httpClientFactory,
-            ISkinService skinService, 
-            IUserService userService, 
+            ISkinService skinService,
+            IUserService userService,
             SteamStorageContext context)
         {
             _logger = logger;
@@ -229,30 +229,20 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
+            Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
 
-                if (skin is null)
-                    return NotFound("Скина с таким Id не существует");
+            if (skin is null)
+                return NotFound("Скина с таким Id не существует");
 
+            List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                .Select(x => x.SkinId).ToListAsync(cancellationToken);
 
-
-                List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                    .Select(x => x.SkinId).ToListAsync(cancellationToken);
-
-                return Ok(await GetSkinResponseAsync(skin, markedSkinsIds, cancellationToken));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(await GetSkinResponseAsync(skin, markedSkinsIds, cancellationToken));
         }
 
         /// <summary>
@@ -268,114 +258,102 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (request.PageNumber <= 0 || request.PageSize <= 0)
-                    throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
+            if (request.PageNumber <= 0 || request.PageSize <= 0)
+                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
 
-                if (request.PageSize > 200)
-                    throw new("Размер страницы не может превышать 200 предметов");
+            if (request.PageSize > 200)
+                throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                    .Select(x => x.SkinId).ToListAsync(cancellationToken);
+            List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                .Select(x => x.SkinId).ToListAsync(cancellationToken);
 
+            IQueryable<Skin> skins = _context.Skins.Where(x =>
+                (request.GameId == null || x.GameId == request.GameId)
+                && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
+                && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
 
+            if (request is { OrderName: not null, IsAscending: not null })
+                switch (request.OrderName)
+                {
+                    case SkinOrderName.Title:
+                        skins = (bool)request.IsAscending
+                            ? skins.OrderBy(x => x.Title)
+                            : skins.OrderByDescending(x => x.Title);
+                        break;
+                    case SkinOrderName.Price:
+                        var skinsPriceResult = skins.GroupJoin(
+                            _context.SkinsDynamics.GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0
+                                }), s => s.Id, d => d.SkinID,
+                            (s, d) => new { Skin = s, LastPrice = d.Any() ? d.First().LastPrice : 0 });
+                        skins = ((bool)request.IsAscending
+                                ? skinsPriceResult
+                                    .OrderBy(result => result.LastPrice)
+                                : skinsPriceResult
+                                    .OrderByDescending(result => result.LastPrice))
+                            .Select(result => result.Skin);
+                        break;
+                    case SkinOrderName.Change7D:
+                        var skinsChange7DResult = skins.GroupJoin(
+                            _context.SkinsDynamics.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    Change7D = g.Any()
+                                        ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
+                                           g.OrderBy(sd => sd.DateUpdate).First().Price) /
+                                          g.OrderBy(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }), s => s.Id, d => d.SkinID,
+                            (s, d) => new { Skin = s, Change7D = d.Any() ? d.First().Change7D : 0 });
+                        skins = ((bool)request.IsAscending
+                                ? skinsChange7DResult
+                                    .OrderBy(result => result.Change7D)
+                                : skinsChange7DResult
+                                    .OrderByDescending(result => result.Change7D))
+                            .Select(result => result.Skin);
+                        break;
+                    case SkinOrderName.Change30D:
+                        var skinsChange30DResult = skins.GroupJoin(
+                            _context.SkinsDynamics.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    Change30D = g.Any()
+                                        ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
+                                           g.OrderBy(sd => sd.DateUpdate).First().Price) /
+                                          g.OrderBy(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }), s => s.Id, d => d.SkinID,
+                            (s, d) => new { Skin = s, Change30D = d.Any() ? d.First().Change30D : 0 });
+                        skins = ((bool)request.IsAscending
+                                ? skinsChange30DResult
+                                    .OrderBy(result => result.Change30D)
+                                : skinsChange30DResult
+                                    .OrderByDescending(result => result.Change30D))
+                            .Select(result => result.Skin);
+                        break;
+                }
 
-                IQueryable<Skin> skins = _context.Skins.Where(x =>
-                    (request.GameId == null || x.GameId == request.GameId)
-                    && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
-                    && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
+            int skinsCount = await skins.CountAsync(cancellationToken);
 
+            int pagesCount = (int)Math.Ceiling((double)skinsCount / request.PageSize);
 
+            List<Skin> resultSkins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize)
+                .ToList();
 
-                if (request is { OrderName: not null, IsAscending: not null })
-                    switch (request.OrderName)
-                    {
-                        case SkinOrderName.Title:
-                            skins = (bool)request.IsAscending
-                                ? skins.OrderBy(x => x.Title)
-                                : skins.OrderByDescending(x => x.Title);
-                            break;
-                        case SkinOrderName.Price:
-                            var skinsPriceResult = skins.GroupJoin(
-                                _context.SkinsDynamics.GroupBy(sd => sd.SkinId)
-                                    .Select(g => new
-                                    {
-                                        SkinID = g.Key,
-                                        LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0
-                                    }), s => s.Id, d => d.SkinID,
-                                (s, d) => new { Skin = s, LastPrice = d.Any() ? d.First().LastPrice : 0 });
-                            skins = ((bool)request.IsAscending
-                                    ? skinsPriceResult
-                                        .OrderBy(result => result.LastPrice)
-                                    : skinsPriceResult
-                                        .OrderByDescending(result => result.LastPrice))
-                                .Select(result => result.Skin);
-                            break;
-                        case SkinOrderName.Change7D:
-                            var skinsChange7DResult = skins.GroupJoin(
-                                _context.SkinsDynamics.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                    .GroupBy(sd => sd.SkinId)
-                                    .Select(g => new
-                                    {
-                                        SkinID = g.Key,
-                                        Change7D = g.Any()
-                                            ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                               g.OrderBy(sd => sd.DateUpdate).First().Price) /
-                                              g.OrderBy(sd => sd.DateUpdate).First().Price
-                                            : 0
-                                    }), s => s.Id, d => d.SkinID,
-                                (s, d) => new { Skin = s, Change7D = d.Any() ? d.First().Change7D : 0 });
-                            skins = ((bool)request.IsAscending
-                                    ? skinsChange7DResult
-                                        .OrderBy(result => result.Change7D)
-                                    : skinsChange7DResult
-                                        .OrderByDescending(result => result.Change7D))
-                                .Select(result => result.Skin);
-                            break;
-                        case SkinOrderName.Change30D:
-                            var skinsChange30DResult = skins.GroupJoin(
-                                _context.SkinsDynamics.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                    .GroupBy(sd => sd.SkinId)
-                                    .Select(g => new
-                                    {
-                                        SkinID = g.Key,
-                                        Change30D = g.Any()
-                                            ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                               g.OrderBy(sd => sd.DateUpdate).First().Price) /
-                                              g.OrderBy(sd => sd.DateUpdate).First().Price
-                                            : 0
-                                    }), s => s.Id, d => d.SkinID,
-                                (s, d) => new { Skin = s, Change30D = d.Any() ? d.First().Change30D : 0 });
-                            skins = ((bool)request.IsAscending
-                                    ? skinsChange30DResult
-                                        .OrderBy(result => result.Change30D)
-                                    : skinsChange30DResult
-                                        .OrderByDescending(result => result.Change30D))
-                                .Select(result => result.Skin);
-                            break;
-                    }
-
-                int skinsCount = await skins.CountAsync(cancellationToken);
-
-                int pagesCount = (int)Math.Ceiling((double)skinsCount / request.PageSize);
-
-                List<Skin> resultSkins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize)
-                    .ToList();
-
-                return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
-                    GetSkinsResponse(resultSkins, markedSkinsIds, cancellationToken)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
+                GetSkinsResponse(resultSkins, markedSkinsIds, cancellationToken)));
         }
 
         /// <summary>
@@ -391,30 +369,20 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinDynamicsRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
+            Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
 
-                if (skin is null)
-                    return NotFound("Скина с таким Id не существует");
+            if (skin is null)
+                return NotFound("Скина с таким Id не существует");
 
+            List<SkinDynamicResponse> dynamic = await
+                _skinService.GetSkinDynamicsResponseAsync(skin, request.StartDate, request.EndDate,
+                    cancellationToken);
 
+            double changePeriod = (double)(dynamic.Count == 0
+                ? 0
+                : (dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price);
 
-                List<SkinDynamicResponse> dynamic = await
-                    _skinService.GetSkinDynamicsResponseAsync(skin, request.StartDate, request.EndDate,
-                        cancellationToken);
-
-                double changePeriod = (double)(dynamic.Count == 0
-                    ? 0
-                    : (dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price);
-
-                return Ok(new SkinDynamicStatsResponse(changePeriod, dynamic));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new SkinDynamicStatsResponse(changePeriod, dynamic));
         }
 
         /// <summary>
@@ -430,44 +398,34 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (request.PageSize <= 0)
-                    throw new("Размер страницы не может быть меньше или равен нулю.");
+            if (request.PageSize <= 0)
+                throw new("Размер страницы не может быть меньше или равен нулю.");
 
-                if (request.PageSize > 200)
-                    throw new("Размер страницы не может превышать 200 предметов");
+            if (request.PageSize > 200)
+                throw new("Размер страницы не может превышать 200 предметов");
 
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                List<int> markedSkinsIds = [];
+            List<int> markedSkinsIds = [];
 
-                if (request.IsMarked is not null)
-                    markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                        .Select(x => x.SkinId)
-                        .ToListAsync(cancellationToken);
+            if (request.IsMarked is not null)
+                markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                    .Select(x => x.SkinId)
+                    .ToListAsync(cancellationToken);
 
+            int count = await _context.Skins.CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
+                                                             && (string.IsNullOrEmpty(request.Filter) ||
+                                                                 x.Title.Contains(request.Filter!))
+                                                             && (request.IsMarked == null || request.IsMarked ==
+                                                                 markedSkinsIds.Any(y => y == x.Id)),
+                cancellationToken);
 
+            int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
-                int count = await _context.Skins.CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                                                 && (string.IsNullOrEmpty(request.Filter) ||
-                                                                     x.Title.Contains(request.Filter!))
-                                                                 && (request.IsMarked == null || request.IsMarked ==
-                                                                     markedSkinsIds.Any(y => y == x.Id)),
-                    cancellationToken);
-
-                int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
-
-                return Ok(new SkinPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new SkinPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
         }
 
         /// <summary>
@@ -483,28 +441,20 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSteamSkinsCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
+            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
 
-                if (game is null)
-                    return NotFound("Игры с таким Id не существует");
+            if (game is null)
+                return NotFound("Игры с таким Id не существует");
 
-                HttpClient client = _httpClientFactory.CreateClient();
-                SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
-                        cancellationToken);
+            HttpClient client = _httpClientFactory.CreateClient();
+            SteamSkinResponse? response =
+                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
+                    cancellationToken);
 
-                if (response is null)
-                    throw new("При получении данных с сервера Steam произошла ошибка");
+            if (response is null)
+                throw new("При получении данных с сервера Steam произошла ошибка");
 
-                return Ok(new SteamSkinsCountResponse(response.total_count));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new SteamSkinsCountResponse(response.total_count));
         }
 
         /// <summary>
@@ -520,36 +470,26 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSavedSkinsCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                List<int> markedSkinsIds = [];
+            List<int> markedSkinsIds = [];
 
-                if (request.IsMarked is not null)
-                    markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                        .Select(x => x.SkinId)
-                        .ToListAsync(cancellationToken: cancellationToken);
+            if (request.IsMarked is not null)
+                markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                    .Select(x => x.SkinId)
+                    .ToListAsync(cancellationToken: cancellationToken);
 
+            int count = await _context.Skins.CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
+                                                             && (string.IsNullOrEmpty(request.Filter) ||
+                                                                 x.Title.Contains(request.Filter!))
+                                                             && (request.IsMarked == null || request.IsMarked ==
+                                                                 markedSkinsIds.Any(y => y == x.Id)),
+                cancellationToken);
 
-
-                int count = await _context.Skins.CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                                                 && (string.IsNullOrEmpty(request.Filter) ||
-                                                                     x.Title.Contains(request.Filter!))
-                                                                 && (request.IsMarked == null || request.IsMarked ==
-                                                                     markedSkinsIds.Any(y => y == x.Id)),
-                    cancellationToken);
-
-                return Ok(new SavedSkinsCountResponse(count));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new SavedSkinsCountResponse(count));
         }
 
         #endregion GET
@@ -569,89 +509,80 @@ namespace SteamStorageAPI.Controllers
             PostSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
+
+            if (game is null)
+                return NotFound("Игры с таким Id не существует");
+
+            HttpClient client = _httpClientFactory.CreateClient();
+
+            int count = 100;
+            int start = 0;
+
+            int answerCount = 100;
+
+            SteamSkinResponse? response =
+                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
+                    cancellationToken);
+
+            if (response is null)
+                throw new("При получении данных с сервера Steam произошла ошибка");
+
+            int totalCount = response.total_count;
+
+            Random rnd = new();
+
+            while (count == answerCount || start < totalCount)
             {
-                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
-
-                if (game is null)
-                    return NotFound("Игры с таким Id не существует");
-
-                HttpClient client = _httpClientFactory.CreateClient();
-
-                int count = 100;
-                int start = 0;
-
-                int answerCount = 100;
-
-                SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
-                        cancellationToken);
-
-                if (response is null)
-                    throw new("При получении данных с сервера Steam произошла ошибка");
-
-                int totalCount = response.total_count;
-
-                Random rnd = new();
-
-                while (count == answerCount || start < totalCount)
+                try
                 {
-                    try
+                    _logger.LogInformation(
+                        $"Процесс выполнения загрузки скинов:\nЗагружено: {start} / {totalCount}");
+
+                    response = await client.GetFromJsonAsync<SteamSkinResponse>(
+                        SteamApi.GetSkinsUrl(game.SteamGameId, count, start), cancellationToken);
+
+                    if (response is null)
+                        throw new("При получении данных с сервера Steam произошла ошибка");
+
+                    List<Skin> skins = [];
+
+                    foreach (SkinResult item in response.results)
                     {
-                        _logger.LogInformation(
-                            $"Процесс выполнения загрузки скинов:\nЗагружено: {start} / {totalCount}");
+                        if (await _context.Skins.AnyAsync(x => x.MarketHashName == item.hash_name,
+                                cancellationToken))
+                            continue;
 
-                        response = await client.GetFromJsonAsync<SteamSkinResponse>(
-                            SteamApi.GetSkinsUrl(game.SteamGameId, count, start), cancellationToken);
-
-                        if (response is null)
-                            throw new("При получении данных с сервера Steam произошла ошибка");
-
-                        List<Skin> skins = [];
-
-                        foreach (SkinResult item in response.results)
+                        skins.Add(new()
                         {
-                            if (await _context.Skins.AnyAsync(x => x.MarketHashName == item.hash_name,
-                                    cancellationToken))
-                                continue;
-
-                            skins.Add(new()
-                            {
-                                GameId = game.Id,
-                                MarketHashName = item.hash_name,
-                                Title = item.name,
-                                SkinIconUrl = item.asset_description.icon_url
-                            });
-                        }
-
-                        await _context.Skins.AddRangeAsync(skins, cancellationToken);
-
-                        await _context.SaveChangesAsync(cancellationToken);
-
-                        answerCount = response.results.Length;
-                        start += response.results.Length;
-
-                        count = 100;
-
-                        await Task.Delay(rnd.Next(3000, 4000), cancellationToken);
+                            GameId = game.Id,
+                            MarketHashName = item.hash_name,
+                            Title = item.name,
+                            SkinIconUrl = item.asset_description.icon_url
+                        });
                     }
-                    catch (Exception ex)
-                    {
-                        count = rnd.Next(20, 99);
-                        start -= 1;
-                        _logger.LogError(ex.Message);
-                        await Task.Delay(rnd.Next(100000, 150000), cancellationToken);
-                    }
+
+                    await _context.Skins.AddRangeAsync(skins, cancellationToken);
+
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    answerCount = response.results.Length;
+                    start += response.results.Length;
+
+                    count = 100;
+
+                    await Task.Delay(rnd.Next(3000, 4000), cancellationToken);
                 }
+                catch (Exception ex)
+                {
+                    count = rnd.Next(20, 99);
+                    start -= 1;
+                    _logger.LogError(ex.Message);
+                    await Task.Delay(rnd.Next(100000, 150000), cancellationToken);
+                }
+            }
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         /// <summary>
@@ -667,42 +598,33 @@ namespace SteamStorageAPI.Controllers
             PostSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
+
+            if (game is null)
+                return NotFound("Игры с таким Id не существует");
+
+            HttpClient client = _httpClientFactory.CreateClient();
+
+            SteamSkinResponse? response =
+                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfoUrl(request.MarketHashName),
+                    cancellationToken);
+
+            if (response is null)
+                throw new("При получении данных с сервера Steam произошла ошибка");
+
+            SkinResult result = response.results.First();
+
+            await _context.Skins.AddAsync(new()
             {
-                Game? game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken);
+                GameId = game.Id,
+                MarketHashName = result.hash_name,
+                Title = result.name,
+                SkinIconUrl = result.asset_description.icon_url
+            }, cancellationToken);
 
-                if (game is null)
-                    return NotFound("Игры с таким Id не существует");
+            await _context.SaveChangesAsync(cancellationToken);
 
-                HttpClient client = _httpClientFactory.CreateClient();
-
-                SteamSkinResponse? response =
-                    await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfoUrl(request.MarketHashName),
-                        cancellationToken);
-
-                if (response is null)
-                    throw new("При получении данных с сервера Steam произошла ошибка");
-
-                SkinResult result = response.results.First();
-
-                await _context.Skins.AddAsync(new()
-                {
-                    GameId = game.Id,
-                    MarketHashName = result.hash_name,
-                    Title = result.name,
-                    SkinIconUrl = result.asset_description.icon_url
-                }, cancellationToken);
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         /// <summary>
@@ -717,40 +639,31 @@ namespace SteamStorageAPI.Controllers
             SetMarkedSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
+
+            Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
+
+            if (skin is null)
+                return NotFound("Скина с таким Id не существует");
+
+            MarkedSkin? markedSkin =
+                await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
+
+            if (markedSkin is not null)
+                return NotFound("Скин с таким Id уже добавлен в избранное");
+
+            await _context.MarkedSkins.AddAsync(new()
             {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+                SkinId = skin.Id,
+                UserId = user.Id
+            }, cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            await _context.SaveChangesAsync(cancellationToken);
 
-                Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken);
-
-                if (skin is null)
-                    return NotFound("Скина с таким Id не существует");
-
-                MarkedSkin? markedSkin =
-                    await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
-
-                if (markedSkin is not null)
-                    return NotFound("Скин с таким Id уже добавлен в избранное");
-
-                await _context.MarkedSkins.AddAsync(new()
-                {
-                    SkinId = skin.Id,
-                    UserId = user.Id
-                }, cancellationToken);
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion POST
@@ -769,31 +682,22 @@ namespace SteamStorageAPI.Controllers
             DeleteMarkedSkinRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                MarkedSkin? markedSkin =
-                    await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
+            MarkedSkin? markedSkin =
+                await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
 
-                if (markedSkin is null)
-                    return NotFound("Скина с таким Id в таблице отмеченных скинов нет");
+            if (markedSkin is null)
+                return NotFound("Скина с таким Id в таблице отмеченных скинов нет");
 
-                _context.MarkedSkins.Remove(markedSkin);
+            _context.MarkedSkins.Remove(markedSkin);
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion DELETE

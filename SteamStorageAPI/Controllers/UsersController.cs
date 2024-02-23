@@ -16,7 +16,6 @@ namespace SteamStorageAPI.Controllers
     {
         #region Fields
 
-        private readonly ILogger<UsersController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
@@ -26,12 +25,10 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public UsersController(
-            ILogger<UsersController> logger,
             IHttpClientFactory httpClientFactory,
             IUserService userService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _httpClientFactory = httpClientFactory;
             _userService = userService;
             _context = context;
@@ -111,17 +108,9 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                List<User> users = await _context.Users.ToListAsync(cancellationToken);
+            List<User> users = await _context.Users.ToListAsync(cancellationToken);
 
-                return Ok(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)));
         }
 
         /// <summary>
@@ -138,20 +127,12 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetUserRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
+            User? user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(await GetUserResponseAsync(user, cancellationToken));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(await GetUserResponseAsync(user, cancellationToken));
         }
 
         /// <summary>
@@ -166,20 +147,12 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<UserResponse>> GetCurrentUserInfo(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(await GetUserResponseAsync(user, cancellationToken));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(await GetUserResponseAsync(user, cancellationToken));
         }
 
         #endregion GET
@@ -198,25 +171,16 @@ namespace SteamStorageAPI.Controllers
             PutGoalSumRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                user.GoalSum = request.GoalSum;
+            user.GoalSum = request.GoalSum;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT
@@ -234,25 +198,16 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult> DeleteUser(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                _context.Users.Remove(user);
+            _context.Users.Remove(user);
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion DELETE

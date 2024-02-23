@@ -5,14 +5,7 @@ namespace SteamStorageAPI.DBEntities;
 
 public partial class SteamStorageContext : DbContext
 {
-    public SteamStorageContext()
-    {
-    }
-
-    public SteamStorageContext(DbContextOptions<SteamStorageContext> options)
-        : base(options)
-    {
-    }
+    #region Properties
 
     public virtual DbSet<Active> Actives { get; set; }
 
@@ -43,6 +36,20 @@ public partial class SteamStorageContext : DbContext
     public virtual DbSet<SkinsDynamic> SkinsDynamics { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    #endregion Properties
+
+    #region Constructor
+
+    public SteamStorageContext(DbContextOptions<SteamStorageContext> options)
+        : base(options)
+    {
+        SaveChangesFailed += SaveChangesFailedHandler;
+    }
+
+    #endregion Constructor
+
+    #region Methods
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -310,6 +317,11 @@ public partial class SteamStorageContext : DbContext
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+    
+    private void SaveChangesFailedHandler(object? sender, SaveChangesFailedEventArgs e)
+    {
+        UndoChanges();
+    }
 
     public void UndoChanges()
     {
@@ -329,4 +341,6 @@ public partial class SteamStorageContext : DbContext
             }
         }
     }
+
+    #endregion Methods
 }

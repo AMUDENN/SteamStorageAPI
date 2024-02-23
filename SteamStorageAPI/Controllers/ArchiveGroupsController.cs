@@ -27,8 +27,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-
-        private readonly ILogger<ArchiveGroupsController> _logger;
+        
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
@@ -39,11 +38,9 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public ArchiveGroupsController(
-            ILogger<ArchiveGroupsController> logger, 
             IUserService userService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _userService = userService;
             _context = context;
 
@@ -116,31 +113,23 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetArchiveGroupsRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                IEnumerable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query();
+            IEnumerable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query();
 
-                if (request is { OrderName: not null, IsAscending: not null })
-                    groups = (bool)request.IsAscending
-                        ? groups.OrderBy(_orderNames[(ArchiveGroupOrderName)request.OrderName])
-                        : groups.OrderByDescending(_orderNames[(ArchiveGroupOrderName)request.OrderName]);
+            if (request is { OrderName: not null, IsAscending: not null })
+                groups = (bool)request.IsAscending
+                    ? groups.OrderBy(_orderNames[(ArchiveGroupOrderName)request.OrderName])
+                    : groups.OrderByDescending(_orderNames[(ArchiveGroupOrderName)request.OrderName]);
 
-                return Ok(groups.Select(x =>
-                    new ArchiveGroupsResponse(x.Id,
-                        x.Title,
-                        x.Description ?? string.Empty,
-                        $"#{x.Colour ?? ProgramConstants.BASE_ARCHIVE_GROUP_COLOUR}")));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(groups.Select(x =>
+                new ArchiveGroupsResponse(x.Id,
+                    x.Title,
+                    x.Description ?? string.Empty,
+                    $"#{x.Colour ?? ProgramConstants.BASE_ARCHIVE_GROUP_COLOUR}")));
         }
 
         /// <summary>
@@ -155,21 +144,13 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<ArchiveGroupsCountResponse>> GetArchiveGroupsCount(
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                return Ok(new ArchiveGroupsCountResponse(await _context.Entry(user).Collection(x => x.ArchiveGroups)
-                    .Query().CountAsync(cancellationToken)));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok(new ArchiveGroupsCountResponse(await _context.Entry(user).Collection(x => x.ArchiveGroups)
+                .Query().CountAsync(cancellationToken)));
         }
 
         #endregion GET
@@ -188,31 +169,22 @@ namespace SteamStorageAPI.Controllers
             PostArchiveGroupRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
+
+            await _context.ArchiveGroups.AddAsync(new()
             {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+                UserId = user.Id,
+                Title = request.Title,
+                Description = request.Description,
+                Colour = request.Colour
+            }, cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            await _context.SaveChangesAsync(cancellationToken);
 
-                await _context.ArchiveGroups.AddAsync(new()
-                {
-                    UserId = user.Id,
-                    Title = request.Title,
-                    Description = request.Description,
-                    Colour = request.Colour
-                }, cancellationToken);
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion POST
@@ -231,33 +203,24 @@ namespace SteamStorageAPI.Controllers
             PutArchiveGroupRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                ArchiveGroup? group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
-                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
+            ArchiveGroup? group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
+                .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
 
-                if (group is null)
-                    return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+            if (group is null)
+                return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
-                group.Title = request.Title;
-                group.Description = request.Description;
-                group.Colour = request.Colour;
+            group.Title = request.Title;
+            group.Description = request.Description;
+            group.Colour = request.Colour;
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion PUT
@@ -276,31 +239,22 @@ namespace SteamStorageAPI.Controllers
             DeleteArchiveGroupRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                User? user = await _userService.GetCurrentUserAsync(cancellationToken);
+            User? user = await _userService.GetCurrentUserAsync(cancellationToken);
 
-                if (user is null)
-                    return NotFound("Пользователя с таким Id не существует");
+            if (user is null)
+                return NotFound("Пользователя с таким Id не существует");
 
-                ArchiveGroup? group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
-                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
+            ArchiveGroup? group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
+                .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken);
 
-                if (group is null)
-                    return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+            if (group is null)
+                return NotFound("У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
-                _context.ArchiveGroups.Remove(group);
+            _context.ArchiveGroups.Remove(group);
 
-                await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _context.UndoChanges();
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
-            }
+            return Ok();
         }
 
         #endregion DELETE
