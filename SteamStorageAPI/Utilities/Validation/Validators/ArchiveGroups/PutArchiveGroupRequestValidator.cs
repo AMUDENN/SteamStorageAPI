@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using SteamStorageAPI.Controllers;
 
-namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
+namespace SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 
-public sealed class PutActiveGroupRequestValidator : AbstractValidator<ActiveGroupsController.PutActiveGroupRequest>
+public sealed class PutArchiveGroupRequestValidator : AbstractValidator<ArchiveGroupsController.PutArchiveGroupRequest>
 {
-    public PutActiveGroupRequestValidator()
+    public PutArchiveGroupRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
             .GreaterThan(0).WithMessage("Id группы не может быть меньше 1")
@@ -21,9 +21,5 @@ public sealed class PutActiveGroupRequestValidator : AbstractValidator<ActiveGro
             .Matches("^([A-Fa-f0-9]{8}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{3})$")
             .WithMessage(
                 "Цвет не выполняет условия, примеры правильного указания цвета: #FA12AD29, #FF1AFF, #2483, #AD0");
-
-        RuleFor(expression => expression.GoalSum)
-            .GreaterThanOrEqualTo(0).WithMessage("Финансовая цель не может быть меньше 0")
-            .LessThan(1000000000000).WithMessage("Финансовая цель не может быть больше 999999999999");
     }
 }

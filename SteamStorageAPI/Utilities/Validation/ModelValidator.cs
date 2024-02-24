@@ -31,17 +31,9 @@ public sealed class ModelValidator : IModelValidator
 
         ValidationResult? result = validator.Validate(GetValidationContext(context.Model));
 
-        if (result.IsValid)
-            return Enumerable.Empty<ModelValidationResult>();
-
-        ValidationFailure? failure = result.Errors.First();
-        return new ModelValidationResult[]
-        {
-            new(
-                failure.PropertyName,
-                failure.ErrorMessage
-            )
-        };
+        return result.IsValid
+            ? Enumerable.Empty<ModelValidationResult>()
+            : result.Errors.Select(error => new ModelValidationResult(error.PropertyName, error.ErrorMessage));
     }
 
     private static IValidationContext GetValidationContext(object model)

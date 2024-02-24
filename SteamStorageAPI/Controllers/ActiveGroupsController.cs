@@ -7,7 +7,6 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation;
-using SteamStorageAPI.Utilities.Validation.Validators;
 using SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
 namespace SteamStorageAPI.Controllers
@@ -73,6 +72,7 @@ namespace SteamStorageAPI.Controllers
         public record ActiveGroupsCountResponse(
             int Count);
 
+        [Validator<GetActiveGroupsRequestValidator>]
         public record GetActiveGroupsRequest(
             ActiveGroupOrderName? OrderName,
             bool? IsAscending);

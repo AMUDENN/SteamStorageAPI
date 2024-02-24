@@ -6,6 +6,8 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -65,21 +67,25 @@ namespace SteamStorageAPI.Controllers
         public record ArchiveGroupsCountResponse(
             int Count);
 
+        [Validator<GetArchiveGroupsRequestValidator>]
         public record GetArchiveGroupsRequest(
             ArchiveGroupOrderName? OrderName,
             bool? IsAscending);
 
+        [Validator<PostArchiveGroupRequestValidator>]
         public record PostArchiveGroupRequest(
             string Title,
             string? Description,
             string? Colour);
 
+        [Validator<PutArchiveGroupRequestValidator>]
         public record PutArchiveGroupRequest(
             int GroupId,
             string Title,
             string? Description,
             string? Colour);
 
+        [Validator<DeleteArchiveGroupRequestValidator>]
         public record DeleteArchiveGroupRequest(
             int GroupId);
 

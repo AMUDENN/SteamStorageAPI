@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using SteamStorageAPI.Controllers;
 
-namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
+namespace SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 
-public sealed class DeleteActiveGroupRequestValidator : AbstractValidator<ActiveGroupsController.DeleteActiveGroupRequest>
+public sealed class DeleteArchiveGroupRequestValidator : AbstractValidator<ArchiveGroupsController.DeleteArchiveGroupRequest>
 {
-    public DeleteActiveGroupRequestValidator()
+    public DeleteArchiveGroupRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
             .GreaterThan(0).WithMessage("Id группы не может быть меньше 1")

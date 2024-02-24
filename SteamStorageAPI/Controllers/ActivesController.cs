@@ -6,6 +6,8 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Validators.Actives;
 using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
@@ -80,6 +82,7 @@ namespace SteamStorageAPI.Controllers
         public record ActivesCountResponse(
             int Count);
 
+        [Validator<GetActivesRequestValidator>]
         public record GetActivesRequest(
             int? GroupId,
             int? GameId,
@@ -89,17 +92,20 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
+        [Validator<GetActivesPagesCountRequestValidator>]
         public record GetActivesPagesCountRequest(
             int? GroupId,
             int? GameId,
             string? Filter,
             int PageSize);
 
+        [Validator<GetActivesCountRequestValidator>]
         public record GetActivesCountRequest(
             int? GroupId,
             int? GameId,
             string? Filter);
 
+        [Validator<PostActiveRequestValidator>]
         public record PostActiveRequest(
             int GroupId,
             int Count,
@@ -109,6 +115,7 @@ namespace SteamStorageAPI.Controllers
             string? Description,
             DateTime BuyDate);
 
+        [Validator<PutActiveRequestValidator>]
         public record PutActiveRequest(
             int Id,
             int GroupId,
@@ -119,6 +126,7 @@ namespace SteamStorageAPI.Controllers
             string? Description,
             DateTime BuyDate);
 
+        [Validator<SoldActiveRequestValidator>]
         public record SoldActiveRequest(
             int Id,
             int GroupId,
@@ -127,6 +135,7 @@ namespace SteamStorageAPI.Controllers
             DateTime SoldDate,
             string? Description);
 
+        [Validator<DeleteActiveRequestValidator>]
         public record DeleteActiveRequest(int Id);
 
         #endregion Records
@@ -169,12 +178,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetActivesRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageNumber <= 0 || request.PageSize <= 0)
-                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
@@ -228,12 +231,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetActivesPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageSize <= 0)
-                throw new("Размер страницы не может быть меньше или равен нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
