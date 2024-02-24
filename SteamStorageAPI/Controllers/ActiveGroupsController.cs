@@ -8,6 +8,7 @@ using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation;
 using SteamStorageAPI.Utilities.Validation.Validators;
+using SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -76,17 +77,19 @@ namespace SteamStorageAPI.Controllers
             ActiveGroupOrderName? OrderName,
             bool? IsAscending);
 
-        [Validator<ActiveGroupDynamicRequestValidator>]
+        [Validator<GetActiveGroupDynamicRequestValidator>]
         public record GetActiveGroupDynamicRequest(
             int GroupId,
             int DaysDynamic);
 
+        [Validator<PostActiveGroupRequestValidator>]
         public record PostActiveGroupRequest(
             string Title,
             string? Description,
             string? Colour,
             decimal? GoalSum);
 
+        [Validator<PutActiveGroupRequestValidator>]
         public record PutActiveGroupRequest(
             int GroupId,
             string Title,
@@ -94,6 +97,7 @@ namespace SteamStorageAPI.Controllers
             string? Colour,
             decimal? GoalSum);
 
+        [Validator<DeleteActiveGroupRequestValidator>]
         public record DeleteActiveGroupRequest(
             int GroupId);
 
@@ -284,7 +288,7 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            ActiveGroup? group = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
+            ActiveGroup group = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
                                      .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
                                  throw new HttpResponseException(StatusCodes.Status404NotFound,
                                      "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
