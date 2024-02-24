@@ -8,6 +8,8 @@ using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Inventory;
 using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
@@ -74,6 +76,7 @@ namespace SteamStorageAPI.Controllers
         public record SavedInventoriesCountResponse(
             int Count);
 
+        [Validator<GetInventoryRequestValidator>]
         public record GetInventoryRequest(
             int? GameId,
             string? Filter,
@@ -82,15 +85,18 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
+        [Validator<GetInventoryPagesCountRequestValidator>]
         public record GetInventoryPagesCountRequest(
             int? GameId,
             string? Filter,
             int PageSize);
 
+        [Validator<GetSavedInventoriesCountRequestValidator>]
         public record GetSavedInventoriesCountRequest(
             int? GameId,
             string? Filter);
 
+        [Validator<RefreshInventoryRequestValidator>]
         public record RefreshInventoryRequest(
             int GameId);
 
@@ -112,12 +118,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetInventoryRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageNumber <= 0 || request.PageSize <= 0)
-                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
@@ -156,12 +156,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetInventoryPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageSize <= 0)
-                throw new("Размер страницы не может быть меньше или равен нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");

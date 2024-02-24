@@ -6,6 +6,9 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Archives;
 using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
@@ -80,6 +83,7 @@ namespace SteamStorageAPI.Controllers
         public record ArchivesCountResponse(
             int Count);
 
+        [Validator<GetArchivesRequestValidator>]
         public record GetArchivesRequest(
             int? GroupId,
             int? GameId,
@@ -89,17 +93,20 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
+        [Validator<GetArchivesPagesCountRequestValidator>]
         public record GetArchivesPagesCountRequest(
             int? GroupId,
             int? GameId,
             string? Filter,
             int PageSize);
 
+        [Validator<GetArchivesCountRequestValidator>]
         public record GetArchivesCountRequest(
             int? GroupId,
             int? GameId,
             string? Filter);
 
+        [Validator<PostArchiveRequestValidator>]
         public record PostArchiveRequest(
             int GroupId,
             int Count,
@@ -110,6 +117,7 @@ namespace SteamStorageAPI.Controllers
             DateTime BuyDate,
             DateTime SoldDate);
 
+        [Validator<PutArchiveRequestValidator>]
         public record PutArchiveRequest(
             int Id,
             int GroupId,
@@ -121,6 +129,7 @@ namespace SteamStorageAPI.Controllers
             DateTime BuyDate,
             DateTime SoldDate);
 
+        [Validator<DeleteArchiveRequestValidator>]
         public record DeleteArchiveRequest(
             int Id);
 
@@ -159,12 +168,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetArchivesRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageNumber <= 0 || request.PageSize <= 0)
-                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
@@ -218,12 +221,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetArchivesPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageSize <= 0)
-                throw new("Размер страницы не может быть меньше или равен нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");

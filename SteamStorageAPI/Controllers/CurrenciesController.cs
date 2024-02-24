@@ -7,6 +7,8 @@ using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -46,25 +48,31 @@ namespace SteamStorageAPI.Controllers
             string Mark,
             double Price);
 
+        [Validator<GetCurrencyRequestValidator>]
         public record GetCurrencyRequest(
             int Id);
 
+        [Validator<PostCurrencyRequestValidator>]
         public record PostCurrencyRequest(
             int SteamCurrencyId,
             string Title,
             string Mark);
 
+        [Validator<RefreshCurrencyRequestValidator>]
         public record RefreshCurrencyRequest(
             string MarketHashName);
 
+        [Validator<PutCurrencyRequestValidator>]
         public record PutCurrencyRequest(
             int CurrencyId,
             string Title,
             string Mark);
 
+        [Validator<SetCurrencyRequestValidator>]
         public record SetCurrencyRequest(
             int CurrencyId);
 
+        [Validator<DeleteCurrencyRequestValidator>]
         public record DeleteCurrencyRequest(
             int CurrencyId);
 

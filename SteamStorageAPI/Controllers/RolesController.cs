@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Roles;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -34,6 +36,7 @@ namespace SteamStorageAPI.Controllers
             int Id,
             string Title);
 
+        [Validator<SetRoleRequestValidator>]
         public record SetRoleRequest(
             int UserId,
             int RoleId);

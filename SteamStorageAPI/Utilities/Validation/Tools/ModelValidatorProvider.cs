@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
-namespace SteamStorageAPI.Utilities.Validation;
+namespace SteamStorageAPI.Utilities.Validation.Tools;
 
 public sealed class ModelValidatorProvider : IModelValidatorProvider
 {

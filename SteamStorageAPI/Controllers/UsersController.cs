@@ -7,6 +7,8 @@ using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Users;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -52,12 +54,15 @@ namespace SteamStorageAPI.Controllers
             DateTime DateRegistration,
             decimal? GoalSum);
 
+        [Validator<GetUserRequestValidator>]
         public record GetUserRequest(
             int UserId);
 
+        [Validator<PutGoalSumRequestValidator>]
         public record PutGoalSumRequest(
             decimal? GoalSum);
 
+        [Validator<PutStartPageRequestValidator>]
         public record PutStartPageRequest(
             int StartPageId);
 

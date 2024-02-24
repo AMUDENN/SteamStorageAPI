@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Pages;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -37,6 +39,7 @@ namespace SteamStorageAPI.Controllers
             int Id,
             string Title);
 
+        [Validator<SetPageRequestValidator>]
         public record SetPageRequest(
             int PageId);
 

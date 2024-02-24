@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using SteamStorageAPI.Controllers;
 
-namespace SteamStorageAPI.Utilities.Validation.Validators.Actives;
+namespace SteamStorageAPI.Utilities.Validation.Validators.Archives;
 
-public sealed class GetActivesRequestValidator : AbstractValidator<ActivesController.GetActivesRequest>
+public sealed class GetArchivesRequestValidator : AbstractValidator<ArchivesController.GetArchivesRequest>
 {
-    public GetActivesRequestValidator()
+    public GetArchivesRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
             .GreaterThan(0).WithMessage("Id группы не может быть меньше 1")

@@ -3,7 +3,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
-namespace SteamStorageAPI.Utilities.Validation;
+namespace SteamStorageAPI.Utilities.Validation.Tools;
 
 public sealed class ModelValidator : IModelValidator
 {

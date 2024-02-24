@@ -7,6 +7,8 @@ using System.Net;
 using System.Net.Mime;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Games;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -43,15 +45,18 @@ namespace SteamStorageAPI.Controllers
             string Title,
             string GameIconUrl);
 
+        [Validator<PostGameRequestValidator>]
         public record PostGameRequest(
             int SteamGameId,
             string IconUrlHash);
 
+        [Validator<PutGameRequestValidator>]
         public record PutGameRequest(
             int GameId,
             string IconUrlHash,
             string Title);
 
+        [Validator<DeleteGameRequestValidator>]
         public record DeleteGameRequest(
             int GameId);
 
@@ -92,14 +97,13 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetGames")]
         [Produces(MediaTypeNames.Application.Json)]
-        public ActionResult<IEnumerable<GameResponse>> GetGames(
+        public async Task<ActionResult<IEnumerable<GameResponse>>> GetGames(
             CancellationToken cancellationToken = default)
         {
-            return Ok(_context.Games.Select(x =>
-                new GameResponse(x.Id,
-                    x.SteamGameId,
-                    x.Title,
-                    SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
+            List<Game> games = await _context.Games.ToListAsync(cancellationToken);
+
+            return Ok(games.Select(x =>
+                new GameResponse(x.Id, x.SteamGameId, x.Title, SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
         }
 
         #endregion GET

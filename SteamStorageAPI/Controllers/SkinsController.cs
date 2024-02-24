@@ -8,6 +8,8 @@ using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Skins;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -95,9 +97,11 @@ namespace SteamStorageAPI.Controllers
         public record SavedSkinsCountResponse(
             int Count);
 
+        [Validator<GetSkinRequestValidator>]
         public record GetSkinRequest(
             int SkinId);
 
+        [Validator<GetSkinsRequestValidator>]
         public record GetSkinsRequest(
             int? GameId,
             string? Filter,
@@ -107,35 +111,43 @@ namespace SteamStorageAPI.Controllers
             int PageNumber,
             int PageSize);
 
+        [Validator<GetSkinDynamicsRequestValidator>]
         public record GetSkinDynamicsRequest(
             int SkinId,
             DateTime StartDate,
             DateTime EndDate);
 
+        [Validator<GetSkinPagesCountRequestValidator>]
         public record GetSkinPagesCountRequest(
             int? GameId,
             string? Filter,
             bool? IsMarked,
             int PageSize);
 
+        [Validator<GetSteamSkinsCountRequestValidator>]
         public record GetSteamSkinsCountRequest(
             int GameId);
 
+        [Validator<GetSavedSkinsCountRequestValidator>]
         public record GetSavedSkinsCountRequest(
             int? GameId,
             string? Filter,
             bool? IsMarked);
 
+        [Validator<PostSkinsRequestValidator>]
         public record PostSkinsRequest(
             int GameId);
 
+        [Validator<PostSkinRequestValidator>]
         public record PostSkinRequest(
             int GameId,
             string MarketHashName);
 
+        [Validator<SetMarkedSkinRequestValidator>]
         public record SetMarkedSkinRequest(
             int SkinId);
 
+        [Validator<DeleteMarkedSkinRequestValidator>]
         public record DeleteMarkedSkinRequest(
             int SkinId);
 
@@ -259,12 +271,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageNumber <= 0 || request.PageSize <= 0)
-                throw new("Размер и номер страницы не могут быть меньше или равны нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
@@ -373,7 +379,6 @@ namespace SteamStorageAPI.Controllers
             Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
-            ;
 
             List<SkinDynamicResponse> dynamic = await
                 _skinService.GetSkinDynamicsResponseAsync(skin, request.StartDate, request.EndDate,
@@ -400,12 +405,6 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinPagesCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.PageSize <= 0)
-                throw new("Размер страницы не может быть меньше или равен нулю.");
-
-            if (request.PageSize > 200)
-                throw new("Размер страницы не может превышать 200 предметов");
-
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
