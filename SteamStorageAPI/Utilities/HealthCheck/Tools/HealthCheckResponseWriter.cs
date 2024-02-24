@@ -2,7 +2,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace SteamStorageAPI.Utilities;
+namespace SteamStorageAPI.Utilities.HealthCheck.Tools;
 
 public static class HealthCheckResponseWriter
 {

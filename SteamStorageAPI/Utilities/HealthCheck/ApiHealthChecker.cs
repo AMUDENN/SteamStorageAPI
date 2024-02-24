@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace SteamStorageAPI.Utilities.HealthCheckers
+namespace SteamStorageAPI.Utilities.HealthCheck
 {
     public class ApiHealthChecker : IHealthCheck
     {

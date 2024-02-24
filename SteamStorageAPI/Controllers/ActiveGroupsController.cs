@@ -6,6 +6,8 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Validators;
 
 namespace SteamStorageAPI.Controllers
 {
@@ -74,6 +76,7 @@ namespace SteamStorageAPI.Controllers
             ActiveGroupOrderName? OrderName,
             bool? IsAscending);
 
+        [Validator<ActiveGroupDynamicRequestValidator>]
         public record GetActiveGroupDynamicRequest(
             int GroupId,
             int DaysDynamic);

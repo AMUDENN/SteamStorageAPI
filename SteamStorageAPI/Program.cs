@@ -13,9 +13,10 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
-using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
-using SteamStorageAPI.Utilities.HealthCheckers;
+using SteamStorageAPI.Utilities.Extensions;
+using SteamStorageAPI.Utilities.HealthCheck;
+using SteamStorageAPI.Utilities.HealthCheck.Tools;
 
 namespace SteamStorageAPI;
 
@@ -26,13 +27,19 @@ public static class Program
     private static WebApplicationBuilder ConfigureServices(WebApplicationBuilder builder)
     {
         //Controllers
-        builder.Services.AddControllers().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.WriteIndented = true;
-            options.JsonSerializerOptions.PropertyNamingPolicy = null;
-            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        });
+        builder.Services
+            .AddControllers(options =>
+            {
+                options.AddAutoValidation();
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.WriteIndented = true;
+                options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            });
         builder.Services.AddEndpointsApiExplorer();
+        
 
         //JwtOptions Initialize
         JwtOptions.Initialize(builder.Configuration);
@@ -44,41 +51,42 @@ public static class Program
         builder.Services.AddTransient<IUserService, UserService>();
 
         //Swagger
-        builder.Services.AddSwaggerGen(options =>
-        {
-            options.SwaggerDoc("v1", new()
+        builder.Services
+            .AddSwaggerGen(options =>
             {
-                Title = "SteamStorage API",
-                Version = "v1",
-                Description = "API для SteamStorage"
-            });
-            options.AddSecurityDefinition("Bearer", new()
-            {
-                In = ParameterLocation.Header,
-                Description = "Авторизация происходит в формате: Bearer {token}",
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = JwtBearerDefaults.AuthenticationScheme,
-                BearerFormat = "JWT"
-            });
-            options.AddSecurityRequirement(new()
-            {
+                options.SwaggerDoc("v1", new()
                 {
-                    new()
+                    Title = "SteamStorage API",
+                    Version = "v1",
+                    Description = "API для SteamStorage"
+                });
+                options.AddSecurityDefinition("Bearer", new()
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Авторизация происходит в формате: Bearer {token}",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = JwtBearerDefaults.AuthenticationScheme,
+                    BearerFormat = "JWT"
+                });
+                options.AddSecurityRequirement(new()
+                {
                     {
-                        Reference = new()
+                        new()
                         {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
+                            Reference = new()
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+
+                string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
             });
-            
-            string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-        });
 
         builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();
@@ -109,7 +117,8 @@ public static class Program
             .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker), tags: new[] { "steam" })
             .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker), tags: new[] { "steam" });
 
-        builder.Services.AddHealthChecksUI(setup =>
+        builder.Services
+            .AddHealthChecksUI(setup =>
             {
                 setup.MaximumHistoryEntriesPerEndpoint(50);
                 setup.SetEvaluationTimeInSeconds(600);

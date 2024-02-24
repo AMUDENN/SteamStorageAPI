@@ -2,7 +2,7 @@
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities.Steam;
 
-namespace SteamStorageAPI.Utilities.HealthCheckers
+namespace SteamStorageAPI.Utilities.HealthCheck
 {
     public class SteamProfileHealthChecker : IHealthCheck
     {
