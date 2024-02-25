@@ -38,6 +38,9 @@
         public static string GetSkinsUrl(int appId, int count, int start) =>
             $"https://steamcommunity.com/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}";
 
+        public static string GetMostPopularSkinUrl(int appId) =>
+            GetSkinsUrl(appId, 1, 0);
+
         public static string GetSkinInfoUrl(string marketHashName) =>
             $"https://steamcommunity.com/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
 

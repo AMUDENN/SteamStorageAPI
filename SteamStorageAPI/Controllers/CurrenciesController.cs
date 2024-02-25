@@ -3,10 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Steam;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
@@ -19,7 +17,6 @@ namespace SteamStorageAPI.Controllers
     {
         #region Fields
 
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
@@ -28,11 +25,9 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public CurrenciesController(
-            IHttpClientFactory httpClientFactory,
             IUserService userService,
             SteamStorageContext context)
         {
-            _httpClientFactory = httpClientFactory;
             _userService = userService;
             _context = context;
         }
@@ -57,10 +52,6 @@ namespace SteamStorageAPI.Controllers
             int SteamCurrencyId,
             string Title,
             string Mark);
-
-        [Validator<RefreshCurrencyRequestValidator>]
-        public record RefreshCurrencyRequest(
-            string MarketHashName);
 
         [Validator<PutCurrencyRequestValidator>]
         public record PutCurrencyRequest(
@@ -115,7 +106,7 @@ namespace SteamStorageAPI.Controllers
         {
             List<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
 
-            return Ok(currencies.Select(async x => await GetCurrencyResponseAsync(x, cancellationToken)));
+            return Ok(currencies.Select(x => GetCurrencyResponseAsync(x, cancellationToken).Result));
         }
 
         /// <summary>
@@ -164,72 +155,6 @@ namespace SteamStorageAPI.Controllers
                 Title = request.Title,
                 Mark = request.Mark
             }, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Обновление курса валют
-        /// </summary>
-        /// <response code="200">Курс валют успешно обновлён</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Базовая валюта (американский доллар) не найдена или предмета с таким MarketHashName не существует</response>
-        /// <response code="499">Операция отменена</response>
-        [HttpPost(Name = "RefreshCurrenciesExchangeRates")]
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> RefreshCurrenciesExchangeRates(
-            RefreshCurrencyRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
-
-            Currency dollar =
-                await _context.Currencies.FirstOrDefaultAsync(x => x.SteamCurrencyId == 1, cancellationToken) ??
-                throw new HttpResponseException(StatusCodes.Status404NotFound,
-                    "В базе данных отсутствует базовая валюта (американский доллар)");
-
-            Skin skin =
-                await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == request.MarketHashName,
-                    cancellationToken) ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                    "В базе данных отсутствует предмет с таким MarketHashName");
-
-            await _context.Entry(skin).Reference(s => s.Game).LoadAsync(cancellationToken);
-
-            HttpClient client = _httpClientFactory.CreateClient();
-            SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId),
-                cancellationToken);
-            if (response?.lowest_price is null)
-                throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "При получении данных с сервера Steam произошла ошибка");
-
-            double dollarPrice =
-                Convert.ToDouble(response.lowest_price.Replace(dollar.Mark, string.Empty).Replace('.', ','));
-
-            foreach (Currency currency in currencies)
-            {
-                response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                    SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
-                        currency.SteamCurrencyId), cancellationToken);
-
-                if (response is null)
-                    continue;
-
-                double price = Convert.ToDouble(response.lowest_price.Replace(currency.Mark, string.Empty)
-                    .Replace('.', ','));
-
-                _context.CurrencyDynamics.Add(new()
-                {
-                    CurrencyId = currency.Id,
-                    DateUpdate = DateTime.Now,
-                    Price = price / dollarPrice
-                });
-
-                await Task.Delay(2000, cancellationToken);
-            }
 
             await _context.SaveChangesAsync(cancellationToken);
 

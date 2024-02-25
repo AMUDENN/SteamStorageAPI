@@ -245,21 +245,11 @@ namespace SteamStorageAPI.Controllers
                 if (item is { marketable: 0, tradable: 0 })
                     continue;
 
-                Skin? skin =
-                    await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name,
+                Skin skin =
+                    await _context.Skins
+                        .FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name, cancellationToken) ??
+                    await _skinService.AddSkin(game.Id, item.market_hash_name, item.name, item.icon_url,
                         cancellationToken);
-                if (skin is null)
-                {
-                    skin = new()
-                    {
-                        GameId = game.Id,
-                        MarketHashName = item.market_hash_name,
-                        Title = item.name,
-                        SkinIconUrl = item.icon_url
-                    };
-                    await _context.Skins.AddAsync(skin, cancellationToken);
-                }
-
 
                 Inventory? inventory =
                     await _context.Inventories.FirstOrDefaultAsync(x => x.SkinId == skin.Id, cancellationToken);

@@ -65,6 +65,28 @@ namespace SteamStorageAPI.Services.SkinService
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<Skin> AddSkin(
+            int gameId, 
+            string marketHashName, 
+            string title, 
+            string skinIconUrl, 
+            CancellationToken cancellationToken = default)
+        {
+            Skin skin = new()
+            {
+                GameId = gameId,
+                MarketHashName = marketHashName,
+                Title = title,
+                SkinIconUrl = skinIconUrl
+            };
+            
+            await _context.Skins.AddAsync(skin, cancellationToken);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return skin;
+        }
+
         #endregion Methods
     }
 }

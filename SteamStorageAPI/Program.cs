@@ -11,8 +11,10 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using SteamStorageAPI.Services.BackgroundServices;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
+using SteamStorageAPI.Services.RefreshCurrenciesService;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.HealthCheck;
@@ -40,15 +42,18 @@ public static class Program
             });
         builder.Services.AddEndpointsApiExplorer();
         
-
         //JwtOptions Initialize
         JwtOptions.Initialize(builder.Configuration);
 
         //Services
+        builder.Services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
         builder.Services.AddScoped<ICryptographyService, CryptographyService>();
         builder.Services.AddTransient<ISkinService, SkinService>();
         builder.Services.AddTransient<IUserService, UserService>();
+        
+        //Background Services
+        builder.Services.AddHostedService<RefreshCurrenciesBackgroundService>();
 
         //Swagger
         builder.Services
