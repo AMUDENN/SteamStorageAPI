@@ -8,8 +8,7 @@ public sealed class GetSkinDynamicsRequestValidator : AbstractValidator<SkinsCon
     public GetSkinDynamicsRequestValidator()
     {
         RuleFor(expression => expression.SkinId)
-            .GreaterThan(0).WithMessage("Id предмета не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id предмета не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id предмета не может быть меньше 1");
         
         RuleFor(expression => expression.EndDate)
             .GreaterThan(expression => expression.StartDate)

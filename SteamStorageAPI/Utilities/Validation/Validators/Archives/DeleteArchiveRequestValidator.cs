@@ -8,7 +8,6 @@ public sealed class DeleteArchiveRequestValidator : AbstractValidator<ArchivesCo
     public DeleteArchiveRequestValidator()
     {
         RuleFor(expression => expression.Id)
-            .GreaterThan(0).WithMessage("Id элемента архива не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id элемента архива не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id элемента архива не может быть меньше 1");
     }
 }

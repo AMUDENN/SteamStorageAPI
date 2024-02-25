@@ -8,11 +8,9 @@ public sealed class SetRoleRequestValidator : AbstractValidator<RolesController.
     public SetRoleRequestValidator()
     {
         RuleFor(expression => expression.UserId)
-            .GreaterThan(0).WithMessage("Id пользователя не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id пользователя не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id пользователя не может быть меньше 1");
         
         RuleFor(expression => expression.RoleId)
-            .GreaterThan(0).WithMessage("Id роли не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id роли не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id роли не может быть меньше 1");
     }
 }

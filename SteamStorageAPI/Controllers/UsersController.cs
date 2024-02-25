@@ -62,10 +62,6 @@ namespace SteamStorageAPI.Controllers
         public record PutGoalSumRequest(
             decimal? GoalSum);
 
-        [Validator<PutStartPageRequestValidator>]
-        public record PutStartPageRequest(
-            int StartPageId);
-
         #endregion Records
 
         #region Methods

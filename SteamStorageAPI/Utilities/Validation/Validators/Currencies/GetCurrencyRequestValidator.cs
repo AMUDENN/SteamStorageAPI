@@ -8,7 +8,6 @@ public sealed class GetCurrencyRequestValidator : AbstractValidator<CurrenciesCo
     public GetCurrencyRequestValidator()
     {
         RuleFor(expression => expression.Id)
-            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id валюты не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1");
     }
 }

@@ -8,16 +8,13 @@ public sealed class SoldActiveRequestValidator : AbstractValidator<ActivesContro
     public SoldActiveRequestValidator()
     {
         RuleFor(expression => expression.Id)
-            .GreaterThan(0).WithMessage("Id актива не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id актива не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id актива не может быть меньше 1");
         
         RuleFor(expression => expression.GroupId)
-            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id группы не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
 
         RuleFor(expression => expression.Count)
-            .GreaterThan(0).WithMessage("Количество предметов не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Количество предметов не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Количество предметов не может быть меньше 1");
 
         RuleFor(expression => expression.SoldPrice)
             .GreaterThanOrEqualTo(0).WithMessage("Стоимость покупки не может быть меньше 0")

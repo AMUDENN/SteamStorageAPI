@@ -8,11 +8,9 @@ public sealed class GetActiveGroupDynamicRequestValidator : AbstractValidator<Ac
     public GetActiveGroupDynamicRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
-            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id группы не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
         
         RuleFor(expression => expression.DaysDynamic)
-            .GreaterThan(0).WithMessage("Количество дней не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Количество дней не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Количество дней не может быть меньше 1");
     }
 }

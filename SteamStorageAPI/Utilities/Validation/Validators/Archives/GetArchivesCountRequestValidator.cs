@@ -8,11 +8,9 @@ public sealed class GetArchivesCountRequestValidator : AbstractValidator<Archive
     public GetArchivesCountRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
-            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id группы не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
 
         RuleFor(expression => expression.GameId)
-            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id игры не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1");
     }
 }

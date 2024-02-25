@@ -8,8 +8,7 @@ public sealed class PostCurrencyRequestValidator : AbstractValidator<CurrenciesC
     public PostCurrencyRequestValidator()
     {
         RuleFor(expression => expression.SteamCurrencyId)
-            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id валюты не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1");
         
         RuleFor(expression => expression.Title)
             .Length(3, 100).WithMessage("Длина названия валюты должна быть от 3 до 100 символов");

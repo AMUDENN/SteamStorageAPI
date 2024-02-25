@@ -8,7 +8,6 @@ public sealed class GetSavedSkinsCountRequestValidator : AbstractValidator<Skins
     public GetSavedSkinsCountRequestValidator()
     {
         RuleFor(expression => expression.GameId)
-            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id игры не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1");
     }
 }

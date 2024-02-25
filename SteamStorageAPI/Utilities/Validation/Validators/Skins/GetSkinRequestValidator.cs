@@ -8,7 +8,6 @@ public sealed class GetSkinRequestValidator : AbstractValidator<SkinsController.
     public GetSkinRequestValidator()
     {
         RuleFor(expression => expression.SkinId)
-            .GreaterThan(0).WithMessage("Id предмета не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id предмета не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id предмета не может быть меньше 1");
     }
 }

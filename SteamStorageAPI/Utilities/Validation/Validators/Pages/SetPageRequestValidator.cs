@@ -8,7 +8,6 @@ public sealed class SetPageRequestValidator : AbstractValidator<PagesController.
     public SetPageRequestValidator()
     {
         RuleFor(expression => expression.PageId)
-            .GreaterThan(0).WithMessage("Id страницы не может быть меньше 1")
-            .LessThan(int.MaxValue).WithMessage($"Id страницы не может быть больше {int.MaxValue}");
+            .GreaterThan(0).WithMessage("Id страницы не может быть меньше 1");
     }
 }

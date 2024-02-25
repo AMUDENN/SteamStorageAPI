@@ -6,7 +6,6 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Validation;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 
