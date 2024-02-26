@@ -82,6 +82,7 @@ namespace SteamStorageAPI.Controllers
         {
             Role role = await _context.Roles.FirstAsync(x => x.Title == nameof(Role.Roles.User), cancellationToken);
 
+            //TODO: Убрать "магические" числа
             const int startPageId = 1;
             const int currencyId = 1;
 

@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace SteamStorageAPI.Utilities.Exceptions;
+﻿namespace SteamStorageAPI.Utilities.Exceptions;
 
 public class HttpResponseException : Exception
 {

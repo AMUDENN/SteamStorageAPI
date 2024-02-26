@@ -35,7 +35,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(exception.Message);
+        _logger.LogError($"Ошибка, переданная в глобальный обработчик: {exception.Message}");
 
         ProblemDetails problemDetails = new()
         {

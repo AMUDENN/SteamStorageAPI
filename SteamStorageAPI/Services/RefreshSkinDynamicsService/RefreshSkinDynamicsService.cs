@@ -35,6 +35,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     public async Task RefreshSkinDynamicsAsync(
         CancellationToken cancellationToken = default)
     {
+        //TODO: "Магические" числа
         Currency dollar =
             await _context.Currencies.Include(x => x.CurrencyDynamics)
                 .FirstOrDefaultAsync(x => x.SteamCurrencyId == 1, cancellationToken) ??
@@ -132,7 +133,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                 {
                     count = rnd.Next(100, 199);
                     start -= 1;
-                    _logger.LogError(ex.Message);
+                    _logger.LogError($"Произошла ошибка во время обновления стоимости предметов: {ex.Message}");
                     await Task.Delay(rnd.Next(100000, 150000), cancellationToken);
                 }
             }

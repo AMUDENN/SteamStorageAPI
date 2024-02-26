@@ -163,6 +163,8 @@ namespace SteamStorageAPI.Controllers
                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
                                     "У вас нет доступа к информации о группе с таким Id или группы с таким Id не существует");
 
+            //TODO: Сделать по аналогии со скинами через StartDate и EndDate
+            
             DateTime startDate = DateTime.Now.AddDays(-request.DaysDynamic);
 
             return Ok(_context.Entry(group)

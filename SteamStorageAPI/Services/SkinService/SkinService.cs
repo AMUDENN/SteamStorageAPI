@@ -38,7 +38,7 @@ namespace SteamStorageAPI.Services.SkinService
         }
 
         public async Task<decimal> GetCurrentPriceAsync(
-            Skin skin, 
+            Skin skin,
             CancellationToken cancellationToken = default)
         {
             List<SkinsDynamic> dynamics = await _context.Entry(skin)
@@ -51,11 +51,15 @@ namespace SteamStorageAPI.Services.SkinService
         }
 
         public async Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(
-            Skin skin, 
+            Skin skin,
             DateTime startDate,
-            DateTime endDate, 
+            DateTime endDate,
             CancellationToken cancellationToken = default)
         {
+            startDate = startDate.Date;
+
+            endDate = endDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+
             return await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
@@ -66,10 +70,10 @@ namespace SteamStorageAPI.Services.SkinService
         }
 
         public async Task<Skin> AddSkinAsync(
-            int gameId, 
-            string marketHashName, 
-            string title, 
-            string skinIconUrl, 
+            int gameId,
+            string marketHashName,
+            string title,
+            string skinIconUrl,
             CancellationToken cancellationToken = default)
         {
             Skin skin = new()
@@ -79,7 +83,7 @@ namespace SteamStorageAPI.Services.SkinService
                 Title = title,
                 SkinIconUrl = skinIconUrl
             };
-            
+
             await _context.Skins.AddAsync(skin, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);

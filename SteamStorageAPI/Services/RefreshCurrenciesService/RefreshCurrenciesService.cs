@@ -39,6 +39,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
     {
         IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
 
+        //TODO: "Магические" числа
         Currency dollar =
             await _context.Currencies.FirstOrDefaultAsync(x => x.SteamCurrencyId == 1, cancellationToken) ??
             throw new HttpResponseException(StatusCodes.Status404NotFound,

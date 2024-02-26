@@ -19,6 +19,7 @@ namespace SteamStorageAPI.Services.SkinService
             DateTime endDate,
             CancellationToken cancellationToken = default);
 
+        //TODO: Возможно стоит убрать этот метод, ибо он не несёт особой пользы :(
         Task<Skin> AddSkinAsync(
             int gameId, 
             string marketHashName, 

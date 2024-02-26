@@ -31,8 +31,7 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-
-        private readonly ILogger<SkinsController> _logger;
+        
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
@@ -43,13 +42,11 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public SkinsController(
-            ILogger<SkinsController> logger,
             IHttpClientFactory httpClientFactory,
             ISkinService skinService,
             IUserService userService,
             SteamStorageContext context)
         {
-            _logger = logger;
             _httpClientFactory = httpClientFactory;
             _skinService = skinService;
             _userService = userService;
@@ -184,7 +181,7 @@ namespace SteamStorageAPI.Controllers
                 change30D, isMarked);
         }
 
-        private IEnumerable<SkinResponse> GetSkinsResponse(
+        private IEnumerable<SkinResponse> GetSkinsResponseAsync(
             IEnumerable<Skin> skins,
             IEnumerable<int> markedSkinsIds,
             CancellationToken cancellationToken = default)
@@ -213,12 +210,16 @@ namespace SteamStorageAPI.Controllers
                                            .OrderBy(sd => sd.DateUpdate).First().Price)
                             : 0
                     }), s => s.Id, d => d.SkinID,
-                (s, d) => new
+                (s, d) =>
                 {
-                    Skin = s,
-                    LastPrice = d.Any() ? d.First().LastPrice : 0,
-                    Change7D = d.Any() ? d.First().Change7D : 0,
-                    Change30D = d.Any() ? d.First().Change30D : 0
+                    var result = d.ToList();
+                    return new
+                    {
+                        Skin = s,
+                        LastPrice = result.FirstOrDefault()?.LastPrice ?? 0,
+                        Change7D = result.FirstOrDefault()?.Change7D ?? 0,
+                        Change30D = result.FirstOrDefault()?.Change30D ?? 0
+                    };
                 });
             return skinsResult.Select(x => new SkinResponse(
                 _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
@@ -359,7 +360,7 @@ namespace SteamStorageAPI.Controllers
                 .ToList();
 
             return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
-                GetSkinsResponse(resultSkins, markedSkinsIds, cancellationToken)));
+                GetSkinsResponseAsync(resultSkins, markedSkinsIds, cancellationToken)));
         }
 
         /// <summary>
@@ -416,12 +417,12 @@ namespace SteamStorageAPI.Controllers
                     .Select(x => x.SkinId)
                     .ToListAsync(cancellationToken);
 
-            int count = await _context.Skins.CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                                             && (string.IsNullOrEmpty(request.Filter) ||
-                                                                 x.Title.Contains(request.Filter!))
-                                                             && (request.IsMarked == null || request.IsMarked ==
-                                                                 markedSkinsIds.Any(y => y == x.Id)),
-                cancellationToken);
+            int count = await _context.Skins
+                .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
+                                 && (request.IsMarked == null ||
+                                     request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
+                    cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
@@ -495,97 +496,6 @@ namespace SteamStorageAPI.Controllers
         #region POST
 
         /// <summary>
-        /// Занесение списка предметов из Steam
-        /// </summary>
-        /// <response code="200">Предметы успешно добавлены</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Игры с таким Id не существует</response>
-        /// <response code="499">Операция отменена</response>
-        [HttpPost(Name = "PostSkins")]
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
-        public async Task<ActionResult> PostSkins(
-            PostSkinsRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                            "Игры с таким Id не существует");
-
-            HttpClient client = _httpClientFactory.CreateClient();
-
-            int count = 100;
-            int start = 0;
-
-            int answerCount = 100;
-
-            SteamSkinResponse? response =
-                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
-                    cancellationToken);
-
-            if (response is null)
-                throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "При получении данных с сервера Steam произошла ошибка");
-
-            int totalCount = response.total_count;
-
-            Random rnd = new();
-
-            while (count == answerCount || start < totalCount)
-            {
-                try
-                {
-                    _logger.LogInformation(
-                        $"Процесс выполнения загрузки скинов:\nЗагружено: {start} / {totalCount}");
-
-                    response = await client.GetFromJsonAsync<SteamSkinResponse>(
-                        SteamApi.GetSkinsUrl(game.SteamGameId, count, start), cancellationToken);
-
-                    if (response is null)
-                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                            "При получении данных с сервера Steam произошла ошибка");
-
-                    List<Skin> skins = [];
-
-                    foreach (SkinResult item in response.results)
-                    {
-                        if (await _context.Skins.AnyAsync(x => x.MarketHashName == item.hash_name,
-                                cancellationToken))
-                            continue;
-
-                        skins.Add(new()
-                        {
-                            GameId = game.Id,
-                            MarketHashName = item.hash_name,
-                            Title = item.name,
-                            SkinIconUrl = item.asset_description.icon_url
-                        });
-                    }
-
-                    await _context.Skins.AddRangeAsync(skins, cancellationToken);
-
-                    await _context.SaveChangesAsync(cancellationToken);
-
-                    answerCount = response.results.Length;
-                    start += response.results.Length;
-
-                    count = 100;
-
-                    await Task.Delay(rnd.Next(3000, 4000), cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    count = rnd.Next(20, 99);
-                    start -= 1;
-                    _logger.LogError(ex.Message);
-                    await Task.Delay(rnd.Next(100000, 150000), cancellationToken);
-                }
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
         /// Занесение одного предмета из Steam
         /// </summary>
         /// <response code="200">Предмет успешно добавлен</response>
@@ -615,10 +525,15 @@ namespace SteamStorageAPI.Controllers
 
             SkinResult result = response.results.First();
 
+            if (await _context.Skins.AnyAsync(x => x.MarketHashName == result.asset_description.market_hash_name,
+                    cancellationToken))
+                throw new HttpResponseException(StatusCodes.Status502BadGateway,
+                    "Скин с таким MarketHashName уже присутствует в базе");
+
             await _context.Skins.AddAsync(new()
             {
                 GameId = game.Id,
-                MarketHashName = result.hash_name,
+                MarketHashName = result.asset_description.market_hash_name,
                 Title = result.name,
                 SkinIconUrl = result.asset_description.icon_url
             }, cancellationToken);
