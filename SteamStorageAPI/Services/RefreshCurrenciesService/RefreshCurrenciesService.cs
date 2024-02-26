@@ -10,9 +10,15 @@ namespace SteamStorageAPI.Services.RefreshCurrenciesService;
 
 public class RefreshCurrenciesService : IRefreshCurrenciesService
 {
+    #region Fields
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ISkinService _skinService;
     private readonly SteamStorageContext _context;
+
+    #endregion Fields
+
+    #region Constructor
 
     public RefreshCurrenciesService(
         IHttpClientFactory httpClientFactory,
@@ -24,8 +30,11 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         _context = context;
     }
 
+    #endregion Constructor
 
-    public async Task RefreshCurrencies(
+    #region Methods
+
+    public async Task RefreshCurrenciesAsync(
         CancellationToken cancellationToken = default)
     {
         IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
@@ -35,9 +44,8 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "В базе данных отсутствует базовая валюта (американский доллар)");
 
-        Game game = await _context.Games.FirstOrDefaultAsync(cancellationToken) ?? throw new HttpResponseException(
-            StatusCodes.Status400BadRequest,
-            "В базе данных нет ни одной игры");
+        Game game = await _context.Games.FirstOrDefaultAsync(x => x.SteamGameId == 730, cancellationToken) ??
+                    throw new HttpResponseException(StatusCodes.Status400BadRequest, "В базе данных нет ни одной игры");
 
         HttpClient client = _httpClientFactory.CreateClient();
 
@@ -54,7 +62,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         Skin skin =
             await _context.Skins.Include(skin => skin.Game)
                 .FirstOrDefaultAsync(x => x.MarketHashName == skinResult.market_hash_name, cancellationToken) ??
-            await _skinService.AddSkin(game.Id, skinResult.market_hash_name, skinResult.name,
+            await _skinService.AddSkinAsync(game.Id, skinResult.market_hash_name, skinResult.name,
                 skinResult.icon_url,
                 cancellationToken);
 
@@ -71,6 +79,9 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
 
         foreach (Currency currency in currencies)
         {
+            if (await _context.CurrencyDynamics.AnyAsync(x => x.DateUpdate.Date == DateTime.Today, cancellationToken))
+                continue;
+
             response = await client.GetFromJsonAsync<SteamPriceResponse>(
                 SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
                     currency.SteamCurrencyId), cancellationToken);
@@ -93,4 +104,6 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
 
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    #endregion Methods
 }

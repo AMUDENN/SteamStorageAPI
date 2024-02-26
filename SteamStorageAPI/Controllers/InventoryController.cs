@@ -248,7 +248,7 @@ namespace SteamStorageAPI.Controllers
                 Skin skin =
                     await _context.Skins
                         .FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name, cancellationToken) ??
-                    await _skinService.AddSkin(game.Id, item.market_hash_name, item.name, item.icon_url,
+                    await _skinService.AddSkinAsync(game.Id, item.market_hash_name, item.name, item.icon_url,
                         cancellationToken);
 
                 Inventory? inventory =

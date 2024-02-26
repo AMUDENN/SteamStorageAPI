@@ -480,12 +480,12 @@ namespace SteamStorageAPI.Controllers
                     .Select(x => x.SkinId)
                     .ToListAsync(cancellationToken: cancellationToken);
 
-            int count = await _context.Skins.CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                                             && (string.IsNullOrEmpty(request.Filter) ||
-                                                                 x.Title.Contains(request.Filter!))
-                                                             && (request.IsMarked == null || request.IsMarked ==
-                                                                 markedSkinsIds.Any(y => y == x.Id)),
-                cancellationToken);
+            int count = await _context.Skins
+                .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
+                                 && (request.IsMarked == null ||
+                                     request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
+                    cancellationToken);
 
             return Ok(new SavedSkinsCountResponse(count));
         }

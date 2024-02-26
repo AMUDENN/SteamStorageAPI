@@ -1,13 +1,13 @@
 ﻿using SteamStorageAPI.Services.BackgroundServices.Tools;
-using SteamStorageAPI.Services.RefreshCurrenciesService;
+using SteamStorageAPI.Services.RefreshSkinDynamicsService;
 
 namespace SteamStorageAPI.Services.BackgroundServices;
 
-public class RefreshCurrenciesBackgroundService : BackgroundServiceBase
+public class RefreshSkinDynamicsBackgroundService : BackgroundServiceBase
 {
     #region Fields
 
-    private readonly ILogger<RefreshCurrenciesBackgroundService> _logger;
+    private readonly ILogger<RefreshSkinDynamicsBackgroundService> _logger;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -15,8 +15,8 @@ public class RefreshCurrenciesBackgroundService : BackgroundServiceBase
 
     #region Constructor
 
-    public RefreshCurrenciesBackgroundService(
-        ILogger<RefreshCurrenciesBackgroundService> logger,
+    public RefreshSkinDynamicsBackgroundService(
+        ILogger<RefreshSkinDynamicsBackgroundService> logger,
         IHostApplicationLifetime lifetime,
         IServiceScopeFactory serviceScopeFactory)
     {
@@ -38,19 +38,19 @@ public class RefreshCurrenciesBackgroundService : BackgroundServiceBase
         {
             try
             {
-                _logger.LogInformation("Начинается обновление курса валют");
+                _logger.LogInformation("Начинается обновление стоимости предметов");
 
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
-                    IRefreshCurrenciesService refreshCurrenciesService =
-                        scope.ServiceProvider.GetRequiredService<IRefreshCurrenciesService>();
+                    IRefreshSkinDynamicsService refreshSkinDynamicsService =
+                        scope.ServiceProvider.GetRequiredService<IRefreshSkinDynamicsService>();
 
-                    await refreshCurrenciesService.RefreshCurrenciesAsync(stoppingToken);
+                    await refreshSkinDynamicsService.RefreshSkinDynamicsAsync(stoppingToken);
                 }
 
-                _logger.LogInformation("Обновление курса валют завершено");
+                _logger.LogInformation("Обновление стоимости предметов завершено");
 
-                await Task.Delay(24 * 60 * 60 * 1000, stoppingToken);
+                await Task.Delay(60 * 60 * 1000, stoppingToken);
             }
             catch (Exception ex)
             {

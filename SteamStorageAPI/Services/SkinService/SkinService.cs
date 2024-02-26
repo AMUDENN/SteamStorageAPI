@@ -65,7 +65,7 @@ namespace SteamStorageAPI.Services.SkinService
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<Skin> AddSkin(
+        public async Task<Skin> AddSkinAsync(
             int gameId, 
             string marketHashName, 
             string title, 

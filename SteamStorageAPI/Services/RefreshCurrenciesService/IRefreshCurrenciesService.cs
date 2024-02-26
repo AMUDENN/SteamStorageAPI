@@ -2,6 +2,6 @@
 
 public interface IRefreshCurrenciesService
 {
-    Task RefreshCurrencies(
+    Task RefreshCurrenciesAsync(
         CancellationToken cancellationToken = default);
 }

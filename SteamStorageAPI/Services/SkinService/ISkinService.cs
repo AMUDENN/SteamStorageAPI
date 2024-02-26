@@ -19,7 +19,7 @@ namespace SteamStorageAPI.Services.SkinService
             DateTime endDate,
             CancellationToken cancellationToken = default);
 
-        Task<Skin> AddSkin(
+        Task<Skin> AddSkinAsync(
             int gameId, 
             string marketHashName, 
             string title, 

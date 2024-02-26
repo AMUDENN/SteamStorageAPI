@@ -15,6 +15,7 @@ using SteamStorageAPI.Services.BackgroundServices;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
 using SteamStorageAPI.Services.RefreshCurrenciesService;
+using SteamStorageAPI.Services.RefreshSkinDynamicsService;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.HealthCheck;
@@ -47,6 +48,7 @@ public static class Program
 
         //Services
         builder.Services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
+        builder.Services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
         builder.Services.AddScoped<ICryptographyService, CryptographyService>();
         builder.Services.AddTransient<ISkinService, SkinService>();
@@ -54,6 +56,7 @@ public static class Program
         
         //Background Services
         builder.Services.AddHostedService<RefreshCurrenciesBackgroundService>();
+        builder.Services.AddHostedService<RefreshSkinDynamicsBackgroundService>();
 
         //Swagger
         builder.Services
