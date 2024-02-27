@@ -13,6 +13,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using SteamStorageAPI.Services.BackgroundServices;
 using SteamStorageAPI.Services.CryptographyService;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.JwtProvider;
 using SteamStorageAPI.Services.RefreshCurrenciesService;
 using SteamStorageAPI.Services.RefreshSkinDynamicsService;
@@ -53,6 +54,7 @@ public static class Program
         builder.Services.AddScoped<ICryptographyService, CryptographyService>();
         builder.Services.AddTransient<ISkinService, SkinService>();
         builder.Services.AddTransient<IUserService, UserService>();
+        builder.Services.AddTransient<ICurrencyService, CurrencyService>();
         
         //Background Services
         builder.Services.AddHostedService<RefreshCurrenciesBackgroundService>();

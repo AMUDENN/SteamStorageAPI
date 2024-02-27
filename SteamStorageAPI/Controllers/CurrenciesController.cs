@@ -210,6 +210,8 @@ namespace SteamStorageAPI.Controllers
 
             if (!await _context.Currencies.AnyAsync(x => x.Id == request.CurrencyId, cancellationToken))
                 throw new HttpResponseException(StatusCodes.Status404NotFound, "Валюты с таким Id не существует");
+            
+            //TODO: Менять и стоимости активов и архивов при смене валюты
 
             user.CurrencyId = request.CurrencyId;
 

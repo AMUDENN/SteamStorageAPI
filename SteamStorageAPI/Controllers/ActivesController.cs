@@ -144,9 +144,10 @@ namespace SteamStorageAPI.Controllers
 
         private async Task<ActiveResponse> GetActiveResponseAsync(
             Active active,
+            User user,
             CancellationToken cancellationToken = default)
         {
-            decimal currentPrice = await _skinService.GetCurrentPriceAsync(active.Skin, cancellationToken);
+            decimal currentPrice = await _skinService.GetCurrentPriceAsync(active.Skin, user, cancellationToken);
 
             return new(active.Id,
                 await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
@@ -156,7 +157,7 @@ namespace SteamStorageAPI.Controllers
                 currentPrice * active.Count,
                 (double)(active.BuyPrice == 0
                     ? 0
-                    : (await _skinService.GetCurrentPriceAsync(active.Skin, cancellationToken) - active.BuyPrice) /
+                    : (currentPrice - active.BuyPrice) /
                       active.BuyPrice));
         }
 
@@ -214,7 +215,7 @@ namespace SteamStorageAPI.Controllers
                 .Take(request.PageSize);
 
             return Ok(new ActivesResponse(activesCount, pagesCount == 0 ? 1 : pagesCount,
-                actives.Select(x => GetActiveResponseAsync(x, cancellationToken).Result)));
+                actives.Select(x => GetActiveResponseAsync(x, user, cancellationToken).Result)));
         }
 
         /// <summary>

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
@@ -31,10 +32,11 @@ namespace SteamStorageAPI.Controllers
         #endregion Enums
 
         #region Fields
-        
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
+        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -45,11 +47,13 @@ namespace SteamStorageAPI.Controllers
             IHttpClientFactory httpClientFactory,
             ISkinService skinService,
             IUserService userService,
+            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _httpClientFactory = httpClientFactory;
             _skinService = skinService;
             _userService = userService;
+            _currencyService = currencyService;
             _context = context;
         }
 
@@ -154,9 +158,12 @@ namespace SteamStorageAPI.Controllers
 
         private async Task<SkinResponse> GetSkinResponseAsync(
             Skin skin,
+            User user,
             IEnumerable<int> markedSkinsIds,
             CancellationToken cancellationToken = default)
         {
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
             List<SkinsDynamic> dynamics = await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
@@ -177,15 +184,19 @@ namespace SteamStorageAPI.Controllers
 
             bool isMarked = markedSkinsIds.Any(x => x == skin.Id);
 
-            return new(await _skinService.GetBaseSkinResponseAsync(skin, cancellationToken), currentPrice, change7D,
+            return new(await _skinService.GetBaseSkinResponseAsync(skin, cancellationToken),
+                (decimal)((double)currentPrice * currencyExchangeRate), change7D,
                 change30D, isMarked);
         }
 
-        private IEnumerable<SkinResponse> GetSkinsResponseAsync(
+        private async Task<IEnumerable<SkinResponse>> GetSkinsResponseAsync(
             IEnumerable<Skin> skins,
+            User user,
             IEnumerable<int> markedSkinsIds,
             CancellationToken cancellationToken = default)
         {
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
             var skinsResult = skins.GroupJoin(
                 _context.SkinsDynamics
                     .GroupBy(sd => sd.SkinId)
@@ -223,7 +234,8 @@ namespace SteamStorageAPI.Controllers
                 });
             return skinsResult.Select(x => new SkinResponse(
                 _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
-                x.LastPrice, x.Change7D, x.Change30D, markedSkinsIds.Any(y => y == x.Skin.Id)));
+                (decimal)((double)x.LastPrice * currencyExchangeRate), x.Change7D, x.Change30D,
+                markedSkinsIds.Any(y => y == x.Skin.Id)));
         }
 
         #endregion Methods
@@ -255,7 +267,7 @@ namespace SteamStorageAPI.Controllers
             List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
                 .Select(x => x.SkinId).ToListAsync(cancellationToken);
 
-            return Ok(await GetSkinResponseAsync(skin, markedSkinsIds, cancellationToken));
+            return Ok(await GetSkinResponseAsync(skin, user, markedSkinsIds, cancellationToken));
         }
 
         /// <summary>
@@ -360,7 +372,7 @@ namespace SteamStorageAPI.Controllers
                 .ToList();
 
             return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
-                GetSkinsResponseAsync(resultSkins, markedSkinsIds, cancellationToken)));
+                await GetSkinsResponseAsync(resultSkins, user, markedSkinsIds, cancellationToken)));
         }
 
         /// <summary>
@@ -377,12 +389,16 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSkinDynamicsRequest request,
             CancellationToken cancellationToken = default)
         {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
             Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
 
             List<SkinDynamicResponse> dynamic = await
-                _skinService.GetSkinDynamicsResponseAsync(skin, request.StartDate, request.EndDate,
+                _skinService.GetSkinDynamicsResponseAsync(skin, user, request.StartDate, request.EndDate,
                     cancellationToken);
 
             double changePeriod = (double)(dynamic.Count == 0
