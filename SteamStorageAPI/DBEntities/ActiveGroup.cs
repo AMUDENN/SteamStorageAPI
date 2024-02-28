@@ -2,6 +2,12 @@
 
 public class ActiveGroup
 {
+    #region Constants
+
+    public const string BASE_ACTIVE_GROUP_COLOUR = "000000";
+
+    #endregion Constants
+    
     #region Properties
 
     public int Id { get; set; }

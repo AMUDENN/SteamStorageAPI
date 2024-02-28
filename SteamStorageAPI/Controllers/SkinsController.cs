@@ -76,7 +76,7 @@ namespace SteamStorageAPI.Controllers
             bool IsMarked);
 
         public record SkinsResponse(
-            int SkinsCount,
+            int Count,
             int PagesCount,
             IEnumerable<SkinResponse> Skins);
 
@@ -134,10 +134,6 @@ namespace SteamStorageAPI.Controllers
             int? GameId,
             string? Filter,
             bool? IsMarked);
-
-        [Validator<PostSkinsRequestValidator>]
-        public record PostSkinsRequest(
-            int GameId);
 
         [Validator<PostSkinRequestValidator>]
         public record PostSkinRequest(
@@ -300,7 +296,7 @@ namespace SteamStorageAPI.Controllers
                 switch (request.OrderName)
                 {
                     case SkinOrderName.Title:
-                        skins = (bool)request.IsAscending
+                        skins = request.IsAscending.Value
                             ? skins.OrderBy(x => x.Title)
                             : skins.OrderByDescending(x => x.Title);
                         break;
@@ -313,7 +309,7 @@ namespace SteamStorageAPI.Controllers
                                     LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0
                                 }), s => s.Id, d => d.SkinID,
                             (s, d) => new { Skin = s, LastPrice = d.Any() ? d.First().LastPrice : 0 });
-                        skins = ((bool)request.IsAscending
+                        skins = (request.IsAscending.Value
                                 ? skinsPriceResult
                                     .OrderBy(result => result.LastPrice)
                                 : skinsPriceResult
@@ -334,7 +330,7 @@ namespace SteamStorageAPI.Controllers
                                         : 0
                                 }), s => s.Id, d => d.SkinID,
                             (s, d) => new { Skin = s, Change7D = d.Any() ? d.First().Change7D : 0 });
-                        skins = ((bool)request.IsAscending
+                        skins = (request.IsAscending.Value
                                 ? skinsChange7DResult
                                     .OrderBy(result => result.Change7D)
                                 : skinsChange7DResult
@@ -355,7 +351,7 @@ namespace SteamStorageAPI.Controllers
                                         : 0
                                 }), s => s.Id, d => d.SkinID,
                             (s, d) => new { Skin = s, Change30D = d.Any() ? d.First().Change30D : 0 });
-                        skins = ((bool)request.IsAscending
+                        skins = (request.IsAscending.Value
                                 ? skinsChange30DResult
                                     .OrderBy(result => result.Change30D)
                                 : skinsChange30DResult

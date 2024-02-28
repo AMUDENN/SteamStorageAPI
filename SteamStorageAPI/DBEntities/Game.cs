@@ -2,6 +2,12 @@
 
 public class Game
 {
+    #region Constanst
+
+    public const int BASE_GAME_ID = 3;
+    
+    #endregion Constants
+    
     #region Properties
 
     public int Id { get; set; }

@@ -14,12 +14,12 @@ public sealed class PostArchiveRequestValidator : AbstractValidator<ArchivesCont
             .GreaterThan(0).WithMessage("Количество предметов не может быть меньше 1");
 
         RuleFor(expression => expression.BuyPrice)
-            .GreaterThanOrEqualTo(0).WithMessage("Стоимость покупки не может быть меньше 0")
+            .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Стоимость покупки не может быть меньше 0.01")
             .LessThan(1000000000000).WithMessage("Стоимость покупки не может быть больше 999999999999");
 
         RuleFor(expression => expression.SoldPrice)
-            .GreaterThanOrEqualTo(0).WithMessage("Финансовая цель не может быть меньше 0")
-            .LessThan(1000000000000).WithMessage("Финансовая цель не может быть больше 999999999999");
+            .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Стоимость продажи не может быть меньше 0.01")
+            .LessThan(1000000000000).WithMessage("Стоимость продажи не может быть больше 999999999999");
 
         RuleFor(expression => expression.SkinId)
             .GreaterThan(0).WithMessage("Id предмета не может быть меньше 1");

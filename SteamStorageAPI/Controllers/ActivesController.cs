@@ -37,8 +37,6 @@ namespace SteamStorageAPI.Controllers
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
-        private readonly Dictionary<ActiveOrderName, Func<Active, object>> _orderNames;
-
         #endregion Fields
 
         #region Constructor
@@ -51,11 +49,6 @@ namespace SteamStorageAPI.Controllers
             _skinService = skinService;
             _userService = userService;
             _context = context;
-
-            _orderNames = new()
-            {
-                // TODO: Сортировка по параметрам!
-            };
         }
 
         #endregion Constructor
@@ -72,9 +65,9 @@ namespace SteamStorageAPI.Controllers
             double Change);
 
         public record ActivesResponse(
-            int ActivesCount,
+            int Count,
             int PagesCount,
-            IEnumerable<ActiveResponse> Skins);
+            IEnumerable<ActiveResponse> Actives);
 
         public record ActivesPagesCountResponse(
             int Count);
@@ -183,31 +176,47 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IEnumerable<Active> actives = _context.Entry(user)
+            IQueryable<Active> actives = _context.Entry(user)
                 .Collection(x => x.ActiveGroups)
                 .Query()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics)
                 .SelectMany(x => x.Actives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
                             && (request.GroupId == null || x.GroupId == request.GroupId));
 
             if (request is { OrderName: not null, IsAscending: not null })
-                actives = (bool)request.IsAscending
-                    ? actives.OrderBy(_orderNames[(ActiveOrderName)request.OrderName])
-                    : actives.OrderByDescending(_orderNames[(ActiveOrderName)request.OrderName]);
+                switch (request.OrderName)
+                {
+                    case ActiveOrderName.Title:
+                        actives = request.IsAscending.Value
+                            ? actives.OrderBy(x => x.Skin.Title)
+                            : actives.OrderByDescending(x => x.Skin.Title);
+                        break;
+                    case ActiveOrderName.Count:
+                        actives = request.IsAscending.Value
+                            ? actives.OrderBy(x => x.Count)
+                            : actives.OrderByDescending(x => x.Count);
+                        break;
+                    case ActiveOrderName.BuyPrice:
+                        actives = request.IsAscending.Value
+                            ? actives.OrderBy(x => x.BuyPrice)
+                            : actives.OrderByDescending(x => x.BuyPrice);
+                        break;
+                    case ActiveOrderName.CurrentPrice:
+                        //TODO: сортирока
+                        break;
+                    case ActiveOrderName.CurrentSum:
+                        //TODO: сортирока
+                        break;
+                    case ActiveOrderName.Change:
+                        //TODO: сортирока
+                        break;
+                }
 
-            int activesCount = await _context
-                .Entry(user)
-                .Collection(x => x.ActiveGroups)
-                .Query()
-                .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
+            int activesCount = await actives.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
 

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
-using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
@@ -34,8 +33,6 @@ namespace SteamStorageAPI.Controllers
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
-        private readonly Dictionary<ArchiveGroupOrderName, Func<ArchiveGroup, object>> _orderNames;
-
         #endregion Fields
 
         #region Constructor
@@ -46,23 +43,25 @@ namespace SteamStorageAPI.Controllers
         {
             _userService = userService;
             _context = context;
-
-
-            _orderNames = new()
-            {
-                // TODO: Сортировка по параметрам!
-            };
         }
 
         #endregion Constructor
 
         #region Records
 
-        public record ArchiveGroupsResponse(
+        public record ArchiveGroupResponse(
             int Id,
             string Title,
             string Description,
-            string Colour);
+            string Colour,
+            decimal BuySum,
+            decimal SoldSum,
+            double Change,
+            DateTime DateCreation);
+
+        public record ArchiveGroupsResponse(
+            int Count,
+            IEnumerable<ArchiveGroupResponse> ArchiveGroups);
 
         public record ArchiveGroupsCountResponse(
             int Count);
@@ -103,7 +102,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetArchiveGroups")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<ArchiveGroupsResponse>>> GetArchiveGroups(
+        public async Task<ActionResult<ArchiveGroupsResponse>> GetArchiveGroups(
             [FromQuery] GetArchiveGroupsRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -111,18 +110,51 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IEnumerable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query();
+            IQueryable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
+                .Include(x => x.Archives);
 
             if (request is { OrderName: not null, IsAscending: not null })
-                groups = (bool)request.IsAscending
-                    ? groups.OrderBy(_orderNames[(ArchiveGroupOrderName)request.OrderName])
-                    : groups.OrderByDescending(_orderNames[(ArchiveGroupOrderName)request.OrderName]);
+                switch (request.OrderName)
+                {
+                    case ArchiveGroupOrderName.Title:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Title)
+                            : groups.OrderByDescending(x => x.Title);
+                        break;
+                    case ArchiveGroupOrderName.Count:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Archives.Sum(y => y.Count))
+                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.Count));
+                        break;
+                    case ArchiveGroupOrderName.BuySum:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Archives.Sum(y => y.Count * y.BuyPrice))
+                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.Count * y.BuyPrice));
+                        break;
+                    case ArchiveGroupOrderName.SoldSum:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Archives.Sum(y => y.Count * y.SoldPrice))
+                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.Count * y.SoldPrice));
+                        break;
+                    case ArchiveGroupOrderName.Change:
+                        //TODO: сортирока
+                        break;
+                }
 
-            return Ok(groups.Select(x =>
-                new ArchiveGroupsResponse(x.Id,
-                    x.Title,
-                    x.Description ?? string.Empty,
-                    $"#{x.Colour ?? ProgramConstants.BASE_ARCHIVE_GROUP_COLOUR}")));
+            List<ArchiveGroup> groupsList = await groups.ToListAsync(cancellationToken);
+            IEnumerable<ArchiveGroupResponse> archiveGroups = groupsList.Select(x => new ArchiveGroupResponse(
+                x.Id,
+                x.Title,
+                x.Description ?? string.Empty,
+                $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
+                x.Archives.Sum(y => y.Count * y.BuyPrice),
+                x.Archives.Sum(y => y.Count * y.SoldPrice),
+                1, //TODO:
+                DateTime.Now));
+
+            //TODO: Добавить дату создания группы в бд
+
+            return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken), archiveGroups));
         }
 
         /// <summary>

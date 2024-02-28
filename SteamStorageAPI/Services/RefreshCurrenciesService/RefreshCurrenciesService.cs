@@ -38,14 +38,13 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         CancellationToken cancellationToken = default)
     {
         IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
-
-        //TODO: "Магические" числа
+        
         Currency dollar =
-            await _context.Currencies.FirstOrDefaultAsync(x => x.SteamCurrencyId == 1, cancellationToken) ??
+            await _context.Currencies.FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "В базе данных отсутствует базовая валюта (американский доллар)");
 
-        Game game = await _context.Games.FirstOrDefaultAsync(x => x.SteamGameId == 730, cancellationToken) ??
+        Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == Game.BASE_GAME_ID, cancellationToken) ??
                     throw new HttpResponseException(StatusCodes.Status400BadRequest, "В базе данных нет ни одной игры");
 
         HttpClient client = _httpClientFactory.CreateClient();

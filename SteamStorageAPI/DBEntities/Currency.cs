@@ -2,6 +2,12 @@
 
 public class Currency
 {
+    #region Constanst
+
+    public const int BASE_CURRENCY_ID = 1;
+    
+    #endregion Constants
+    
     #region Properties
 
     public int Id { get; set; }

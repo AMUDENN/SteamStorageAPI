@@ -38,8 +38,6 @@ namespace SteamStorageAPI.Controllers
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
-        private readonly Dictionary<InventoryOrderName, Func<Inventory, object>> _orderNames;
-
         #endregion Fields
 
         #region Constructor
@@ -54,21 +52,23 @@ namespace SteamStorageAPI.Controllers
             _skinService = skinService;
             _userService = userService;
             _context = context;
-
-            _orderNames = new()
-            {
-                // TODO: Сортировка по параметрам!
-            };
         }
 
         #endregion Constructor
 
         #region Records
-
+        
         public record InventoryResponse(
             int Id,
             BaseSkinResponse Skin,
-            int Count);
+            int Count,
+            decimal CurrentPrice,
+            decimal CurrentSum);
+        
+        public record InventoriesResponse(
+            int Count,
+            int PagesCount,
+            IEnumerable<InventoryResponse> Inventories);
 
         public record InventoryPagesCountResponse(
             int Count);
@@ -101,6 +101,17 @@ namespace SteamStorageAPI.Controllers
             int GameId);
 
         #endregion Records
+        
+        #region Methods
+
+        public async Task<IEnumerable<InventoryResponse>> GetInventoriesResponseAsync(
+            IEnumerable<Inventory> inventories,
+            CancellationToken cancellationToken = default)
+        {
+            return Enumerable.Empty<InventoryResponse>(); //TODO:
+        }
+        
+        #endregion Methods
 
         #region GET
 
@@ -114,7 +125,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetInventory")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetInventory(
+        public async Task<ActionResult<InventoriesResponse>> GetInventory(
             [FromQuery] GetInventoryRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -122,7 +133,7 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IEnumerable<Inventory> inventories = _context.Entry(user)
+            IQueryable<Inventory> inventories = _context.Entry(user)
                 .Collection(x => x.Inventories)
                 .Query()
                 .Include(x => x.Skin)
@@ -130,16 +141,35 @@ namespace SteamStorageAPI.Controllers
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
 
             if (request is { OrderName: not null, IsAscending: not null })
-                inventories = (bool)request.IsAscending
-                    ? inventories.OrderBy(_orderNames[(InventoryOrderName)request.OrderName])
-                    : inventories.OrderByDescending(_orderNames[(InventoryOrderName)request.OrderName]);
+                switch (request.OrderName)
+                {
+                    case InventoryOrderName.Title:
+                        inventories = request.IsAscending.Value
+                            ? inventories.OrderBy(x => x.Skin.Title)
+                            : inventories.OrderByDescending(x => x.Skin.Title);
+                        break;
+                    case InventoryOrderName.Count:
+                        inventories = request.IsAscending.Value
+                            ? inventories.OrderBy(x => x.Count)
+                            : inventories.OrderByDescending(x => x.Count);
+                        break;
+                    case InventoryOrderName.Price:
+                        //TODO: сортирока
+                        break;
+                    case InventoryOrderName.Sum:
+                        //TODO: сортирока
+                        break;
+                }
+
+            int inventoriesCount = await inventories.CountAsync(cancellationToken);
+            
+            int pagesCount = (int)Math.Ceiling((double)inventoriesCount / request.PageSize);
 
             inventories = inventories.Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize);
 
-            return Ok(inventories.Select(async x =>
-                new InventoryResponse(x.Id, await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                    x.Count)));
+            return Ok(new InventoriesResponse(inventoriesCount, pagesCount == 0 ? 1 : pagesCount,
+                await GetInventoriesResponseAsync(inventories, cancellationToken)));
         }
 
         /// <summary>

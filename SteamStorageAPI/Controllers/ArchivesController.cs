@@ -37,8 +37,6 @@ namespace SteamStorageAPI.Controllers
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
-        private readonly Dictionary<ArchiveOrderName, Func<Archive, object>> _orderNames;
-
         #endregion Fields
 
         #region Constructor
@@ -51,11 +49,6 @@ namespace SteamStorageAPI.Controllers
             _skinService = skinService;
             _userService = userService;
             _context = context;
-
-            _orderNames = new()
-            {
-                // TODO: Сортировка по параметрам!
-            };
         }
 
         #endregion Constructor
@@ -72,9 +65,9 @@ namespace SteamStorageAPI.Controllers
             double Change);
 
         public record ArchivesResponse(
-            int ArchivesCount,
+            int Count,
             int PagesCount,
-            IEnumerable<ArchiveResponse> Skins);
+            IEnumerable<ArchiveResponse> Archives);
 
         public record ArchivesPagesCountResponse(
             int Count);
@@ -171,7 +164,7 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IEnumerable<Archive> archives = _context.Entry(user)
+            IQueryable<Archive> archives = _context.Entry(user)
                 .Collection(x => x.ArchiveGroups)
                 .Query()
                 .Include(x => x.Archives)
@@ -182,25 +175,44 @@ namespace SteamStorageAPI.Controllers
                             && (request.GroupId == null || x.GroupId == request.GroupId));
 
             if (request is { OrderName: not null, IsAscending: not null })
-                archives = (bool)request.IsAscending
-                    ? archives.OrderBy(_orderNames[(ArchiveOrderName)request.OrderName])
-                    : archives.OrderByDescending(_orderNames[(ArchiveOrderName)request.OrderName]);
+                switch (request.OrderName)
+                {
+                    case ArchiveOrderName.Title:
+                        archives = request.IsAscending.Value
+                            ? archives.OrderBy(x => x.Skin.Title)
+                            : archives.OrderByDescending(x => x.Skin.Title);
+                        break;
+                    case ArchiveOrderName.Count:
+                        archives = request.IsAscending.Value
+                            ? archives.OrderBy(x => x.Count)
+                            : archives.OrderByDescending(x => x.Count);
+                        break;
+                    case ArchiveOrderName.BuyPrice:
+                        archives = request.IsAscending.Value
+                            ? archives.OrderBy(x => x.BuyPrice)
+                            : archives.OrderByDescending(x => x.BuyPrice);
+                        break;
+                    case ArchiveOrderName.SoldPrice:
+                        archives = request.IsAscending.Value
+                            ? archives.OrderBy(x => x.SoldPrice)
+                            : archives.OrderByDescending(x => x.SoldPrice);
+                        break;
+                    case ArchiveOrderName.SoldSum:
+                        archives = request.IsAscending.Value
+                            ? archives.OrderBy(x => x.SoldPrice * x.Count)
+                            : archives.OrderByDescending(x => x.SoldPrice * x.Count);
+                        break;
+                    case ArchiveOrderName.Change:
+                        //TODO: сортирока
+                        break;
+                }
+
+            int archivesCount = await archives.CountAsync(cancellationToken);
+
+            int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
 
             archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize);
-
-            int archivesCount = await _context
-                .Entry(user)
-                .Collection(x => x.ArchiveGroups)
-                .Query()
-                .Include(x => x.Archives)
-                .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Archives)
-                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
-                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
-
-            int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
 
             return Ok(new ArchivesResponse(archivesCount, pagesCount,
                 archives.Select(x => GetArchiveResponseAsync(x, cancellationToken).Result)));

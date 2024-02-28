@@ -2,6 +2,12 @@
 
 public class ArchiveGroup
 {
+    #region Constants
+
+    public const string BASE_ARCHIVE_GROUP_COLOUR = "FFFFFF";
+
+    #endregion Constants
+
     #region Properties
 
     public int Id { get; set; }

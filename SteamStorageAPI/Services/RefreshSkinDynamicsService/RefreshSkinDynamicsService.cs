@@ -35,10 +35,9 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     public async Task RefreshSkinDynamicsAsync(
         CancellationToken cancellationToken = default)
     {
-        //TODO: "Магические" числа
         Currency dollar =
             await _context.Currencies.Include(x => x.CurrencyDynamics)
-                .FirstOrDefaultAsync(x => x.SteamCurrencyId == 1, cancellationToken) ??
+                .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "В базе данных отсутствует базовая валюта (американский доллар)");
 

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.UserService;
-using SteamStorageAPI.Utilities;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
@@ -34,8 +33,6 @@ namespace SteamStorageAPI.Controllers
         private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
-        private readonly Dictionary<ActiveGroupOrderName, Func<ActiveGroup, object>> _orderNames;
-
         #endregion Fields
 
         #region Constructor
@@ -46,23 +43,27 @@ namespace SteamStorageAPI.Controllers
         {
             _userService = userService;
             _context = context;
-
-            _orderNames = new()
-            {
-                // TODO: Сортировка по параметрам!
-            };
         }
 
         #endregion Constructor
 
         #region Records
 
-        public record ActiveGroupsResponse(
+        public record ActiveGroupResponse(
             int Id,
             string Title,
             string Description,
             string Colour,
-            decimal? GoalSum);
+            decimal? GoalSum,
+            double? GoalSumCompletion,
+            decimal BuySum,
+            decimal CurrentSum,
+            double Change,
+            DateTime DateCreation);
+
+        public record ActiveGroupsResponse(
+            int Count,
+            IEnumerable<ActiveGroupResponse> ActiveGroups);
 
         public record ActiveGroupDynamicsResponse(
             int Id,
@@ -80,7 +81,8 @@ namespace SteamStorageAPI.Controllers
         [Validator<GetActiveGroupDynamicRequestValidator>]
         public record GetActiveGroupDynamicRequest(
             int GroupId,
-            int DaysDynamic);
+            DateTime StartDate,
+            DateTime EndDate);
 
         [Validator<PostActiveGroupRequestValidator>]
         public record PostActiveGroupRequest(
@@ -115,7 +117,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetActiveGroups")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<ActiveGroupsResponse>>> GetActiveGroups(
+        public async Task<ActionResult<ActiveGroupsResponse>> GetActiveGroups(
             [FromQuery] GetActiveGroupsRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -123,19 +125,61 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IEnumerable<ActiveGroup> groups = _context.Entry(user).Collection(x => x.ActiveGroups).Query();
+            IQueryable<ActiveGroup> groups = _context.Entry(user).Collection(x => x.ActiveGroups).Query()
+                .Include(x => x.Actives).ThenInclude(x => x.Skin).ThenInclude(x => x.SkinsDynamics);
 
             if (request is { OrderName: not null, IsAscending: not null })
-                groups = (bool)request.IsAscending
-                    ? groups.OrderBy(_orderNames[(ActiveGroupOrderName)request.OrderName])
-                    : groups.OrderByDescending(_orderNames[(ActiveGroupOrderName)request.OrderName]);
+                switch (request.OrderName)
+                {
+                    case ActiveGroupOrderName.Title:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Title)
+                            : groups.OrderByDescending(x => x.Title);
+                        break;
+                    case ActiveGroupOrderName.Count:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Actives.Sum(y => y.Count))
+                            : groups.OrderByDescending(x => x.Actives.Sum(y => y.Count));
+                        break;
+                    case ActiveGroupOrderName.BuySum:
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x => x.Actives.Sum(y => y.BuyPrice * y.Count))
+                            : groups.OrderByDescending(x => x.Actives.Sum(y => y.BuyPrice * y.Count));
+                        break;
+                    case ActiveGroupOrderName.CurrentSum:
+                        //TODO: сортирока
+                        break;
+                    case ActiveGroupOrderName.Change:
+                        //TODO: сортирока
+                        break;
+                }
 
-            return Ok(groups.Select(x =>
-                new ActiveGroupsResponse(x.Id,
-                    x.Title,
-                    x.Description ?? string.Empty,
-                    $"#{x.Colour ?? ProgramConstants.BASE_ACTIVE_GROUP_COLOUR}",
-                    x.GoalSum)));
+            List<ActiveGroup> groupsList = await groups.ToListAsync(cancellationToken);
+            IEnumerable<ActiveGroupResponse> activeGroups = groupsList.Select(x => new ActiveGroupResponse(
+                x.Id,
+                x.Title,
+                x.Description ?? string.Empty,
+                $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
+                x.GoalSum,
+                x.GoalSum.HasValue
+                    ? x.GoalSum.Value == 0
+                        ? 1
+                        : (double)(x.Actives.Sum(y =>
+                            y.Skin.SkinsDynamics.Count != 0
+                                ? y.Skin.SkinsDynamics.MaxBy(z => z.DateUpdate)!.Price * y.Count
+                                : 0) / x.GoalSum.Value)
+                    : null,
+                x.Actives.Sum(y => y.BuyPrice * y.Count),
+                x.Actives.Sum(y =>
+                    y.Skin.SkinsDynamics.Count != 0
+                        ? y.Skin.SkinsDynamics.MaxBy(z => z.DateUpdate)!.Price * y.Count
+                        : 0),
+                1, //TODO:
+                DateTime.Now));
+
+            //TODO: Добавить дату создания группы в бд
+
+            return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken), activeGroups));
         }
 
         /// <summary>
@@ -163,18 +207,16 @@ namespace SteamStorageAPI.Controllers
                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
                                     "У вас нет доступа к информации о группе с таким Id или группы с таким Id не существует");
 
-            //TODO: Сделать по аналогии со скинами через StartDate и EndDate
-            
-            DateTime startDate = DateTime.Now.AddDays(-request.DaysDynamic);
+            DateTime startDate = request.StartDate.Date;
+
+            DateTime endDate = request.EndDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
 
             return Ok(_context.Entry(group)
                 .Collection(s => s.ActiveGroupsDynamics)
                 .Query()
-                .Where(x => x.DateUpdate > startDate)
+                .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
                 .Select(x =>
-                    new ActiveGroupDynamicsResponse(x.Id,
-                        x.DateUpdate,
-                        x.Sum)));
+                    new ActiveGroupDynamicsResponse(x.Id, x.DateUpdate, x.Sum)));
         }
 
         /// <summary>
@@ -291,9 +333,9 @@ namespace SteamStorageAPI.Controllers
                             "Пользователя с таким Id не существует");
 
             ActiveGroup group = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
-                                     .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
-                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                     "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
+                                throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
             _context.ActiveGroups.Remove(group);
 
