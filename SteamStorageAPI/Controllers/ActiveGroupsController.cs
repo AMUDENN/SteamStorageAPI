@@ -65,10 +65,14 @@ namespace SteamStorageAPI.Controllers
             int Count,
             IEnumerable<ActiveGroupResponse> ActiveGroups);
 
-        public record ActiveGroupDynamicsResponse(
+        public record ActiveGroupDynamicResponse(
             int Id,
             DateTime DateUpdate,
             decimal Sum);
+        
+        public record ActiveGroupDynamicStatsResponse(
+            double ChangePeriod,
+            IEnumerable<ActiveGroupDynamicResponse> Dynamic);
 
         public record ActiveGroupsCountResponse(
             int Count);
@@ -104,6 +108,20 @@ namespace SteamStorageAPI.Controllers
             int GroupId);
 
         #endregion Records
+        
+        #region Methods
+
+        private async Task<IEnumerable<ActiveGroupResponse>> GetActiveGroupsResponsesAsync(
+            IEnumerable<ActiveGroup> groups,
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            //TODO: Добавить дату создания группы в бд
+            
+            return Enumerable.Empty<ActiveGroupResponse>(); //TODO:
+        }
+
+        #endregion Methods
 
         #region GET
 
@@ -154,32 +172,8 @@ namespace SteamStorageAPI.Controllers
                         break;
                 }
 
-            List<ActiveGroup> groupsList = await groups.ToListAsync(cancellationToken);
-            IEnumerable<ActiveGroupResponse> activeGroups = groupsList.Select(x => new ActiveGroupResponse(
-                x.Id,
-                x.Title,
-                x.Description ?? string.Empty,
-                $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
-                x.GoalSum,
-                x.GoalSum.HasValue
-                    ? x.GoalSum.Value == 0
-                        ? 1
-                        : (double)(x.Actives.Sum(y =>
-                            y.Skin.SkinsDynamics.Count != 0
-                                ? y.Skin.SkinsDynamics.MaxBy(z => z.DateUpdate)!.Price * y.Count
-                                : 0) / x.GoalSum.Value)
-                    : null,
-                x.Actives.Sum(y => y.BuyPrice * y.Count),
-                x.Actives.Sum(y =>
-                    y.Skin.SkinsDynamics.Count != 0
-                        ? y.Skin.SkinsDynamics.MaxBy(z => z.DateUpdate)!.Price * y.Count
-                        : 0),
-                1, //TODO:
-                DateTime.Now));
-
-            //TODO: Добавить дату создания группы в бд
-
-            return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken), activeGroups));
+            return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken),
+                await GetActiveGroupsResponsesAsync(groups, user, cancellationToken)));
         }
 
         /// <summary>
@@ -192,7 +186,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetActiveGroupDynamics")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<ActiveGroupDynamicsResponse>>> GetActiveGroupDynamics(
+        public async Task<ActionResult<ActiveGroupDynamicStatsResponse>> GetActiveGroupDynamics(
             [FromQuery] GetActiveGroupDynamicRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -211,12 +205,18 @@ namespace SteamStorageAPI.Controllers
 
             DateTime endDate = request.EndDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
 
-            return Ok(_context.Entry(group)
+            List<ActiveGroupDynamicResponse> dynamic = await _context.Entry(group)
                 .Collection(s => s.ActiveGroupsDynamics)
                 .Query()
                 .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
-                .Select(x =>
-                    new ActiveGroupDynamicsResponse(x.Id, x.DateUpdate, x.Sum)));
+                .Select(x => new ActiveGroupDynamicResponse(x.Id, x.DateUpdate, x.Sum))
+                .ToListAsync(cancellationToken);
+
+            double changePeriod = (double)(dynamic.Count == 0
+                ? 0
+                : (dynamic.Last().Sum - dynamic.First().Sum) / dynamic.First().Sum);
+
+            return Ok(new ActiveGroupDynamicStatsResponse(changePeriod, dynamic));
         }
 
         /// <summary>

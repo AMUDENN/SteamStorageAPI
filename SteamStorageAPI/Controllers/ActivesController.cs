@@ -154,6 +154,14 @@ namespace SteamStorageAPI.Controllers
                       active.BuyPrice));
         }
 
+        private async Task<IEnumerable<ActiveResponse>> GetActivesResponseAsync(
+            IEnumerable<Active> actives,
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            return Enumerable.Empty<ActiveResponse>(); //TODO:
+        }
+
         #endregion Methods
 
         #region GET
@@ -224,7 +232,7 @@ namespace SteamStorageAPI.Controllers
                 .Take(request.PageSize);
 
             return Ok(new ActivesResponse(activesCount, pagesCount == 0 ? 1 : pagesCount,
-                actives.Select(x => GetActiveResponseAsync(x, user, cancellationToken).Result)));
+                await GetActivesResponseAsync(actives, user, cancellationToken)));
         }
 
         /// <summary>

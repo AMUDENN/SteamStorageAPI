@@ -142,6 +142,14 @@ namespace SteamStorageAPI.Controllers
                 (double)(archive.BuyPrice == 0 ? 0 : (archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice));
         }
 
+        private async Task<IEnumerable<ArchiveResponse>> GetArchivesResponseAsync(
+            IEnumerable<Archive> archives,
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            return Enumerable.Empty<ArchiveResponse>(); //TODO:
+        }
+        
         #endregion Methods
 
         #region GET
@@ -214,8 +222,8 @@ namespace SteamStorageAPI.Controllers
             archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize);
 
-            return Ok(new ArchivesResponse(archivesCount, pagesCount,
-                archives.Select(x => GetArchiveResponseAsync(x, cancellationToken).Result)));
+            return Ok(new ArchivesResponse(archivesCount, pagesCount == 0 ? 1 : pagesCount,
+                await GetArchivesResponseAsync(archives, user, cancellationToken)));
         }
 
         /// <summary>

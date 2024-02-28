@@ -79,15 +79,15 @@ namespace SteamStorageAPI.Controllers
             int Count,
             int PagesCount,
             IEnumerable<SkinResponse> Skins);
-
-        public record SkinDynamicStatsResponse(
-            double ChangePeriod,
-            IEnumerable<SkinDynamicResponse> Dynamic);
-
+        
         public record SkinDynamicResponse(
             int Id,
             DateTime DateUpdate,
             decimal Price);
+
+        public record SkinDynamicStatsResponse(
+            double ChangePeriod,
+            IEnumerable<SkinDynamicResponse> Dynamic);
 
         public record SkinPagesCountResponse(
             int Count);

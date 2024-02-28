@@ -37,8 +37,13 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
     public async Task RefreshCurrenciesAsync(
         CancellationToken cancellationToken = default)
     {
+        if (await _context.CurrencyDynamics.CountAsync(x => x.DateUpdate.Date == DateTime.Today, cancellationToken) ==
+            await _context.Currencies.CountAsync(cancellationToken))
+            throw new HttpResponseException(StatusCodes.Status502BadGateway,
+                "Сегодня уже было выполнено обновление курса валют!");
+
         IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
-        
+
         Currency dollar =
             await _context.Currencies.FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
             throw new HttpResponseException(StatusCodes.Status404NotFound,
@@ -66,7 +71,6 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 skinResult.icon_url,
                 cancellationToken);
 
-
         SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
             SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId),
             cancellationToken);
@@ -79,7 +83,8 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
 
         foreach (Currency currency in currencies)
         {
-            if (await _context.CurrencyDynamics.AnyAsync(x => x.DateUpdate.Date == DateTime.Today, cancellationToken))
+            if (await _context.CurrencyDynamics.AnyAsync(
+                    x => x.CurrencyId == currency.Id && x.DateUpdate.Date == DateTime.Today, cancellationToken))
                 continue;
 
             response = await client.GetFromJsonAsync<SteamPriceResponse>(

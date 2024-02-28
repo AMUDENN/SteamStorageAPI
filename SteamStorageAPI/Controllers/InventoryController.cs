@@ -106,6 +106,7 @@ namespace SteamStorageAPI.Controllers
 
         public async Task<IEnumerable<InventoryResponse>> GetInventoriesResponseAsync(
             IEnumerable<Inventory> inventories,
+            User user,
             CancellationToken cancellationToken = default)
         {
             return Enumerable.Empty<InventoryResponse>(); //TODO:
@@ -169,7 +170,7 @@ namespace SteamStorageAPI.Controllers
                 .Take(request.PageSize);
 
             return Ok(new InventoriesResponse(inventoriesCount, pagesCount == 0 ? 1 : pagesCount,
-                await GetInventoriesResponseAsync(inventories, cancellationToken)));
+                await GetInventoriesResponseAsync(inventories, user, cancellationToken)));
         }
 
         /// <summary>

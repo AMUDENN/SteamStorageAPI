@@ -90,6 +90,20 @@ namespace SteamStorageAPI.Controllers
 
         #endregion Records
 
+        #region Methods
+
+        private async Task<IEnumerable<ArchiveGroupResponse>> GetArchiveGroupsResponsesAsync(
+            IEnumerable<ArchiveGroup> groups,
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            //TODO: Добавить дату создания группы в бд
+            
+            return Enumerable.Empty<ArchiveGroupResponse>(); //TODO:
+        }
+
+        #endregion Methods
+        
         #region GET
 
         /// <summary>
@@ -141,20 +155,8 @@ namespace SteamStorageAPI.Controllers
                         break;
                 }
 
-            List<ArchiveGroup> groupsList = await groups.ToListAsync(cancellationToken);
-            IEnumerable<ArchiveGroupResponse> archiveGroups = groupsList.Select(x => new ArchiveGroupResponse(
-                x.Id,
-                x.Title,
-                x.Description ?? string.Empty,
-                $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
-                x.Archives.Sum(y => y.Count * y.BuyPrice),
-                x.Archives.Sum(y => y.Count * y.SoldPrice),
-                1, //TODO:
-                DateTime.Now));
-
-            //TODO: Добавить дату создания группы в бд
-
-            return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken), archiveGroups));
+            return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken),
+                await GetArchiveGroupsResponsesAsync(groups, user, cancellationToken)));
         }
 
         /// <summary>
