@@ -67,6 +67,8 @@ namespace SteamStorageAPI.Controllers
             decimal BuyPrice,
             decimal CurrentPrice,
             decimal CurrentSum,
+            decimal? GoalPrice,
+            double? GoalPriceCompletion,
             double Change);
 
         public record ActivesResponse(
@@ -141,12 +143,13 @@ namespace SteamStorageAPI.Controllers
         #region Methods
 
         private async Task<IEnumerable<ActiveResponse>> GetActivesResponseAsync(
-            IEnumerable<Active> actives,
+            IQueryable<Active> actives,
             User user,
             CancellationToken cancellationToken = default)
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
+            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
             List<Active> listActives = actives.ToList();
 
             var activePrices = listActives.ToDictionary(
@@ -169,6 +172,10 @@ namespace SteamStorageAPI.Controllers
                     x.BuyPrice,
                     (decimal)activePrices[x.Id].CurrentPrice,
                     (decimal)activePrices[x.Id].CurrentPrice * x.Count,
+                    x.GoalPrice,
+                    x.GoalPrice == null
+                        ? null
+                        : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
                     (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice))
             );
         }

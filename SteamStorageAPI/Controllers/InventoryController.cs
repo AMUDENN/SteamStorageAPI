@@ -109,12 +109,13 @@ namespace SteamStorageAPI.Controllers
         #region Methods
 
         private async Task<IEnumerable<InventoryResponse>> GetInventoriesResponseAsync(
-            IEnumerable<Inventory> inventories,
+            IQueryable<Inventory> inventories,
             User user,
             CancellationToken cancellationToken = default)
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
+            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
             List<Inventory> listInventories = inventories.ToList();
 
             var inventoryPrices = listInventories.ToDictionary(

@@ -133,7 +133,7 @@ namespace SteamStorageAPI.Controllers
         #region Methods
 
         private IEnumerable<ArchiveResponse> GetArchivesResponse(
-            IEnumerable<Archive> archives,
+            IQueryable<Archive> archives,
             CancellationToken cancellationToken = default)
         {
             

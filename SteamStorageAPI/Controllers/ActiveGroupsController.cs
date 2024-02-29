@@ -125,6 +125,7 @@ namespace SteamStorageAPI.Controllers
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
+            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
             var activeSums = groups.ToDictionary(
                 group => group.Id,
                 group => new
@@ -153,7 +154,10 @@ namespace SteamStorageAPI.Controllers
                         activeSums[x.Id].Count,
                         (decimal)activeSums[x.Id].BuyPriceSum,
                         (decimal)activeSums[x.Id].LatestPriceSum,
-                        (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) / activeSums[x.Id].BuyPriceSum,
+                        activeSums[x.Id].BuyPriceSum != 0
+                            ? (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) /
+                              activeSums[x.Id].BuyPriceSum
+                            : 1,
                         DateTime.Now))
                 .ToListAsync(cancellationToken);
 

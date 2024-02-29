@@ -117,9 +117,10 @@ namespace SteamStorageAPI.Controllers
                     x.Archives.Sum(y => y.Count),
                     (decimal)((double)x.Archives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate),
                     (decimal)((double)x.Archives.Sum(y => y.SoldPrice * y.Count) * currencyExchangeRate),
-                    ((double)x.Archives.Sum(y => y.SoldPrice * y.Count) -
-                     (double)x.Archives.Sum(y => y.BuyPrice * y.Count)) /
-                    (double)x.Archives.Sum(y => y.BuyPrice * y.Count),
+                    x.Archives.Sum(y => y.BuyPrice) != 0
+                        ? ((double)x.Archives.Sum(y => y.SoldPrice) - (double)x.Archives.Sum(y => y.BuyPrice)) /
+                          (double)x.Archives.Sum(y => y.BuyPrice)
+                        : 1,
                     DateTime.Now)).ToListAsync(cancellationToken);
 
             return result;
@@ -176,13 +177,13 @@ namespace SteamStorageAPI.Controllers
                     case ArchiveGroupOrderName.Change:
                         groups = request.IsAscending.Value
                             ? groups.OrderBy(x =>
-                                (x.Archives.Sum(y => y.SoldPrice * y.Count) -
-                                 x.Archives.Sum(y => y.BuyPrice * y.Count)) /
-                                x.Archives.Sum(y => y.BuyPrice * y.Count))
+                                (x.Archives.Sum(y => y.SoldPrice) -
+                                 x.Archives.Sum(y => y.BuyPrice)) /
+                                x.Archives.Sum(y => y.BuyPrice))
                             : groups.OrderByDescending(x =>
-                                (x.Archives.Sum(y => y.SoldPrice * y.Count) -
-                                 x.Archives.Sum(y => y.BuyPrice * y.Count)) /
-                                x.Archives.Sum(y => y.BuyPrice * y.Count));
+                                (x.Archives.Sum(y => y.SoldPrice) -
+                                 x.Archives.Sum(y => y.BuyPrice)) /
+                                x.Archives.Sum(y => y.BuyPrice));
                         break;
                 }
 
