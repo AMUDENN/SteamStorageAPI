@@ -2,6 +2,12 @@
 
 public class Page
 {
+    #region Constanst
+
+    public const int BASE_START_PAGE_ID = 1;
+    
+    #endregion Constants
+    
     #region Properties
 
     public int Id { get; set; }

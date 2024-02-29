@@ -82,16 +82,12 @@ namespace SteamStorageAPI.Controllers
         {
             Role role = await _context.Roles.FirstAsync(x => x.Title == nameof(Role.Roles.User), cancellationToken);
 
-            //TODO: Убрать "магические" числа
-            const int startPageId = 1;
-            const int currencyId = 1;
-
             User user = new()
             {
                 SteamId = steamId,
                 RoleId = role.Id,
-                StartPageId = startPageId,
-                CurrencyId = currencyId,
+                StartPageId = Page.BASE_START_PAGE_ID,
+                CurrencyId = Currency.BASE_CURRENCY_ID,
                 DateRegistration = DateTime.Now
             };
             await _context.Users.AddAsync(user, cancellationToken);

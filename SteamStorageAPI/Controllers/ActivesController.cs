@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
@@ -35,6 +36,7 @@ namespace SteamStorageAPI.Controllers
 
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
+        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -44,10 +46,12 @@ namespace SteamStorageAPI.Controllers
         public ActivesController(
             ISkinService skinService,
             IUserService userService,
+            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _skinService = skinService;
             _userService = userService;
+            _currencyService = currencyService;
             _context = context;
         }
 
@@ -141,7 +145,32 @@ namespace SteamStorageAPI.Controllers
             User user,
             CancellationToken cancellationToken = default)
         {
-            return Enumerable.Empty<ActiveResponse>(); //TODO:
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            List<Active> listActives = actives.ToList();
+
+            var activePrices = listActives.ToDictionary(
+                active => active.Id,
+                active => new
+                {
+                    CurrentPrice = active.Skin.SkinsDynamics.Count != 0
+                        ? (double)active.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
+                          currencyExchangeRate
+                        : 0
+                }
+            );
+
+            return listActives.Select(x =>
+                new ActiveResponse(
+                    x.Id,
+                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                    x.BuyDate,
+                    x.Count,
+                    x.BuyPrice,
+                    (decimal)activePrices[x.Id].CurrentPrice,
+                    (decimal)activePrices[x.Id].CurrentPrice * x.Count,
+                    (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice))
+            );
         }
 
         #endregion Methods

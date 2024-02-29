@@ -153,10 +153,7 @@ namespace SteamStorageAPI.Controllers
                         activeSums[x.Id].Count,
                         (decimal)activeSums[x.Id].BuyPriceSum,
                         (decimal)activeSums[x.Id].LatestPriceSum,
-                        activeSums[x.Id].BuyPriceSum == 0
-                            ? 1
-                            : (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) /
-                              activeSums[x.Id].BuyPriceSum,
+                        (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) / activeSums[x.Id].BuyPriceSum,
                         DateTime.Now))
                 .ToListAsync(cancellationToken);
 

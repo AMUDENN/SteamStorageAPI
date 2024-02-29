@@ -113,9 +113,31 @@ namespace SteamStorageAPI.Controllers
             User user,
             CancellationToken cancellationToken = default)
         {
-            return Enumerable.Empty<InventoryResponse>(); //TODO:
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            List<Inventory> listInventories = inventories.ToList();
+
+            var inventoryPrices = listInventories.ToDictionary(
+                inventory => inventory.Id,
+                inventory => new
+                {
+                    CurrentPrice = inventory.Skin.SkinsDynamics.Count != 0
+                        ? (double)inventory.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
+                          currencyExchangeRate
+                        : 0
+                }
+            );
+
+            return listInventories.Select(x =>
+                new InventoryResponse(
+                    x.Id,
+                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                    x.Count,
+                    (decimal)inventoryPrices[x.Id].CurrentPrice,
+                    (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count)
+            );
         }
-        
+
         #endregion Methods
 
         #region GET
@@ -142,6 +164,7 @@ namespace SteamStorageAPI.Controllers
                 .Collection(x => x.Inventories)
                 .Query()
                 .Include(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
 

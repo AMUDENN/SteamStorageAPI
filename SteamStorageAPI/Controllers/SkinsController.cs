@@ -229,10 +229,14 @@ namespace SteamStorageAPI.Controllers
                     };
                 });
             
-            return skinsResult.Select(x => new SkinResponse(
+            return skinsResult.Select(x => 
+                new SkinResponse(
                 _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
-                (decimal)((double)x.LastPrice * currencyExchangeRate), x.Change7D, x.Change30D,
-                markedSkinsIds.Any(y => y == x.Skin.Id)));
+                (decimal)((double)x.LastPrice * currencyExchangeRate), 
+                x.Change7D, 
+                x.Change30D,
+                markedSkinsIds.Any(y => y == x.Skin.Id))
+            );
         }
 
         #endregion Methods
