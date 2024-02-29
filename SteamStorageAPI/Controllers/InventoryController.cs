@@ -182,15 +182,59 @@ namespace SteamStorageAPI.Controllers
                             : inventories.OrderByDescending(x => x.Count);
                         break;
                     case InventoryOrderName.Price:
-                        //TODO: сортирока
+                        var inventoriesPriceResult = inventories.GroupJoin(
+                            _context.SkinsDynamics
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    CurrentPrice = g.Any()
+                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }),
+                            s => s.Skin.Id,
+                            d => d.SkinID,
+                            (s, d) => new
+                            {
+                                Inventory = s,
+                                CurrentPrice = d.Any() ? d.First().CurrentPrice : 0
+                            });
+                        inventories = (request.IsAscending.Value
+                                ? inventoriesPriceResult
+                                    .OrderBy(result => result.CurrentPrice)
+                                : inventoriesPriceResult
+                                    .OrderByDescending(result => result.CurrentPrice))
+                            .Select(result => result.Inventory);
                         break;
                     case InventoryOrderName.Sum:
-                        //TODO: сортирока
+                        var inventoriesSumResult = inventories.GroupJoin(
+                            _context.SkinsDynamics
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    CurrentPrice = g.Any()
+                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }),
+                            s => s.Skin.Id,
+                            d => d.SkinID,
+                            (s, d) => new
+                            {
+                                Inventory = s,
+                                Sum = d.Any() ? d.First().CurrentPrice * s.Count : 0
+                            });
+                        inventories = (request.IsAscending.Value
+                                ? inventoriesSumResult
+                                    .OrderBy(result => result.Sum)
+                                : inventoriesSumResult
+                                    .OrderByDescending(result => result.Sum))
+                            .Select(result => result.Inventory);
                         break;
                 }
 
             int inventoriesCount = await inventories.CountAsync(cancellationToken);
-            
+
             int pagesCount = (int)Math.Ceiling((double)inventoriesCount / request.PageSize);
 
             inventories = inventories.Skip((request.PageNumber - 1) * request.PageSize)

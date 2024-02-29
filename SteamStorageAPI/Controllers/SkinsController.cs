@@ -216,7 +216,9 @@ namespace SteamStorageAPI.Controllers
                                        g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
                                            .OrderBy(sd => sd.DateUpdate).First().Price)
                             : 0
-                    }), s => s.Id, d => d.SkinID,
+                    }), 
+                s => s.Id, 
+                d => d.SkinID,
                 (s, d) =>
                 {
                     var result = d.ToList();
