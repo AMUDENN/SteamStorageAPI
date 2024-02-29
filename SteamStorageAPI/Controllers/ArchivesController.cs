@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
@@ -58,6 +59,8 @@ namespace SteamStorageAPI.Controllers
         public record ArchiveResponse(
             int Id,
             BaseSkinResponse Skin,
+            DateTime BuyDate,
+            DateTime SoldDate,
             int Count,
             decimal BuyPrice,
             decimal SoldPrice,
@@ -129,25 +132,24 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<ArchiveResponse> GetArchiveResponseAsync(
-            Archive archive,
-            CancellationToken cancellationToken = default)
-        {
-            return new(archive.Id,
-                await _skinService.GetBaseSkinResponseAsync(archive.Skin, cancellationToken),
-                archive.Count,
-                archive.BuyPrice,
-                archive.SoldPrice,
-                archive.SoldPrice * archive.Count,
-                (double)(archive.BuyPrice == 0 ? 0 : (archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice));
-        }
-
-        private async Task<IEnumerable<ArchiveResponse>> GetArchivesResponseAsync(
+        private IEnumerable<ArchiveResponse> GetArchivesResponse(
             IEnumerable<Archive> archives,
-            User user,
             CancellationToken cancellationToken = default)
         {
-            return Enumerable.Empty<ArchiveResponse>(); //TODO:
+            
+            IEnumerable<ArchiveResponse> result = archives.Select(x =>
+                new ArchiveResponse(
+                    x.Id,
+                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                    x.BuyDate,
+                    x.SoldDate,
+                    x.Count,
+                    x.BuyPrice,
+                    x.SoldPrice,
+                    x.SoldPrice * x.Count,
+                    (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice)));
+
+            return result;
         }
         
         #endregion Methods
@@ -211,7 +213,9 @@ namespace SteamStorageAPI.Controllers
                             : archives.OrderByDescending(x => x.SoldPrice * x.Count);
                         break;
                     case ArchiveOrderName.Change:
-                        //TODO: сортирока
+                        archives = request.IsAscending.Value
+                            ? archives.OrderBy(x => (x.SoldPrice - x.BuyPrice) / x.BuyPrice)
+                            : archives.OrderByDescending(x => (x.SoldPrice - x.BuyPrice) / x.BuyPrice);
                         break;
                 }
 
@@ -223,7 +227,7 @@ namespace SteamStorageAPI.Controllers
                 .Take(request.PageSize);
 
             return Ok(new ArchivesResponse(archivesCount, pagesCount == 0 ? 1 : pagesCount,
-                await GetArchivesResponseAsync(archives, user, cancellationToken)));
+                GetArchivesResponse(archives, cancellationToken)));
         }
 
         /// <summary>

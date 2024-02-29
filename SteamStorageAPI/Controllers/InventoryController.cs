@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Inventory;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
@@ -36,6 +37,7 @@ namespace SteamStorageAPI.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISkinService _skinService;
         private readonly IUserService _userService;
+        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -46,11 +48,13 @@ namespace SteamStorageAPI.Controllers
             IHttpClientFactory httpClientFactory,
             ISkinService skinService,
             IUserService userService,
+            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _httpClientFactory = httpClientFactory;
             _skinService = skinService;
             _userService = userService;
+            _currencyService = currencyService;
             _context = context;
         }
 

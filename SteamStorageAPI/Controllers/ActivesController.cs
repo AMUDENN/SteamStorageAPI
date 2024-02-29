@@ -58,6 +58,7 @@ namespace SteamStorageAPI.Controllers
         public record ActiveResponse(
             int Id,
             BaseSkinResponse Skin,
+            DateTime BuyDate,
             int Count,
             decimal BuyPrice,
             decimal CurrentPrice,
@@ -134,25 +135,6 @@ namespace SteamStorageAPI.Controllers
         #endregion Records
 
         #region Methods
-
-        private async Task<ActiveResponse> GetActiveResponseAsync(
-            Active active,
-            User user,
-            CancellationToken cancellationToken = default)
-        {
-            decimal currentPrice = await _skinService.GetCurrentPriceAsync(active.Skin, user, cancellationToken);
-
-            return new(active.Id,
-                await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
-                active.Count,
-                active.BuyPrice,
-                currentPrice,
-                currentPrice * active.Count,
-                (double)(active.BuyPrice == 0
-                    ? 0
-                    : (currentPrice - active.BuyPrice) /
-                      active.BuyPrice));
-        }
 
         private async Task<IEnumerable<ActiveResponse>> GetActivesResponseAsync(
             IEnumerable<Active> actives,
