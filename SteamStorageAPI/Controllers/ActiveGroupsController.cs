@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
@@ -31,6 +32,7 @@ namespace SteamStorageAPI.Controllers
         #region Fields
 
         private readonly IUserService _userService;
+        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -39,9 +41,11 @@ namespace SteamStorageAPI.Controllers
 
         public ActiveGroupsController(
             IUserService userService,
+            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _userService = userService;
+            _currencyService = currencyService;
             _context = context;
         }
 
@@ -52,10 +56,11 @@ namespace SteamStorageAPI.Controllers
         public record ActiveGroupResponse(
             int Id,
             string Title,
-            string Description,
+            string? Description,
             string Colour,
             decimal? GoalSum,
             double? GoalSumCompletion,
+            int Count,
             decimal BuySum,
             decimal CurrentSum,
             double Change,
@@ -112,13 +117,50 @@ namespace SteamStorageAPI.Controllers
         #region Methods
 
         private async Task<IEnumerable<ActiveGroupResponse>> GetActiveGroupsResponsesAsync(
-            IEnumerable<ActiveGroup> groups,
+            IQueryable<ActiveGroup> groups,
             User user,
             CancellationToken cancellationToken = default)
         {
             //TODO: Добавить дату создания группы в бд
-            
-            return Enumerable.Empty<ActiveGroupResponse>(); //TODO:
+
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            var activeSums = groups.ToDictionary(
+                group => group.Id,
+                group => new
+                {
+                    BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate,
+                    LatestPriceSum = (double)group.Actives
+                                         .Where(y => y.Skin.SkinsDynamics.Count != 0)
+                                         .Sum(y => y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First()
+                                             .Price * y.Count) *
+                                     currencyExchangeRate,
+                    Count = group.Actives.Sum(y => y.Count)
+                }
+            );
+
+            List<ActiveGroupResponse> result = await groups
+                .Select(x =>
+                    new ActiveGroupResponse(
+                        x.Id,
+                        x.Title,
+                        x.Description,
+                        $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
+                        x.GoalSum,
+                        x.GoalSum == null
+                            ? null
+                            : activeSums[x.Id].LatestPriceSum / (double)x.GoalSum,
+                        activeSums[x.Id].Count,
+                        (decimal)activeSums[x.Id].BuyPriceSum,
+                        (decimal)activeSums[x.Id].LatestPriceSum,
+                        activeSums[x.Id].BuyPriceSum == 0
+                            ? 1
+                            : (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) /
+                              activeSums[x.Id].BuyPriceSum,
+                        DateTime.Now))
+                .ToListAsync(cancellationToken);
+
+            return result;
         }
 
         #endregion Methods
@@ -142,7 +184,7 @@ namespace SteamStorageAPI.Controllers
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
-
+            
             IQueryable<ActiveGroup> groups = _context.Entry(user).Collection(x => x.ActiveGroups).Query()
                 .Include(x => x.Actives).ThenInclude(x => x.Skin).ThenInclude(x => x.SkinsDynamics);
 

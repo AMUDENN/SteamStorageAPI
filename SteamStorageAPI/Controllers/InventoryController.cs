@@ -104,7 +104,7 @@ namespace SteamStorageAPI.Controllers
         
         #region Methods
 
-        public async Task<IEnumerable<InventoryResponse>> GetInventoriesResponseAsync(
+        private async Task<IEnumerable<InventoryResponse>> GetInventoriesResponseAsync(
             IEnumerable<Inventory> inventories,
             User user,
             CancellationToken cancellationToken = default)

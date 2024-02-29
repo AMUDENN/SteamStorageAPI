@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
@@ -31,6 +32,7 @@ namespace SteamStorageAPI.Controllers
         #region Fields
 
         private readonly IUserService _userService;
+        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -39,9 +41,11 @@ namespace SteamStorageAPI.Controllers
 
         public ArchiveGroupsController(
             IUserService userService,
+            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _userService = userService;
+            _currencyService = currencyService;
             _context = context;
         }
 
@@ -52,8 +56,9 @@ namespace SteamStorageAPI.Controllers
         public record ArchiveGroupResponse(
             int Id,
             string Title,
-            string Description,
+            string? Description,
             string Colour,
+            int Count,
             decimal BuySum,
             decimal SoldSum,
             double Change,
@@ -93,13 +98,31 @@ namespace SteamStorageAPI.Controllers
         #region Methods
 
         private async Task<IEnumerable<ArchiveGroupResponse>> GetArchiveGroupsResponsesAsync(
-            IEnumerable<ArchiveGroup> groups,
+            IQueryable<ArchiveGroup> groups,
             User user,
             CancellationToken cancellationToken = default)
         {
             //TODO: Добавить дату создания группы в бд
-            
-            return Enumerable.Empty<ArchiveGroupResponse>(); //TODO:
+
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            groups = groups.Include(x => x.Archives);
+
+            List<ArchiveGroupResponse> result = await groups.Select(x =>
+                new ArchiveGroupResponse(
+                    x.Id,
+                    x.Title,
+                    x.Description,
+                    $"#{x.Colour ?? ArchiveGroup.BASE_ARCHIVE_GROUP_COLOUR}",
+                    x.Archives.Sum(y => y.Count),
+                    (decimal)((double)x.Archives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate),
+                    (decimal)((double)x.Archives.Sum(y => y.SoldPrice * y.Count) * currencyExchangeRate),
+                    ((double)x.Archives.Sum(y => y.SoldPrice * y.Count) -
+                     (double)x.Archives.Sum(y => y.BuyPrice * y.Count)) /
+                    (double)x.Archives.Sum(y => y.BuyPrice * y.Count),
+                    DateTime.Now)).ToListAsync(cancellationToken);
+
+            return result;
         }
 
         #endregion Methods
@@ -142,16 +165,24 @@ namespace SteamStorageAPI.Controllers
                         break;
                     case ArchiveGroupOrderName.BuySum:
                         groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Archives.Sum(y => y.Count * y.BuyPrice))
-                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.Count * y.BuyPrice));
+                            ? groups.OrderBy(x => x.Archives.Sum(y => y.BuyPrice * y.Count))
+                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.BuyPrice * y.Count));
                         break;
                     case ArchiveGroupOrderName.SoldSum:
                         groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Archives.Sum(y => y.Count * y.SoldPrice))
-                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.Count * y.SoldPrice));
+                            ? groups.OrderBy(x => x.Archives.Sum(y => y.SoldPrice * y.Count))
+                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.SoldPrice * y.Count));
                         break;
                     case ArchiveGroupOrderName.Change:
-                        //TODO: сортирока
+                        groups = request.IsAscending.Value
+                            ? groups.OrderBy(x =>
+                                (x.Archives.Sum(y => y.SoldPrice * y.Count) -
+                                 x.Archives.Sum(y => y.BuyPrice * y.Count)) /
+                                x.Archives.Sum(y => y.BuyPrice * y.Count))
+                            : groups.OrderByDescending(x =>
+                                (x.Archives.Sum(y => y.SoldPrice * y.Count) -
+                                 x.Archives.Sum(y => y.BuyPrice * y.Count)) /
+                                x.Archives.Sum(y => y.BuyPrice * y.Count));
                         break;
                 }
 

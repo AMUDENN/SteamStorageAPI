@@ -228,6 +228,7 @@ namespace SteamStorageAPI.Controllers
                         Change30D = result.FirstOrDefault()?.Change30D ?? 0
                     };
                 });
+            
             return skinsResult.Select(x => new SkinResponse(
                 _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
                 (decimal)((double)x.LastPrice * currencyExchangeRate), x.Change7D, x.Change30D,

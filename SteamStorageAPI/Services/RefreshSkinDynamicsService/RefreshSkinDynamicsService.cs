@@ -35,6 +35,9 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     public async Task RefreshSkinDynamicsAsync(
         CancellationToken cancellationToken = default)
     {
+        
+        //TODO: Performance Troubles
+        
         Currency dollar =
             await _context.Currencies.Include(x => x.CurrencyDynamics)
                 .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
