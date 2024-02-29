@@ -225,13 +225,79 @@ namespace SteamStorageAPI.Controllers
                             : actives.OrderByDescending(x => x.BuyPrice);
                         break;
                     case ActiveOrderName.CurrentPrice:
-                        //TODO: сортирока
+                        var activesCurrentPriceResult = actives.GroupJoin(
+                            _context.SkinsDynamics
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    CurrentPrice = g.Any()
+                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }),
+                            s => s.Skin.Id,
+                            d => d.SkinID,
+                            (s, d) => new
+                            {
+                                Active = s,
+                                CurrentPrice = d.Any() ? d.First().CurrentPrice : 0
+                            });
+                        actives = (request.IsAscending.Value
+                                ? activesCurrentPriceResult
+                                    .OrderBy(result => result.CurrentPrice)
+                                : activesCurrentPriceResult
+                                    .OrderByDescending(result => result.CurrentPrice))
+                            .Select(result => result.Active);
                         break;
                     case ActiveOrderName.CurrentSum:
-                        //TODO: сортирока
+                        var activesCurrentSumResult = actives.GroupJoin(
+                            _context.SkinsDynamics
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    CurrentPrice = g.Any()
+                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }),
+                            s => s.Skin.Id,
+                            d => d.SkinID,
+                            (s, d) => new
+                            {
+                                Active = s,
+                                CurrentSum = d.Any() ? d.First().CurrentPrice * s.Count : 0
+                            });
+                        actives = (request.IsAscending.Value
+                                ? activesCurrentSumResult
+                                    .OrderBy(result => result.CurrentSum)
+                                : activesCurrentSumResult
+                                    .OrderByDescending(result => result.CurrentSum))
+                            .Select(result => result.Active);
                         break;
                     case ActiveOrderName.Change:
-                        //TODO: сортирока
+                        var activesChangeResult = actives.GroupJoin(
+                            _context.SkinsDynamics
+                                .GroupBy(sd => sd.SkinId)
+                                .Select(g => new
+                                {
+                                    SkinID = g.Key,
+                                    CurrentPrice = g.Any()
+                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                        : 0
+                                }),
+                            s => s.Skin.Id,
+                            d => d.SkinID,
+                            (s, d) => new
+                            {
+                                Active = s,
+                                Change = d.Any() ? (d.First().CurrentPrice - s.BuyPrice) / s.BuyPrice : -1
+                            });
+                        actives = (request.IsAscending.Value
+                                ? activesChangeResult
+                                    .OrderBy(result => result.Change)
+                                : activesChangeResult
+                                    .OrderByDescending(result => result.Change))
+                            .Select(result => result.Active);
                         break;
                 }
 

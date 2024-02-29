@@ -313,7 +313,11 @@ namespace SteamStorageAPI.Controllers
                                     SkinID = g.Key,
                                     LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0
                                 }), s => s.Id, d => d.SkinID,
-                            (s, d) => new { Skin = s, LastPrice = d.Any() ? d.First().LastPrice : 0 });
+                            (s, d) => new
+                            {
+                                Skin = s,
+                                LastPrice = d.Any() ? d.First().LastPrice : 0
+                            });
                         skins = (request.IsAscending.Value
                                 ? skinsPriceResult
                                     .OrderBy(result => result.LastPrice)
@@ -333,8 +337,14 @@ namespace SteamStorageAPI.Controllers
                                            g.OrderBy(sd => sd.DateUpdate).First().Price) /
                                           g.OrderBy(sd => sd.DateUpdate).First().Price
                                         : 0
-                                }), s => s.Id, d => d.SkinID,
-                            (s, d) => new { Skin = s, Change7D = d.Any() ? d.First().Change7D : 0 });
+                                }),
+                            s => s.Id,
+                            d => d.SkinID,
+                            (s, d) => new
+                            {
+                                Skin = s,
+                                Change7D = d.Any() ? d.First().Change7D : 0
+                            });
                         skins = (request.IsAscending.Value
                                 ? skinsChange7DResult
                                     .OrderBy(result => result.Change7D)
@@ -355,7 +365,11 @@ namespace SteamStorageAPI.Controllers
                                           g.OrderBy(sd => sd.DateUpdate).First().Price
                                         : 0
                                 }), s => s.Id, d => d.SkinID,
-                            (s, d) => new { Skin = s, Change30D = d.Any() ? d.First().Change30D : 0 });
+                            (s, d) => new
+                            {
+                                Skin = s,
+                                Change30D = d.Any() ? d.First().Change30D : 0
+                            });
                         skins = (request.IsAscending.Value
                                 ? skinsChange30DResult
                                     .OrderBy(result => result.Change30D)
