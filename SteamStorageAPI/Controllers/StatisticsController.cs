@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
@@ -16,6 +17,7 @@ namespace SteamStorageAPI.Controllers
         #region Fields
 
         private readonly IUserService _userService;
+        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -24,9 +26,11 @@ namespace SteamStorageAPI.Controllers
 
         public StatisticsController(
             IUserService userService,
+            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _userService = userService;
+            _currencyService = currencyService;
             _context = context;
         }
 
@@ -90,6 +94,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
             List<Active> actives = await _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
@@ -108,14 +114,12 @@ namespace SteamStorageAPI.Controllers
             double investedSum =
                 (double)(actives.Sum(y => y.BuyPrice * y.Count) + archives.Sum(y => y.BuyPrice * y.Count));
 
-            double currentSum = (double)
-            (
-                actives.Sum(y =>
-                    (y.Skin.SkinsDynamics.Count == 0
-                        ? 0
-                        : y.Skin.SkinsDynamics.OrderBy(x => x.DateUpdate).Last().Price) * y.Count)
-                + archives.Sum(y => y.SoldPrice * y.Count)
-            );
+            double currentSum =
+                actives.Sum(x =>
+                    (x.Skin.SkinsDynamics.Count != 0
+                        ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
+                          currencyExchangeRate
+                        : 0) + (double)archives.Sum(y => y.SoldPrice * y.Count));
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
@@ -141,6 +145,8 @@ namespace SteamStorageAPI.Controllers
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
+            
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             double financialGoal = (double)(user.GoalSum ?? 0);
 
@@ -159,14 +165,12 @@ namespace SteamStorageAPI.Controllers
                 .SelectMany(x => x.Archives)
                 .ToListAsync(cancellationToken);
 
-            double currentSum = (double)
-            (
-                actives.Sum(y =>
-                    (y.Skin.SkinsDynamics.Count == 0
-                        ? 0
-                        : y.Skin.SkinsDynamics.OrderBy(x => x.DateUpdate).Last().Price) * y.Count)
-                + archives.Sum(y => y.SoldPrice * y.Count)
-            );
+            double currentSum =
+                actives.Sum(x =>
+                    (x.Skin.SkinsDynamics.Count != 0
+                        ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
+                          currencyExchangeRate
+                        : 0) + (double)archives.Sum(y => y.SoldPrice * y.Count));
 
             double percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
@@ -193,6 +197,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
             List<Active> actives = await _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
@@ -205,10 +211,11 @@ namespace SteamStorageAPI.Controllers
 
             double investedSum = (double)actives.Sum(y => y.BuyPrice * y.Count);
 
-            double currentSum = (double)actives.Sum(y =>
-                (y.Skin.SkinsDynamics.Count == 0
-                    ? 0
-                    : y.Skin.SkinsDynamics.OrderBy(x => x.DateUpdate).Last().Price) * y.Count);
+            double currentSum = actives.Sum(x =>
+                x.Skin.SkinsDynamics.Count != 0
+                    ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
+                      currencyExchangeRate
+                    : 0);
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
@@ -270,6 +277,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
             List<Inventory> inventories = await _context.Entry(user)
                 .Collection(u => u.Inventories)
                 .Query()
@@ -279,20 +288,24 @@ namespace SteamStorageAPI.Controllers
 
             int count = inventories.Sum(x => x.Count);
 
-
-            double sum = (double)inventories.Sum(y =>
-                (y.Skin.SkinsDynamics.Count == 0
-                    ? 0
-                    : y.Skin.SkinsDynamics.OrderBy(x => x.DateUpdate).Last().Price) * y.Count);
+            double sum = inventories.Sum(x =>
+                x.Skin.SkinsDynamics.Count != 0
+                    ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
+                      currencyExchangeRate
+                    : 0);
 
             List<Game> games = inventories.Select(x => x.Skin.Game)
                 .Distinct()
                 .ToList();
 
             List<InventoryGameStatisticResponse> gamesResponse = [];
-            gamesResponse.AddRange(games.Select(item => new InventoryGameStatisticResponse(item.Title,
-                (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count,
-                inventories.Count)));
+            gamesResponse.AddRange(
+                games.Select(item =>
+                    new InventoryGameStatisticResponse(
+                        item.Title,
+                        (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count,
+                        inventories.Count(x => x.Skin.Game.Id == item.Id)))
+            );
 
             return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
         }

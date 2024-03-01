@@ -49,13 +49,12 @@ namespace SteamStorageAPI.Services.SkinService
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            List<SkinsDynamic> dynamics = await _context.Entry(skin)
+            IOrderedQueryable<SkinsDynamic> dynamics = _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
-                .OrderBy(x => x.DateUpdate)
-                .ToListAsync(cancellationToken);
+                .OrderBy(x => x.DateUpdate);
 
-            return dynamics.Count == 0 ? 0 : (decimal)((double)dynamics.Last().Price * currencyExchangeRate);
+            return dynamics.Any() ? (decimal)((double)dynamics.Last().Price * currencyExchangeRate) : 0;
         }
 
         public async Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(

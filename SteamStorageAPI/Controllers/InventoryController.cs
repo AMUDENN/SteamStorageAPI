@@ -183,23 +183,13 @@ namespace SteamStorageAPI.Controllers
                             : inventories.OrderByDescending(x => x.Count);
                         break;
                     case InventoryOrderName.Price:
-                        var inventoriesPriceResult = inventories.GroupJoin(
-                            _context.SkinsDynamics
-                                .GroupBy(sd => sd.SkinId)
-                                .Select(g => new
-                                {
-                                    SkinID = g.Key,
-                                    CurrentPrice = g.Any()
-                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
-                                        : 0
-                                }),
-                            s => s.Skin.Id,
-                            d => d.SkinID,
-                            (s, d) => new
-                            {
-                                Inventory = s,
-                                CurrentPrice = d.Any() ? d.First().CurrentPrice : 0
-                            });
+                        var inventoriesPriceResult = inventories.Select(x => new
+                        {
+                            Inventory = x,
+                            CurrentPrice = x.Skin.SkinsDynamics.Count != 0
+                                ? x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price
+                                : 0
+                        });
                         inventories = (request.IsAscending.Value
                                 ? inventoriesPriceResult
                                     .OrderBy(result => result.CurrentPrice)
@@ -208,23 +198,13 @@ namespace SteamStorageAPI.Controllers
                             .Select(result => result.Inventory);
                         break;
                     case InventoryOrderName.Sum:
-                        var inventoriesSumResult = inventories.GroupJoin(
-                            _context.SkinsDynamics
-                                .GroupBy(sd => sd.SkinId)
-                                .Select(g => new
-                                {
-                                    SkinID = g.Key,
-                                    CurrentPrice = g.Any()
-                                        ? g.OrderByDescending(sd => sd.DateUpdate).First().Price
-                                        : 0
-                                }),
-                            s => s.Skin.Id,
-                            d => d.SkinID,
-                            (s, d) => new
-                            {
-                                Inventory = s,
-                                Sum = d.Any() ? d.First().CurrentPrice * s.Count : 0
-                            });
+                        var inventoriesSumResult = inventories.Select(x => new
+                        {
+                            Inventory = x,
+                            Sum = x.Skin.SkinsDynamics.Count != 0
+                                ? x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price * x.Count
+                                : 0
+                        });
                         inventories = (request.IsAscending.Value
                                 ? inventoriesSumResult
                                     .OrderBy(result => result.Sum)
