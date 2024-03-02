@@ -11,10 +11,12 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Quartz;
 using SteamStorageAPI.Services.BackgroundServices;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.JwtProvider;
+using SteamStorageAPI.Services.QuartzJobs;
 using SteamStorageAPI.Services.RefreshActiveDynamicsService;
 using SteamStorageAPI.Services.RefreshCurrenciesService;
 using SteamStorageAPI.Services.RefreshSkinDynamicsService;
@@ -33,10 +35,7 @@ public static class Program
     {
         //Controllers
         builder.Services
-            .AddControllers(options =>
-            {
-                options.AddAutoValidation();
-            })
+            .AddControllers(options => { options.AddAutoValidation(); })
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.WriteIndented = true;
@@ -44,25 +43,42 @@ public static class Program
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             });
         builder.Services.AddEndpointsApiExplorer();
-        
+
         //JwtOptions Initialize
         JwtOptions.Initialize(builder.Configuration);
 
         //Services
-        builder.Services.AddScoped<IRefreshActiveDynamicsService, RefreshActiveDynamicsService>();
+        builder.Services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
         builder.Services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
         builder.Services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
-        
+
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
         builder.Services.AddScoped<ICryptographyService, CryptographyService>();
         builder.Services.AddTransient<ISkinService, SkinService>();
         builder.Services.AddTransient<IUserService, UserService>();
         builder.Services.AddTransient<ICurrencyService, CurrencyService>();
-        
+
+        //Quartz
+        builder.Services.AddQuartz(q =>
+        {
+            q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
+
+            q.AddJob<RefreshActiveGroupDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupDynamicsJob)));
+
+            q.AddTrigger(t => t
+                .ForJob(nameof(RefreshCurrenciesJob))
+                .WithIdentity(nameof(RefreshCurrenciesJob) + "Trigger")
+                .WithCronSchedule("0 0 1 * * ?"));
+
+            q.AddTrigger(t => t
+                .ForJob(nameof(RefreshActiveGroupDynamicsJob))
+                .WithIdentity(nameof(RefreshActiveGroupDynamicsJob) + "Trigger")
+                .WithCronSchedule("0 0 1 * * ?"));
+        });
+
         //Background Services
-        builder.Services.AddHostedService<RefreshActiveDynamicsBackgroundService>();
-        builder.Services.AddHostedService<RefreshCurrenciesBackgroundService>();
         builder.Services.AddHostedService<RefreshSkinDynamicsBackgroundService>();
+        builder.Services.AddHostedService<QuartzHostedService>();
 
         //Swagger
         builder.Services
@@ -110,11 +126,12 @@ public static class Program
         string connectionStringSteamStorage = builder.Configuration.GetConnectionString("SteamStorage")
                                               ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
 
-        string connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks") 
+        string connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks")
                                               ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
 
-        builder.Services.AddDbContext<SteamStorageContext>(options => options.UseSqlServer(connectionStringSteamStorage));
-        
+        builder.Services.AddDbContext<SteamStorageContext>(
+            options => options.UseSqlServer(connectionStringSteamStorage));
+
         //ExceptionHandlers
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
@@ -228,7 +245,7 @@ public static class Program
         //Authorization
         app.UseAuthentication();
         app.UseAuthorization();
-        
+
         //ExceptionHandler
         app.UseExceptionHandler();
 

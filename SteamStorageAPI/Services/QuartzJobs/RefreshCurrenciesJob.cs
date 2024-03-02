@@ -1,27 +1,24 @@
-﻿using SteamStorageAPI.Services.BackgroundServices.Tools;
+﻿using Quartz;
 using SteamStorageAPI.Services.RefreshCurrenciesService;
 
-namespace SteamStorageAPI.Services.BackgroundServices;
+namespace SteamStorageAPI.Services.QuartzJobs;
 
-public class RefreshCurrenciesBackgroundService : BackgroundServiceBase
+public class RefreshCurrenciesJob : IJob
 {
     #region Fields
 
-    private readonly ILogger<RefreshCurrenciesBackgroundService> _logger;
-    private readonly IHostApplicationLifetime _lifetime;
+    private readonly ILogger<RefreshCurrenciesJob> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
     #endregion Fields
 
     #region Constructor
 
-    public RefreshCurrenciesBackgroundService(
-        ILogger<RefreshCurrenciesBackgroundService> logger,
-        IHostApplicationLifetime lifetime,
+    public RefreshCurrenciesJob(
+        ILogger<RefreshCurrenciesJob> logger,
         IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
-        _lifetime = lifetime;
         _serviceScopeFactory = serviceScopeFactory;
     }
 
@@ -29,12 +26,12 @@ public class RefreshCurrenciesBackgroundService : BackgroundServiceBase
 
     #region Methods
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task Execute(
+        IJobExecutionContext context)
     {
-        if (!await WaitForAppStartup(_lifetime, stoppingToken))
-            return;
-
-        while (!stoppingToken.IsCancellationRequested)
+        bool isSuccessful = false;
+        
+        while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
         {
             try
             {
@@ -45,18 +42,18 @@ public class RefreshCurrenciesBackgroundService : BackgroundServiceBase
                     IRefreshCurrenciesService refreshCurrenciesService =
                         scope.ServiceProvider.GetRequiredService<IRefreshCurrenciesService>();
 
-                    await refreshCurrenciesService.RefreshCurrenciesAsync(stoppingToken);
+                    await refreshCurrenciesService.RefreshCurrenciesAsync(context.CancellationToken);
                 }
 
+                isSuccessful = true;
+                
                 _logger.LogInformation("Обновление курса валют завершено");
-
-                await Task.Delay(24 * 60 * 60 * 1000, stoppingToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Ошибка при обновлении курса валют: {ex.Message}");
 
-                await Task.Delay(30 * 60 * 1000, stoppingToken);
+                await Task.Delay(30 * 60 * 1000, context.CancellationToken);
             }
         }
     }

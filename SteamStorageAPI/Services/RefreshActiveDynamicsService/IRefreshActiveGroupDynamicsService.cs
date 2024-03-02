@@ -1,6 +1,6 @@
 ﻿namespace SteamStorageAPI.Services.RefreshActiveDynamicsService;
 
-public interface IRefreshActiveDynamicsService
+public interface IRefreshActiveGroupDynamicsService
 {
     Task RefreshActiveDynamicsAsync(
         CancellationToken cancellationToken = default);
