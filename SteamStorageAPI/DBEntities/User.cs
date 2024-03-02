@@ -18,6 +18,16 @@ public class User
 
     public decimal? GoalSum { get; set; }
 
+    public string? Username { get; set; }
+
+    public string? IconUrl { get; set; }
+
+    public string? IconUrlMedium { get; set; }
+
+    public string? IconUrlFull { get; set; }
+    
+    public DateTime? DateUpdate { get; set; }
+
     public virtual ICollection<ActiveGroup> ActiveGroups { get; set; } = new List<ActiveGroup>();
 
     public virtual ICollection<ArchiveGroup> ArchiveGroups { get; set; } = new List<ArchiveGroup>();

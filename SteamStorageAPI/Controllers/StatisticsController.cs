@@ -72,6 +72,8 @@ namespace SteamStorageAPI.Controllers
         #endregion Records
 
         #region GET
+        
+        //TODO: ТУТ ВЕЗДЕ ToList , Это крах...
 
         /// <summary>
         /// Получение суммы инвестиций
@@ -123,7 +125,9 @@ namespace SteamStorageAPI.Controllers
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
-            return Ok(new InvestmentSumResponse(currentSum, percentage));
+            return Ok(new InvestmentSumResponse(
+                currentSum, 
+                percentage));
         }
 
         /// <summary>
@@ -174,7 +178,9 @@ namespace SteamStorageAPI.Controllers
 
             double percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
-            return Ok(new FinancialGoalResponse(financialGoal, percentage));
+            return Ok(new FinancialGoalResponse(
+                financialGoal, 
+                percentage));
         }
 
         /// <summary>
@@ -219,7 +225,10 @@ namespace SteamStorageAPI.Controllers
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
-            return Ok(new ActiveStatisticResponse(count, currentSum, percentage));
+            return Ok(new ActiveStatisticResponse(
+                count, 
+                currentSum, 
+                percentage));
         }
 
         /// <summary>
@@ -257,7 +266,10 @@ namespace SteamStorageAPI.Controllers
 
             double percentage = investedSum == 0 ? 1 : (soldSum - investedSum) / investedSum;
 
-            return Ok(new ArchiveStatisticResponse(count, soldSum, percentage));
+            return Ok(new ArchiveStatisticResponse(
+                count, 
+                soldSum, 
+                percentage));
         }
 
         /// <summary>
@@ -306,7 +318,7 @@ namespace SteamStorageAPI.Controllers
                         (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count,
                         inventories.Count(x => x.Skin.Game.Id == item.Id)))
             );
-
+            
             return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
         }
 
@@ -355,7 +367,8 @@ namespace SteamStorageAPI.Controllers
 
             int inventoriesCount = inventories.Sum(x => x.Count);
 
-            return Ok(new ItemsCountResponse(activesCount + archivesCount + inventoriesCount));
+            return Ok(new ItemsCountResponse(
+                activesCount + archivesCount + inventoriesCount));
         }
 
         #endregion GET

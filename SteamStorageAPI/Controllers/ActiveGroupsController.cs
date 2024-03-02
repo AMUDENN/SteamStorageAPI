@@ -121,8 +121,6 @@ namespace SteamStorageAPI.Controllers
             User user,
             CancellationToken cancellationToken = default)
         {
-            //TODO: Добавить дату создания группы в бд
-
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
@@ -158,7 +156,7 @@ namespace SteamStorageAPI.Controllers
                             ? (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) /
                               activeSums[x.Id].BuyPriceSum
                             : 1,
-                        DateTime.Now))
+                        x.DateCreation))
                 .ToListAsync(cancellationToken);
 
             return result;
@@ -310,7 +308,8 @@ namespace SteamStorageAPI.Controllers
                 Title = request.Title,
                 Description = request.Description,
                 Colour = request.Colour,
-                GoalSum = request.GoalSum
+                GoalSum = request.GoalSum,
+                DateCreation = DateTime.Now
             }, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);

@@ -201,7 +201,7 @@ namespace SteamStorageAPI.Controllers
                 {
                     SkinID = g.Key,
                     LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0,
-                    Change7D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-7)) > 1
+                    Change7D = g.Any(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                         ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                                         .OrderByDescending(sd => sd.DateUpdate).First().Price -
                                     g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
@@ -209,7 +209,7 @@ namespace SteamStorageAPI.Controllers
                                    g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                                        .OrderBy(sd => sd.DateUpdate).First().Price)
                         : 0,
-                    Change30D = g.Count(sd => sd.DateUpdate > DateTime.Now.AddDays(-30)) > 1
+                    Change30D = g.Any(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
                         ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
                                         .OrderByDescending(sd => sd.DateUpdate).First().Price -
                                     g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))

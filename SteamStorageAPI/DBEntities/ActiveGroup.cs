@@ -21,6 +21,8 @@ public class ActiveGroup
     public string? Colour { get; set; }
 
     public decimal? GoalSum { get; set; }
+    
+    public DateTime DateCreation { get; set; }
 
     public virtual ICollection<ActiveGroupsDynamic> ActiveGroupsDynamics { get; set; } =
         new List<ActiveGroupsDynamic>();

@@ -73,20 +73,36 @@ namespace SteamStorageAPI.Controllers
             if (user is null)
                 return null;
 
-            HttpClient client = _httpClientFactory.CreateClient();
-            SteamUserResult? steamUserResult =
-                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId),
-                    cancellationToken);
+            if (user.Username is null || user.IconUrl is null || user.IconUrlMedium is null ||
+                user.IconUrlFull is null ||
+                (user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.Now.AddDays(-1)))
+            {
+                HttpClient client = _httpClientFactory.CreateClient();
+                SteamUserResult? steamUserResult =
+                    await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId),
+                        cancellationToken);
 
-            if (steamUserResult is null)
-                return null;
+                if (steamUserResult is null)
+                    return null;
 
-            SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
+                SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
+
+                user.Username = steamUser?.personaname;
+                user.IconUrl = steamUser?.avatar.Replace("https://avatars.steamstatic.com/", string.Empty);
+                user.IconUrlMedium = steamUser?.avatarmedium.Replace("https://avatars.steamstatic.com/", string.Empty);
+                user.IconUrlFull = steamUser?.avatarfull.Replace("https://avatars.steamstatic.com/", string.Empty);
+
+                user.DateUpdate = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
 
             return new(user.Id,
                 user.SteamId.ToString(),
-                steamUser?.avatar, steamUser?.avatarmedium, steamUser?.avatarfull,
-                steamUser?.personaname,
+                user.IconUrl is null ? null : SteamApi.GetUserIconUrl(user.IconUrl),
+                user.IconUrlMedium is null ? null : SteamApi.GetUserIconUrl(user.IconUrlMedium),
+                user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),
+                user.Username,
                 user.RoleId,
                 user.StartPageId,
                 user.CurrencyId,
@@ -113,7 +129,7 @@ namespace SteamStorageAPI.Controllers
         {
             List<User> users = await _context.Users.ToListAsync(cancellationToken);
 
-            return Ok(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)));
+            return Ok(users.Select(x => GetUserResponseAsync(x, cancellationToken).Result));
         }
 
         /// <summary>
