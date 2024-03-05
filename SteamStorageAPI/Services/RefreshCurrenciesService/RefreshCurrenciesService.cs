@@ -10,6 +10,12 @@ namespace SteamStorageAPI.Services.RefreshCurrenciesService;
 
 public class RefreshCurrenciesService : IRefreshCurrenciesService
 {
+    #region Constants
+
+    private const int REFRESH_DELAY = 2000; // 2 sec
+
+    #endregion Constants
+
     #region Fields
 
     private readonly IHttpClientFactory _httpClientFactory;
@@ -104,7 +110,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 Price = price / dollarPrice
             });
 
-            await Task.Delay(2000, cancellationToken);
+            await Task.Delay(REFRESH_DELAY, cancellationToken);
         }
 
         await _context.SaveChangesAsync(cancellationToken);

@@ -2,12 +2,6 @@
 {
     public static class SteamApi
     {
-        #region Constants
-
-        private const string STEAM_API_KEY = "BF900A723E4FFBDF6A73966A794F7768";
-
-        #endregion Constants
-        
         #region Fields
 
         private static readonly Dictionary<string, string> _replaceChars = new()
@@ -15,13 +9,27 @@
             [" "] = "%20",
             ["'"] = "%27"
         };
-        
+
         #endregion Fields
+
+        #region Properties
+
+        private static string SteamApiKey { get; set; } = string.Empty;
+
+        #endregion Properties
 
         #region Methods
 
+        public static void Initialize(IConfiguration configuration)
+        {
+            IConfigurationSection steamSection = configuration.GetSection("Steam");
+
+            SteamApiKey = steamSection.GetValue<string>("ApiKey") ??
+                          throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
+        }
+
         public static string GetUserInfoUrl(long steamProfileId) =>
-            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steamProfileId}";
+            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamApiKey}&steamids={steamProfileId}";
 
         public static string GetUserIconUrl(string urlHash) =>
             $"https://avatars.steamstatic.com/{urlHash}";
@@ -86,7 +94,8 @@
 
         private static string ReplaceMarketHashName(string marketHashName)
         {
-            return _replaceChars.Aggregate(marketHashName, (current, replaceChar) => current.Replace(replaceChar.Key, replaceChar.Value));
+            return _replaceChars.Aggregate(marketHashName,
+                (current, replaceChar) => current.Replace(replaceChar.Key, replaceChar.Value));
         }
 
         #endregion Methods

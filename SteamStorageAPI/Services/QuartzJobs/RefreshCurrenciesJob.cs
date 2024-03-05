@@ -1,5 +1,6 @@
 ﻿using Quartz;
 using SteamStorageAPI.Services.RefreshCurrenciesService;
+using SteamStorageAPI.Services.Tools;
 
 namespace SteamStorageAPI.Services.QuartzJobs;
 
@@ -30,7 +31,7 @@ public class RefreshCurrenciesJob : IJob
         IJobExecutionContext context)
     {
         bool isSuccessful = false;
-        
+
         while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
         {
             try
@@ -46,14 +47,14 @@ public class RefreshCurrenciesJob : IJob
                 }
 
                 isSuccessful = true;
-                
+
                 _logger.LogInformation("Обновление курса валют завершено");
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Ошибка при обновлении курса валют: {ex.Message}");
 
-                await Task.Delay(30 * 60 * 1000, context.CancellationToken);
+                await Task.Delay(ServicesConstants.REFRESH_CURRENCIES_JOB_ERROR_DELAY, context.CancellationToken);
             }
         }
     }

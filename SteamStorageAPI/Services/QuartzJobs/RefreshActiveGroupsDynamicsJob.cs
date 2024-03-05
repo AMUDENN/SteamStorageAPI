@@ -1,21 +1,22 @@
 ﻿using Quartz;
 using SteamStorageAPI.Services.RefreshActiveDynamicsService;
+using SteamStorageAPI.Services.Tools;
 
 namespace SteamStorageAPI.Services.QuartzJobs;
 
-public class RefreshActiveGroupDynamicsJob : IJob
+public class RefreshActiveGroupsDynamicsJob : IJob
 {
     #region Fields
 
-    private readonly ILogger<RefreshActiveGroupDynamicsJob> _logger;
+    private readonly ILogger<RefreshActiveGroupsDynamicsJob> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
     #endregion Fields
 
     #region Constructor
 
-    public RefreshActiveGroupDynamicsJob(
-        ILogger<RefreshActiveGroupDynamicsJob> logger,
+    public RefreshActiveGroupsDynamicsJob(
+        ILogger<RefreshActiveGroupsDynamicsJob> logger,
         IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
@@ -30,7 +31,7 @@ public class RefreshActiveGroupDynamicsJob : IJob
         IJobExecutionContext context)
     {
         bool isSuccessful = false;
-        
+
         while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
         {
             try
@@ -53,7 +54,8 @@ public class RefreshActiveGroupDynamicsJob : IJob
             {
                 _logger.LogError($"Ошибка при обновлении ActiveGroupsDynamic: {ex.Message}");
 
-                await Task.Delay(30 * 60 * 1000, context.CancellationToken);
+                await Task.Delay(ServicesConstants.REFRESH_ACTIVE_GROUPS_DYNAMICS_JOB_ERROR_DELAY,
+                    context.CancellationToken);
             }
         }
     }

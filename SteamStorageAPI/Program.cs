@@ -24,6 +24,7 @@ using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.HealthCheck;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
+using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI;
 
@@ -46,6 +47,9 @@ public static class Program
 
         //JwtOptions Initialize
         JwtOptions.Initialize(builder.Configuration);
+        
+        //SteamApi Initialize
+        SteamApi.Initialize(builder.Configuration);
 
         //Services
         builder.Services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
@@ -63,17 +67,17 @@ public static class Program
         {
             q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
 
-            q.AddJob<RefreshActiveGroupDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupDynamicsJob)));
+            q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
 
             q.AddTrigger(t => t
                 .ForJob(nameof(RefreshCurrenciesJob))
                 .WithIdentity(nameof(RefreshCurrenciesJob) + "Trigger")
-                .WithCronSchedule("0 0 1 * * ?"));
+                .WithCronSchedule("0 0 1 * * ?")); // 01:00 Every Day
 
             q.AddTrigger(t => t
-                .ForJob(nameof(RefreshActiveGroupDynamicsJob))
-                .WithIdentity(nameof(RefreshActiveGroupDynamicsJob) + "Trigger")
-                .WithCronSchedule("0 0 1 * * ?"));
+                .ForJob(nameof(RefreshActiveGroupsDynamicsJob))
+                .WithIdentity(nameof(RefreshActiveGroupsDynamicsJob) + "Trigger")
+                .WithCronSchedule("0 0 1 * * ?")); // 01:00 Every Day
         });
 
         //Background Services

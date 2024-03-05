@@ -1,5 +1,6 @@
 ﻿using SteamStorageAPI.Services.BackgroundServices.Tools;
 using SteamStorageAPI.Services.RefreshSkinDynamicsService;
+using SteamStorageAPI.Services.Tools;
 
 namespace SteamStorageAPI.Services.BackgroundServices;
 
@@ -51,13 +52,13 @@ public class RefreshSkinDynamicsBackgroundService : BackgroundServiceBase
 
                 _logger.LogInformation("Обновление стоимости предметов завершено");
 
-                await Task.Delay(60 * 60 * 1000, stoppingToken);
+                await Task.Delay(ServicesConstants.REFRESH_SKIN_DYNAMICS_BACKGROUND_DELAY, stoppingToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Ошибка при обновлении курса валют: {ex.Message}");
 
-                await Task.Delay(30 * 60 * 1000, stoppingToken);
+                await Task.Delay(ServicesConstants.REFRESH_SKIN_DYNAMICS_BACKGROUND_ERROR_DELAY, stoppingToken);
             }
         }
     }

@@ -37,18 +37,29 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
                 "Сегодня уже было выполнено обновление ActiveDynamics!");
 
-        //TODO: Не работает запрос
+        //TODO: Оптимизировать надо
 
-        List<ActiveGroupsDynamic> dynamics = await _context.ActiveGroups
-            .Select(x => new ActiveGroupsDynamic()
+        List<ActiveGroupsDynamic> dynamics = [];
+
+        IQueryable<ActiveGroup> activeGroups = _context.ActiveGroups
+            .AsQueryable()
+            .Include(x => x.Actives)
+            .ThenInclude(x => x.Skin)
+            .ThenInclude(x => x.SkinsDynamics)
+            .Include(x => x.User)
+            .AsQueryable();
+
+        foreach (ActiveGroup group in activeGroups)
+        {
+            dynamics.Add(new()
             {
-                GroupId = x.Id,
-                Sum = (decimal)((double)x.Actives.Where(y => y.Skin.SkinsDynamics.Count != 0).Sum(y =>
+                GroupId = group.Id,
+                Sum = (decimal)((double)group.Actives.Where(y => y.Skin.SkinsDynamics.Count != 0).Sum(y =>
                                     y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First().Price * y.Count) *
-                                _currencyService.GetCurrencyExchangeRateAsync(x.User, cancellationToken).Result),
+                                _currencyService.GetCurrencyExchangeRateAsync(group.User, cancellationToken).Result),
                 DateUpdate = DateTime.Now
-            })
-            .ToListAsync(cancellationToken);
+            });
+        }
 
         await _context.ActiveGroupsDynamics.AddRangeAsync(dynamics, cancellationToken);
 

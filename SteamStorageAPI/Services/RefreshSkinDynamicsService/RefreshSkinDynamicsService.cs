@@ -8,6 +8,20 @@ namespace SteamStorageAPI.Services.RefreshSkinDynamicsService;
 
 public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 {
+    #region Constants
+
+    private const int REFRESH_DELAY_MIN = 10000; // 10 sec
+    private const int REFRESH_DELAY_MAX = 15000; // 15 sec
+
+    private const int REFRESH_DELAY_ERROR_MIN = 100000; // 100 sec
+    private const int REFRESH_DELAY_ERROR_MAX = 150000; // 150 sec
+
+    private const int BASE_RESPONSE_COUNT = 200;
+    private const int MIN_RESPONSE_COUNT = 100;
+    private const int START_RESPONSE = 0;
+
+    #endregion Constants
+
     #region Fields
 
     private readonly ILogger<RefreshSkinDynamicsService> _logger;
@@ -35,9 +49,8 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     public async Task RefreshSkinDynamicsAsync(
         CancellationToken cancellationToken = default)
     {
-        
         //TODO: Performance Troubles
-        
+
         Currency dollar =
             await _context.Currencies.Include(x => x.CurrencyDynamics)
                 .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
@@ -50,10 +63,10 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
         {
             HttpClient client = _httpClientFactory.CreateClient();
 
-            int count = 200;
-            int start = 0;
+            int count = BASE_RESPONSE_COUNT;
+            int start = START_RESPONSE;
 
-            int answerCount = 200;
+            int answerCount = BASE_RESPONSE_COUNT;
 
             SteamSkinResponse? response =
                 await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
@@ -127,16 +140,16 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                     answerCount = response.results.Length;
                     start += response.results.Length;
 
-                    count = 200;
+                    count = BASE_RESPONSE_COUNT;
 
-                    await Task.Delay(rnd.Next(10000, 15000), cancellationToken);
+                    await Task.Delay(rnd.Next(REFRESH_DELAY_MIN, REFRESH_DELAY_MAX), cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    count = rnd.Next(100, 199);
+                    count = rnd.Next(MIN_RESPONSE_COUNT, BASE_RESPONSE_COUNT);
                     start -= 1;
                     _logger.LogError($"Произошла ошибка во время обновления стоимости предметов: {ex.Message}");
-                    await Task.Delay(rnd.Next(100000, 150000), cancellationToken);
+                    await Task.Delay(rnd.Next(REFRESH_DELAY_ERROR_MIN, REFRESH_DELAY_ERROR_MAX), cancellationToken);
                 }
             }
         }
