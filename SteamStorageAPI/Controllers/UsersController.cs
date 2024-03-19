@@ -48,7 +48,7 @@ namespace SteamStorageAPI.Controllers
             string? ImageUrlMedium,
             string? ImageUrlFull,
             string? Nickname,
-            int RoleId,
+            string Role,
             int StartPageId,
             int CurrencyId,
             DateTime DateRegistration,
@@ -97,13 +97,15 @@ namespace SteamStorageAPI.Controllers
 
             await _context.SaveChangesAsync(cancellationToken);
 
+            Role? role = await _context.Roles.FirstOrDefaultAsync(x => x.Id == user.RoleId, cancellationToken);
+            
             return new(user.Id,
                 user.SteamId.ToString(),
                 user.IconUrl is null ? null : SteamApi.GetUserIconUrl(user.IconUrl),
                 user.IconUrlMedium is null ? null : SteamApi.GetUserIconUrl(user.IconUrlMedium),
                 user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),
-                user.Username,
-                user.RoleId,
+                user.Username?.Trim([' ']),
+                role?.Title ?? "Роль не найдена",
                 user.StartPageId,
                 user.CurrencyId,
                 user.DateRegistration,

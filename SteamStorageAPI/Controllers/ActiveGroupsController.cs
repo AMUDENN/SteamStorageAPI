@@ -184,8 +184,12 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
             
-            IQueryable<ActiveGroup> groups = _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                .Include(x => x.Actives).ThenInclude(x => x.Skin).ThenInclude(x => x.SkinsDynamics);
+            IQueryable<ActiveGroup> groups = _context.Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -253,7 +257,7 @@ namespace SteamStorageAPI.Controllers
                 .Select(x => new ActiveGroupDynamicResponse(x.Id, x.DateUpdate, x.Sum))
                 .ToListAsync(cancellationToken);
 
-            double changePeriod = (double)(dynamic.Count == 0
+            double changePeriod = (double)(dynamic.Count == 0 || dynamic.First().Sum == 0
                 ? 0
                 : (dynamic.Last().Sum - dynamic.First().Sum) / dynamic.First().Sum);
 

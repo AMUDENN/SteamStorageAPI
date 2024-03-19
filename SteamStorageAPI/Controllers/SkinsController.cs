@@ -101,6 +101,9 @@ namespace SteamStorageAPI.Controllers
         [Validator<GetSkinRequestValidator>]
         public record GetSkinRequest(
             int SkinId);
+        
+        public record GetBaseSkinRequest(
+            string? Filter);
 
         [Validator<GetSkinsRequestValidator>]
         public record GetSkinsRequest(
@@ -275,6 +278,28 @@ namespace SteamStorageAPI.Controllers
         }
 
         /// <summary>
+        /// Получение упрощённого списка предметов
+        /// </summary>
+        /// <response code="200">Возвращает упрощённый список предметов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetBaseSkins")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<SkinsResponse>> GetBaseSkins(
+            [FromQuery] GetBaseSkinRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            IQueryable<Skin> skins = _context.Skins.Where(x =>
+                string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter));
+
+            skins = skins.Take(20);
+
+            return Ok(skins.Select(x => _skinService.GetBaseSkinResponseAsync(x, cancellationToken).Result));
+        }
+
+        /// <summary>
         /// Получение списка предметов
         /// </summary>
         /// <response code="200">Возвращает список предметов</response>
@@ -297,7 +322,7 @@ namespace SteamStorageAPI.Controllers
 
             IQueryable<Skin> skins = _context.Skins.Where(x =>
                 (request.GameId == null || x.GameId == request.GameId)
-                && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
+                && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                 && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
 
             if (request is { OrderName: not null, IsAscending: not null })
@@ -459,7 +484,7 @@ namespace SteamStorageAPI.Controllers
 
             int count = await _context.Skins
                 .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                                  && (request.IsMarked == null ||
                                      request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
                     cancellationToken);
@@ -523,7 +548,7 @@ namespace SteamStorageAPI.Controllers
 
             int count = await _context.Skins
                 .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter!))
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                                  && (request.IsMarked == null ||
                                      request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
                     cancellationToken);

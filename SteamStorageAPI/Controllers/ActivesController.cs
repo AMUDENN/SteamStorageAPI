@@ -61,6 +61,7 @@ namespace SteamStorageAPI.Controllers
 
         public record ActiveResponse(
             int Id,
+            int GroupId,
             BaseSkinResponse Skin,
             DateTime BuyDate,
             int Count,
@@ -69,7 +70,8 @@ namespace SteamStorageAPI.Controllers
             decimal CurrentSum,
             decimal? GoalPrice,
             double? GoalPriceCompletion,
-            double Change);
+            double Change,
+            string? Description);
 
         public record ActivesResponse(
             int Count,
@@ -166,6 +168,7 @@ namespace SteamStorageAPI.Controllers
             return listActives.Select(x =>
                 new ActiveResponse(
                     x.Id,
+                    x.GroupId,
                     _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
                     x.BuyDate,
                     x.Count,
@@ -176,7 +179,8 @@ namespace SteamStorageAPI.Controllers
                     x.GoalPrice == null
                         ? null
                         : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
-                    (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice))
+                    (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
+                    x.Description)
             );
         }
 
@@ -210,7 +214,7 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.SkinsDynamics)
                 .SelectMany(x => x.Actives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                             && (request.GroupId == null || x.GroupId == request.GroupId));
 
             if (request is { OrderName: not null, IsAscending: not null })
@@ -316,7 +320,7 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                                  && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
@@ -350,7 +354,7 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!))
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                                  && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
         }
 

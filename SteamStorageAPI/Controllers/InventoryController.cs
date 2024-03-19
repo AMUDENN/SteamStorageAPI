@@ -167,7 +167,7 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -248,7 +248,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .Include(x => x.Skin)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)));
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
 
             return Ok(new InventoryPagesCountResponse(
                 (int)Math.Ceiling((double)inventories.Count() / request.PageSize)));
@@ -278,7 +278,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .Include(x => x.Skin)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter!)),
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)),
                     cancellationToken)));
         }
 

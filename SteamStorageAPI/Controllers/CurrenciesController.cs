@@ -41,7 +41,8 @@ namespace SteamStorageAPI.Controllers
             int SteamCurrencyId,
             string Title,
             string Mark,
-            double Price);
+            double Price,
+            DateTime DateUpdate);
 
         [Validator<GetCurrencyRequestValidator>]
         public record GetCurrencyRequest(
@@ -78,14 +79,22 @@ namespace SteamStorageAPI.Controllers
             if (currency is null)
                 return null;
 
-            List<CurrencyDynamic> currencyDynamics = await _context.Entry(currency).Collection(s => s.CurrencyDynamics)
-                .Query().ToListAsync(cancellationToken);
+            IQueryable<CurrencyDynamic> currencyDynamics = _context
+                .Entry(currency)
+                .Collection(s => s.CurrencyDynamics)
+                .Query()
+                .OrderBy(x => x.DateUpdate);
 
             return new(currency.Id,
                 currency.SteamCurrencyId,
                 currency.Title,
                 currency.Mark,
-                currencyDynamics.Count == 0 ? 0 : currencyDynamics.OrderBy(x => x.DateUpdate).Last().Price);
+                !await currencyDynamics.AnyAsync(cancellationToken) 
+                    ? 0 
+                    : currencyDynamics.Last().Price,
+                !await currencyDynamics.AnyAsync(cancellationToken)
+                    ? DateTime.Now
+                    : currencyDynamics.Last().DateUpdate);
         }
 
         #endregion Methods
