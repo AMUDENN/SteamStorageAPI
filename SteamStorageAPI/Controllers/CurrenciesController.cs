@@ -43,6 +43,10 @@ namespace SteamStorageAPI.Controllers
             string Mark,
             double Price,
             DateTime DateUpdate);
+        
+        public record CurrenciesResponse(
+            int Count,
+            IEnumerable<CurrencyResponse> Currencies);
 
         [Validator<GetCurrencyRequestValidator>]
         public record GetCurrencyRequest(
@@ -72,13 +76,10 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<CurrencyResponse?> GetCurrencyResponseAsync(
-            Currency? currency,
+        private async Task<CurrencyResponse> GetCurrencyResponseAsync(
+            Currency currency,
             CancellationToken cancellationToken = default)
         {
-            if (currency is null)
-                return null;
-
             IQueryable<CurrencyDynamic> currencyDynamics = _context
                 .Entry(currency)
                 .Collection(s => s.CurrencyDynamics)
@@ -110,12 +111,13 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetCurrencies")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<CurrencyResponse>>> GetCurrencies(
+        public async Task<ActionResult<CurrenciesResponse>> GetCurrencies(
             CancellationToken cancellationToken = default)
         {
             List<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
 
-            return Ok(currencies.Select(x => GetCurrencyResponseAsync(x, cancellationToken).Result));
+            return Ok(new CurrenciesResponse(currencies.Count,
+                currencies.Select(x => GetCurrencyResponseAsync(x, cancellationToken).Result)));
         }
 
         /// <summary>

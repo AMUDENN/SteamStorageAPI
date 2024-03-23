@@ -38,6 +38,10 @@ namespace SteamStorageAPI.Controllers
         public record PageResponse(
             int Id,
             string Title);
+        
+        public record PagesResponse(
+            int Count,
+            IEnumerable<PageResponse> Pages);
 
         [Validator<SetPageRequestValidator>]
         public record SetPageRequest(
@@ -55,12 +59,12 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetPages")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<PageResponse>>> GetPages(
+        public async Task<ActionResult<PagesResponse>> GetPages(
             CancellationToken cancellationToken = default)
         {
             List<Page> pages = await _context.Pages.ToListAsync(cancellationToken);
 
-            return Ok(pages.Select(x => new PageResponse(x.Id, x.Title)));
+            return Ok(new PagesResponse(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title))));
         }
 
         #endregion GET

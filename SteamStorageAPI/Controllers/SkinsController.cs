@@ -67,6 +67,10 @@ namespace SteamStorageAPI.Controllers
             string Title,
             string MarketHashName,
             string MarketUrl);
+        
+        public record BaseSkinsResponse(
+            int Count,
+            IEnumerable<BaseSkinResponse> Skins);
 
         public record SkinResponse(
             BaseSkinResponse Skin,
@@ -102,7 +106,7 @@ namespace SteamStorageAPI.Controllers
         public record GetSkinRequest(
             int SkinId);
         
-        public record GetBaseSkinRequest(
+        public record GetBaseSkinsRequest(
             string? Filter);
 
         [Validator<GetSkinsRequestValidator>]
@@ -287,8 +291,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetBaseSkins")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SkinsResponse>> GetBaseSkins(
-            [FromQuery] GetBaseSkinRequest request,
+        public async Task<ActionResult<BaseSkinsResponse>> GetBaseSkins(
+            [FromQuery] GetBaseSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
             IQueryable<Skin> skins = _context.Skins.Where(x =>
@@ -296,7 +300,8 @@ namespace SteamStorageAPI.Controllers
 
             skins = skins.Take(20);
 
-            return Ok(skins.Select(x => _skinService.GetBaseSkinResponseAsync(x, cancellationToken).Result));
+            return Ok(new BaseSkinsResponse(await skins.CountAsync(cancellationToken),
+                skins.Select(x => _skinService.GetBaseSkinResponseAsync(x, cancellationToken).Result)));
         }
 
         /// <summary>

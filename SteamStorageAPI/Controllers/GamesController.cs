@@ -44,6 +44,10 @@ namespace SteamStorageAPI.Controllers
             int SteamGameId,
             string Title,
             string GameIconUrl);
+        
+        public record GamesResponse(
+            int Count,
+            IEnumerable<GameResponse> Games);
 
         [Validator<PostGameRequestValidator>]
         public record PostGameRequest(
@@ -97,13 +101,14 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetGames")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<GameResponse>>> GetGames(
+        public async Task<ActionResult<GamesResponse>> GetGames(
             CancellationToken cancellationToken = default)
         {
             List<Game> games = await _context.Games.ToListAsync(cancellationToken);
 
-            return Ok(games.Select(x =>
-                new GameResponse(x.Id, x.SteamGameId, x.Title, SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
+            return Ok(new GamesResponse(games.Count, games.Select(x =>
+                new GameResponse(x.Id, x.SteamGameId, x.Title,
+                    SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl)))));
         }
 
         #endregion GET

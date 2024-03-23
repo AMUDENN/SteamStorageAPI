@@ -35,6 +35,10 @@ namespace SteamStorageAPI.Controllers
         public record RoleResponse(
             int Id,
             string Title);
+        
+        public record RolesResponse(
+            int Count,
+            IEnumerable<RoleResponse> Roles);
 
         [Validator<SetRoleRequestValidator>]
         public record SetRoleRequest(
@@ -54,12 +58,12 @@ namespace SteamStorageAPI.Controllers
         /// <response code="499">Операция отменена</response>
         [HttpGet(Name = "GetRoles")]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<RoleResponse>>> GetRoles(
+        public async Task<ActionResult<RolesResponse>> GetRoles(
             CancellationToken cancellationToken = default)
         {
             List<Role> roles = await _context.Roles.ToListAsync(cancellationToken);
 
-            return Ok(roles.Select(x => new RoleResponse(x.Id, x.Title)));
+            return Ok(new RolesResponse(roles.Count, roles.Select(x => new RoleResponse(x.Id, x.Title))));
         }
 
         #endregion GET

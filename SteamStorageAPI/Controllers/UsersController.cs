@@ -53,6 +53,10 @@ namespace SteamStorageAPI.Controllers
             int CurrencyId,
             DateTime DateRegistration,
             decimal? GoalSum);
+        
+        public record UsersResponse(
+            int Count,
+            IEnumerable<UserResponse?> Users);
 
         [Validator<GetUserRequestValidator>]
         public record GetUserRequest(
@@ -126,12 +130,12 @@ namespace SteamStorageAPI.Controllers
         [HttpGet(Name = "GetUsers")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers(
+        public async Task<ActionResult<UsersResponse>> GetUsers(
             CancellationToken cancellationToken = default)
         {
             List<User> users = await _context.Users.ToListAsync(cancellationToken);
 
-            return Ok(users.Select(x => GetUserResponseAsync(x, cancellationToken).Result));
+            return Ok(new UsersResponse(users.Count, users.Select(x => GetUserResponseAsync(x, cancellationToken).Result)));
         }
 
         /// <summary>
