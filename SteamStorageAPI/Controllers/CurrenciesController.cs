@@ -140,6 +140,30 @@ namespace SteamStorageAPI.Controllers
 
             return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));
         }
+        
+        /// <summary>
+        /// Получение информации о текущей валюте пользователя
+        /// </summary>
+        /// <response code="200">Возвращает информацию о текущей валюте пользователя</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetCurrentCurrency")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<CurrencyResponse>> GetCurrentCurrency(
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+            
+            Currency currency =
+                await _context.Currencies.FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken) ??
+                throw new HttpResponseException(StatusCodes.Status404NotFound, "Валюты с таким Id не существует");
+
+            return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));
+        }
 
         #endregion GET
 

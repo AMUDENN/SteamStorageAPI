@@ -44,6 +44,7 @@ namespace SteamStorageAPI.Controllers
         public record UserResponse(
             int UserId,
             string SteamId,
+            string ProfileUrl,
             string? ImageUrl,
             string? ImageUrlMedium,
             string? ImageUrlFull,
@@ -105,6 +106,7 @@ namespace SteamStorageAPI.Controllers
             
             return new(user.Id,
                 user.SteamId.ToString(),
+                SteamApi.GetUserUrl(user.SteamId),
                 user.IconUrl is null ? null : SteamApi.GetUserIconUrl(user.IconUrl),
                 user.IconUrlMedium is null ? null : SteamApi.GetUserIconUrl(user.IconUrlMedium),
                 user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),

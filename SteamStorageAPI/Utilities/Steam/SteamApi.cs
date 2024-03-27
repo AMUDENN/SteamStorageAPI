@@ -31,6 +31,9 @@
         public static string GetUserInfoUrl(long steamProfileId) =>
             $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamApiKey}&steamids={steamProfileId}";
 
+        public static string GetUserUrl(long steamProfileId) =>
+            $"https://steamcommunity.com/profiles/{steamProfileId}";
+
         public static string GetUserIconUrl(string urlHash) =>
             $"https://avatars.steamstatic.com/{urlHash}";
 

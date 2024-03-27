@@ -306,14 +306,7 @@ namespace SteamStorageAPI.Controllers
             Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "Игры с таким Id не существует");
-
-            _context.Inventories.RemoveRange(_context.Entry(user)
-                .Collection(x => x.Inventories)
-                .Query()
-                .Include(x => x.Skin)
-                .Where(x => x.Skin.GameId == game.Id));
-
-
+            
             HttpClient client = _httpClientFactory.CreateClient();
             SteamInventoryResponse? response =
                 await client.GetFromJsonAsync<SteamInventoryResponse>(
@@ -323,6 +316,12 @@ namespace SteamStorageAPI.Controllers
                 throw new HttpResponseException(StatusCodes.Status400BadRequest,
                     "При получении данных с сервера Steam произошла ошибка");
 
+            _context.Inventories.RemoveRange(_context.Entry(user)
+                            .Collection(x => x.Inventories)
+                            .Query()
+                            .Include(x => x.Skin)
+                            .Where(x => x.Skin.GameId == game.Id));
+            
             foreach (InventoryDescription item in response.descriptions)
             {
                 if (item is { marketable: 0, tradable: 0 })
