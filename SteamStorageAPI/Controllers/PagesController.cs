@@ -62,7 +62,7 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<PagesResponse>> GetPages(
             CancellationToken cancellationToken = default)
         {
-            List<Page> pages = await _context.Pages.ToListAsync(cancellationToken);
+            List<Page> pages = await _context.Pages.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new PagesResponse(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title))));
         }

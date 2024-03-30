@@ -116,7 +116,7 @@ namespace SteamStorageAPI.Controllers
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Inventory> listInventories = inventories.ToList();
+            List<Inventory> listInventories = inventories.AsNoTracking().ToList();
 
             var inventoryPrices = listInventories.ToDictionary(
                 inventory => inventory.Id,
@@ -164,6 +164,7 @@ namespace SteamStorageAPI.Controllers
             IQueryable<Inventory> inventories = _context.Entry(user)
                 .Collection(x => x.Inventories)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
@@ -246,6 +247,7 @@ namespace SteamStorageAPI.Controllers
             IEnumerable<Inventory> inventories = _context.Entry(user)
                 .Collection(x => x.Inventories)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Skin)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
@@ -276,6 +278,7 @@ namespace SteamStorageAPI.Controllers
                 .Entry(user)
                 .Collection(x => x.Inventories)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Skin)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                                  && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)),

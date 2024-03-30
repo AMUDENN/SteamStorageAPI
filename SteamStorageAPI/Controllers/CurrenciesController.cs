@@ -84,6 +84,7 @@ namespace SteamStorageAPI.Controllers
                 .Entry(currency)
                 .Collection(s => s.CurrencyDynamics)
                 .Query()
+                .AsNoTracking()
                 .OrderBy(x => x.DateUpdate);
 
             return new(currency.Id,
@@ -114,7 +115,7 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<CurrenciesResponse>> GetCurrencies(
             CancellationToken cancellationToken = default)
         {
-            List<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
+            List<Currency> currencies = await _context.Currencies.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new CurrenciesResponse(currencies.Count,
                 currencies.Select(x => GetCurrencyResponseAsync(x, cancellationToken).Result)));
@@ -135,7 +136,7 @@ namespace SteamStorageAPI.Controllers
             CancellationToken cancellationToken = default)
         {
             Currency currency =
-                await _context.Currencies.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                await _context.Currencies.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
                 throw new HttpResponseException(StatusCodes.Status404NotFound, "Валюты с таким Id не существует");
 
             return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));
@@ -159,7 +160,7 @@ namespace SteamStorageAPI.Controllers
                             "Пользователя с таким Id не существует");
             
             Currency currency =
-                await _context.Currencies.FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken) ??
+                await _context.Currencies.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken) ??
                 throw new HttpResponseException(StatusCodes.Status404NotFound, "Валюты с таким Id не существует");
 
             return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));

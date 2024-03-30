@@ -170,6 +170,7 @@ namespace SteamStorageAPI.Controllers
             List<SkinsDynamic> dynamics = await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
+                .AsNoTracking()
                 .OrderBy(x => x.DateUpdate)
                 .ToListAsync(cancellationToken);
 
@@ -203,6 +204,7 @@ namespace SteamStorageAPI.Controllers
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
             
             var skinsDynamics = _context.SkinsDynamics
+                .AsNoTracking()
                 .GroupBy(sd => sd.SkinId)
                 .Select(g => new
                 {
@@ -271,12 +273,16 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+            Skin skin = await _context.Skins.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
 
-            List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                .Select(x => x.SkinId).ToListAsync(cancellationToken);
+            List<int> markedSkinsIds = await _context.Entry(user)
+                .Collection(x => x.MarkedSkins)
+                .Query()
+                .AsNoTracking()
+                .Select(x => x.SkinId)
+                .ToListAsync(cancellationToken);
 
             return Ok(await GetSkinResponseAsync(skin, user, markedSkinsIds, cancellationToken));
         }
@@ -295,8 +301,8 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetBaseSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
-            IQueryable<Skin> skins = _context.Skins.Where(x =>
-                string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter));
+            IQueryable<Skin> skins = _context.Skins.AsNoTracking()
+                .Where(x => string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter));
 
             skins = skins.Take(20);
 
@@ -322,10 +328,15 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            List<int> markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
-                .Select(x => x.SkinId).ToListAsync(cancellationToken);
+            List<int> markedSkinsIds = await _context.Entry(user)
+                .Collection(x => x.MarkedSkins)
+                .Query()
+                .AsNoTracking()
+                .Select(x => x.SkinId)
+                .ToListAsync(cancellationToken);
 
-            IQueryable<Skin> skins = _context.Skins.Where(x =>
+            IQueryable<Skin> skins = _context.Skins.AsNoTracking()
+                .Where(x =>
                 (request.GameId == null || x.GameId == request.GameId)
                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                 && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
@@ -447,7 +458,7 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+            Skin skin = await _context.Skins.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
 
@@ -483,11 +494,14 @@ namespace SteamStorageAPI.Controllers
             List<int> markedSkinsIds = [];
 
             if (request.IsMarked is not null)
-                markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                markedSkinsIds = await _context.Entry(user)
+                    .Collection(x => x.MarkedSkins)
+                    .Query()
+                    .AsNoTracking()
                     .Select(x => x.SkinId)
                     .ToListAsync(cancellationToken);
 
-            int count = await _context.Skins
+            int count = await _context.Skins.AsNoTracking()
                 .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
                                  && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                                  && (request.IsMarked == null ||
@@ -513,7 +527,7 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSteamSkinsCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+            Game game = await _context.Games.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "Игры с таким Id не существует");
 
@@ -547,11 +561,14 @@ namespace SteamStorageAPI.Controllers
             List<int> markedSkinsIds = [];
 
             if (request.IsMarked is not null)
-                markedSkinsIds = await _context.Entry(user).Collection(x => x.MarkedSkins).Query()
+                markedSkinsIds = await _context.Entry(user)
+                    .Collection(x => x.MarkedSkins)
+                    .Query()
+                    .AsNoTracking()
                     .Select(x => x.SkinId)
                     .ToListAsync(cancellationToken: cancellationToken);
 
-            int count = await _context.Skins
+            int count = await _context.Skins.AsNoTracking()
                 .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
                                  && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                                  && (request.IsMarked == null ||

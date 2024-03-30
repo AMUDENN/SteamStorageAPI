@@ -102,7 +102,7 @@ namespace SteamStorageAPI.Controllers
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            Role? role = await _context.Roles.FirstOrDefaultAsync(x => x.Id == user.RoleId, cancellationToken);
+            Role? role = await _context.Roles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user.RoleId, cancellationToken);
             
             return new(user.Id,
                 user.SteamId.ToString(),
@@ -135,7 +135,7 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<UsersResponse>> GetUsers(
             CancellationToken cancellationToken = default)
         {
-            List<User> users = await _context.Users.ToListAsync(cancellationToken);
+            List<User> users = await _context.Users.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new UsersResponse(users.Count, users.Select(x => GetUserResponseAsync(x, cancellationToken).Result)));
         }
@@ -155,7 +155,7 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetUserRequest request,
             CancellationToken cancellationToken = default)
         {
-            User user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
+            User user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 

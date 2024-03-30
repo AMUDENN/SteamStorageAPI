@@ -124,7 +124,8 @@ namespace SteamStorageAPI.Controllers
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            var activeSums = groups.ToDictionary(
+            var activeSums = groups.AsNoTracking()
+                .ToDictionary(
                 group => group.Id,
                 group => new
                 {
@@ -187,6 +188,7 @@ namespace SteamStorageAPI.Controllers
             IQueryable<ActiveGroup> groups = _context.Entry(user)
                 .Collection(x => x.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics);
@@ -242,6 +244,7 @@ namespace SteamStorageAPI.Controllers
             ActiveGroup group = await _context.Entry(user)
                                     .Collection(u => u.ActiveGroups)
                                     .Query()
+                                    .AsNoTracking()
                                     .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
                                     "У вас нет доступа к информации о группе с таким Id или группы с таким Id не существует");
@@ -253,6 +256,7 @@ namespace SteamStorageAPI.Controllers
             List<ActiveGroupDynamicResponse> dynamic = await _context.Entry(group)
                 .Collection(s => s.ActiveGroupsDynamics)
                 .Query()
+                .AsNoTracking()
                 .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
                 .Select(x => new ActiveGroupDynamicResponse(x.Id, x.DateUpdate, x.Sum))
                 .ToListAsync(cancellationToken);
@@ -281,8 +285,11 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            return Ok(new ActiveGroupsCountResponse(await _context.Entry(user).Collection(x => x.ActiveGroups)
-                .Query().CountAsync(cancellationToken)));
+            return Ok(new ActiveGroupsCountResponse(await _context.Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .AsNoTracking()
+                .CountAsync(cancellationToken)));
         }
 
         #endregion GET

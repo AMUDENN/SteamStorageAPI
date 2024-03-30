@@ -104,7 +104,7 @@ namespace SteamStorageAPI.Controllers
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            groups = groups.Include(x => x.Archives);
+            groups = groups.AsNoTracking().Include(x => x.Archives);
 
             List<ArchiveGroupResponse> result = await groups.Select(x =>
                 new ArchiveGroupResponse(
@@ -147,7 +147,10 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IQueryable<ArchiveGroup> groups = _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
+            IQueryable<ArchiveGroup> groups = _context.Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives);
 
             if (request is { OrderName: not null, IsAscending: not null })
@@ -207,8 +210,11 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            return Ok(new ArchiveGroupsCountResponse(await _context.Entry(user).Collection(x => x.ArchiveGroups)
-                .Query().CountAsync(cancellationToken)));
+            return Ok(new ArchiveGroupsCountResponse(await _context.Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .AsNoTracking()
+                .CountAsync(cancellationToken)));
         }
 
         #endregion GET

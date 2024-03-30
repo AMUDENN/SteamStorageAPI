@@ -104,7 +104,7 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<GamesResponse>> GetGames(
             CancellationToken cancellationToken = default)
         {
-            List<Game> games = await _context.Games.ToListAsync(cancellationToken);
+            List<Game> games = await _context.Games.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new GamesResponse(games.Count, games.Select(x =>
                 new GameResponse(x.Id, x.SteamGameId, x.Title,

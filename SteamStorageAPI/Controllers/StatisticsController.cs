@@ -101,6 +101,7 @@ namespace SteamStorageAPI.Controllers
             List<Active> actives = await _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin.SkinsDynamics)
                 .SelectMany(x => x.Actives)
@@ -109,6 +110,7 @@ namespace SteamStorageAPI.Controllers
             List<Archive> archives = await _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .SelectMany(x => x.Archives)
                 .ToListAsync(cancellationToken);
@@ -157,6 +159,7 @@ namespace SteamStorageAPI.Controllers
             List<Active> actives = await _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin.SkinsDynamics)
                 .SelectMany(x => x.Actives)
@@ -165,6 +168,7 @@ namespace SteamStorageAPI.Controllers
             List<Archive> archives = await _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .SelectMany(x => x.Archives)
                 .ToListAsync(cancellationToken);
@@ -208,6 +212,7 @@ namespace SteamStorageAPI.Controllers
             List<Active> actives = await _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin.SkinsDynamics)
                 .SelectMany(x => x.Actives)
@@ -254,6 +259,7 @@ namespace SteamStorageAPI.Controllers
             List<Archive> archives = await _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .SelectMany(x => x.Archives)
                 .ToListAsync(cancellationToken);
@@ -294,6 +300,7 @@ namespace SteamStorageAPI.Controllers
             List<Inventory> inventories = await _context.Entry(user)
                 .Collection(u => u.Inventories)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Skin.SkinsDynamics)
                 .Include(x => x.Skin.Game)
                 .ToListAsync(cancellationToken);
@@ -307,7 +314,8 @@ namespace SteamStorageAPI.Controllers
                     : 0);
 
             List<Game> games = inventories.Select(x => x.Skin.Game)
-                .Distinct()
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
                 .ToList();
 
             List<InventoryGameStatisticResponse> gamesResponse = [];
@@ -345,6 +353,7 @@ namespace SteamStorageAPI.Controllers
             List<Active> actives = await _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
@@ -354,6 +363,7 @@ namespace SteamStorageAPI.Controllers
             List<Archive> archives = await _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .SelectMany(x => x.Archives)
                 .ToListAsync(cancellationToken);
@@ -363,7 +373,8 @@ namespace SteamStorageAPI.Controllers
             List<Inventory> inventories = await _context.Entry(user)
                 .Collection(u => u.Inventories)
                 .Query()
-                .ToListAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
             int inventoriesCount = inventories.Sum(x => x.Count);
 

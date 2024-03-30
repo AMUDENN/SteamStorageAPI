@@ -137,8 +137,8 @@ namespace SteamStorageAPI.Controllers
             IQueryable<Archive> archives,
             CancellationToken cancellationToken = default)
         {
-            
-            IEnumerable<ArchiveResponse> result = archives.Select(x =>
+            IEnumerable<ArchiveResponse> result = archives.AsNoTracking()
+                .Select(x =>
                 new ArchiveResponse(
                     x.Id,
                     x.GroupId,
@@ -180,6 +180,7 @@ namespace SteamStorageAPI.Controllers
             IQueryable<Archive> archives = _context.Entry(user)
                 .Collection(x => x.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Archives)
@@ -255,6 +256,7 @@ namespace SteamStorageAPI.Controllers
                 .Entry(user)
                 .Collection(x => x.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Archives)
@@ -289,6 +291,7 @@ namespace SteamStorageAPI.Controllers
                 .Entry(user)
                 .Collection(x => x.ArchiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Archives)

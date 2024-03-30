@@ -152,7 +152,7 @@ namespace SteamStorageAPI.Controllers
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Active> listActives = actives.ToList();
+            List<Active> listActives = actives.AsNoTracking().ToList();
 
             var activePrices = listActives.ToDictionary(
                 active => active.Id,
@@ -209,6 +209,7 @@ namespace SteamStorageAPI.Controllers
             IQueryable<Active> actives = _context.Entry(user)
                 .Collection(x => x.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics)
@@ -316,6 +317,7 @@ namespace SteamStorageAPI.Controllers
                 .Entry(user)
                 .Collection(x => x.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
@@ -350,6 +352,7 @@ namespace SteamStorageAPI.Controllers
                 .Entry(user)
                 .Collection(x => x.ActiveGroups)
                 .Query()
+                .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)

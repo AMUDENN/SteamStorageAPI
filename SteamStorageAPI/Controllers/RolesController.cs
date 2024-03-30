@@ -61,7 +61,7 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<RolesResponse>> GetRoles(
             CancellationToken cancellationToken = default)
         {
-            List<Role> roles = await _context.Roles.ToListAsync(cancellationToken);
+            List<Role> roles = await _context.Roles.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new RolesResponse(roles.Count, roles.Select(x => new RoleResponse(x.Id, x.Title))));
         }
