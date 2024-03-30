@@ -173,26 +173,27 @@ namespace SteamStorageAPI.Controllers
             return (listActives.Sum(x => x.Count),
                 listActives.Sum(x => x.BuyPrice * x.Count),
                 listActives.Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count),
-                listActives
+                await Task.WhenAll(listActives
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(x =>
-                    new ActiveResponse(
-                        x.Id,
-                        x.GroupId,
-                        _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
-                        x.BuyDate,
-                        x.Count,
-                        x.BuyPrice,
-                        (decimal)activePrices[x.Id].CurrentPrice,
-                        (decimal)activePrices[x.Id].CurrentPrice * x.Count,
-                        x.GoalPrice,
-                        x.GoalPrice == null
-                            ? null
-                            : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
-                        (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
-                        x.Description)
-                ));
+                    .Select(async x =>
+                        new ActiveResponse(
+                            x.Id,
+                            x.GroupId,
+                            await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                            x.BuyDate,
+                            x.Count,
+                            x.BuyPrice,
+                            (decimal)activePrices[x.Id].CurrentPrice,
+                            (decimal)activePrices[x.Id].CurrentPrice * x.Count,
+                            x.GoalPrice,
+                            x.GoalPrice == null
+                                ? null
+                                : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
+                            (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
+                            x.Description)
+                    ))
+                );
         }
 
         #endregion Methods

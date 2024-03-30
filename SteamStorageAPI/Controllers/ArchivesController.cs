@@ -136,21 +136,23 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private (int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives) GetArchivesResponse(
+        private async Task<(int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives)> GetArchivesResponse(
             IQueryable<Archive> archives,
             int pageNumber,
             int pageSize,
             CancellationToken cancellationToken = default)
         {
-            IEnumerable<ArchiveResponse> result = archives
+            IEnumerable<Archive> archivesEnumerable = archives
                 .AsNoTracking()
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(x =>
+                .AsEnumerable();
+            
+            IEnumerable<ArchiveResponse> result = await Task.WhenAll(archivesEnumerable.Select(async x =>
                 new ArchiveResponse(
                     x.Id,
                     x.GroupId,
-                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
                     x.BuyDate,
                     x.SoldDate,
                     x.Count,
@@ -158,7 +160,7 @@ namespace SteamStorageAPI.Controllers
                     x.SoldPrice,
                     x.SoldPrice * x.Count,
                     (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice),
-                    x.Description));
+                    x.Description)));
 
             return (archives.Sum(x => x.Count),
                 archives.Sum(x => x.BuyPrice * x.Count),
@@ -243,7 +245,7 @@ namespace SteamStorageAPI.Controllers
             int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
 
             (int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives) archivesResponse = 
-                GetArchivesResponse(archives, request.PageNumber, request.PageSize, cancellationToken);
+                await GetArchivesResponse(archives, request.PageNumber, request.PageSize, cancellationToken);
             
             return Ok(new ArchivesResponse(archivesCount, 
                 pagesCount == 0 ? 1 : pagesCount,

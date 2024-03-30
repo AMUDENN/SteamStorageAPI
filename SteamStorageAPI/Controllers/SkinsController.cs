@@ -202,7 +202,7 @@ namespace SteamStorageAPI.Controllers
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            
+
             var skinsDynamics = _context.SkinsDynamics
                 .AsNoTracking()
                 .GroupBy(sd => sd.SkinId)
@@ -240,14 +240,14 @@ namespace SteamStorageAPI.Controllers
                         Change7D = d.Any() ? d.First().Change7D : 0,
                         Change30D = d.Any() ? d.First().Change30D : 0
                     });
-            
-            return skinsResult.Select(x =>
+
+            return await Task.WhenAll(skinsResult.Select(async x =>
                 new SkinResponse(
-                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
                     (decimal)((double)x.LastPrice * currencyExchangeRate),
                     x.Change7D,
                     x.Change30D,
-                    markedSkinsIds.Any(y => y == x.Skin.Id))
+                    markedSkinsIds.Any(y => y == x.Skin.Id)))
             );
         }
 
@@ -311,7 +311,8 @@ namespace SteamStorageAPI.Controllers
             skins = skins.OrderBy(x => x.Id).Take(20);
 
             return Ok(new BaseSkinsResponse(await skins.CountAsync(cancellationToken),
-                skins.Select(x => _skinService.GetBaseSkinResponseAsync(x, cancellationToken).Result)));
+                await Task.WhenAll(skins.AsEnumerable()
+                    .Select(async x => await _skinService.GetBaseSkinResponseAsync(x, cancellationToken)))));
         }
 
         /// <summary>

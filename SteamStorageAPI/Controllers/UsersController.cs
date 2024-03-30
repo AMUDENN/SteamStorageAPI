@@ -137,7 +137,8 @@ namespace SteamStorageAPI.Controllers
         {
             List<User> users = await _context.Users.AsNoTracking().ToListAsync(cancellationToken);
 
-            return Ok(new UsersResponse(users.Count, users.Select(x => GetUserResponseAsync(x, cancellationToken).Result)));
+            return Ok(new UsersResponse(users.Count,
+                await Task.WhenAll(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)))));
         }
 
         /// <summary>

@@ -129,14 +129,14 @@ namespace SteamStorageAPI.Controllers
                 }
             );
 
-            return listInventories.Select(x =>
+            return await Task.WhenAll(listInventories.Select(async x =>
                 new InventoryResponse(
                     x.Id,
-                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
                     x.Count,
                     (decimal)inventoryPrices[x.Id].CurrentPrice,
                     (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count)
-            );
+            ));
         }
 
         #endregion Methods

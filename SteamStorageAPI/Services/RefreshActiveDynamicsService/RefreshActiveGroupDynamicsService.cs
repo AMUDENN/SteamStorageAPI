@@ -48,7 +48,7 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             .ThenInclude(x => x.SkinsDynamics)
             .Include(x => x.User)
             .AsQueryable();
-
+        
         foreach (ActiveGroup group in activeGroups)
         {
             dynamics.Add(new()
@@ -56,7 +56,7 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
                 GroupId = group.Id,
                 Sum = (decimal)((double)group.Actives.Where(y => y.Skin.SkinsDynamics.Count != 0).Sum(y =>
                                     y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First().Price * y.Count) *
-                                _currencyService.GetCurrencyExchangeRateAsync(group.User, cancellationToken).Result),
+                                await _currencyService.GetCurrencyExchangeRateAsync(group.User, cancellationToken)),
                 DateUpdate = DateTime.Now
             });
         }

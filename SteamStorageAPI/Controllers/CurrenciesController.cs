@@ -118,7 +118,8 @@ namespace SteamStorageAPI.Controllers
             List<Currency> currencies = await _context.Currencies.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new CurrenciesResponse(currencies.Count,
-                currencies.Select(x => GetCurrencyResponseAsync(x, cancellationToken).Result)));
+                await Task.WhenAll(currencies.Select(async x =>
+                    await GetCurrencyResponseAsync(x, cancellationToken)))));
         }
 
         /// <summary>
