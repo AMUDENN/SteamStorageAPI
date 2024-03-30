@@ -277,6 +277,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
 
+            await _context.Entry(skin).Reference(x => x.Game).LoadAsync(cancellationToken);
+
             List<int> markedSkinsIds = await _context.Entry(user)
                 .Collection(x => x.MarkedSkins)
                 .Query()
@@ -301,10 +303,12 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetBaseSkinsRequest request,
             CancellationToken cancellationToken = default)
         {
-            IQueryable<Skin> skins = _context.Skins.AsNoTracking()
+            IQueryable<Skin> skins = _context.Skins
+                .AsNoTracking()
+                .Include(x => x.Game)
                 .Where(x => string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter));
 
-            skins = skins.Take(20);
+            skins = skins.OrderBy(x => x.Id).Take(20);
 
             return Ok(new BaseSkinsResponse(await skins.CountAsync(cancellationToken),
                 skins.Select(x => _skinService.GetBaseSkinResponseAsync(x, cancellationToken).Result)));
@@ -335,7 +339,9 @@ namespace SteamStorageAPI.Controllers
                 .Select(x => x.SkinId)
                 .ToListAsync(cancellationToken);
 
-            IQueryable<Skin> skins = _context.Skins.AsNoTracking()
+            IQueryable<Skin> skins = _context.Skins
+                .AsNoTracking()
+                .Include(x => x.Game)
                 .Where(x =>
                 (request.GameId == null || x.GameId == request.GameId)
                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
@@ -429,6 +435,8 @@ namespace SteamStorageAPI.Controllers
                             .Select(result => result.Skin);
                         break;
                 }
+            else
+                skins = skins.OrderBy(x => x.Id);
 
             int skinsCount = await skins.CountAsync(cancellationToken);
 

@@ -71,6 +71,9 @@ namespace SteamStorageAPI.Controllers
         public record ArchivesResponse(
             int Count,
             int PagesCount,
+            int ArchivesCount,
+            decimal InvestmentSum,
+            decimal SoldSum,
             IEnumerable<ArchiveResponse> Archives);
 
         public record ArchivesPagesCountResponse(
@@ -133,11 +136,16 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private IEnumerable<ArchiveResponse> GetArchivesResponse(
+        private (int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives) GetArchivesResponse(
             IQueryable<Archive> archives,
+            int pageNumber,
+            int pageSize,
             CancellationToken cancellationToken = default)
         {
-            IEnumerable<ArchiveResponse> result = archives.AsNoTracking()
+            IEnumerable<ArchiveResponse> result = archives
+                .AsNoTracking()
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(x =>
                 new ArchiveResponse(
                     x.Id,
@@ -152,7 +160,10 @@ namespace SteamStorageAPI.Controllers
                     (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice),
                     x.Description));
 
-            return result;
+            return (archives.Sum(x => x.Count),
+                archives.Sum(x => x.BuyPrice * x.Count),
+                archives.Sum(x => x.SoldPrice * x.Count),
+                result);
         }
         
         #endregion Methods
@@ -183,6 +194,8 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin.Game)
                 .SelectMany(x => x.Archives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
@@ -222,16 +235,22 @@ namespace SteamStorageAPI.Controllers
                             : archives.OrderByDescending(x => (x.SoldPrice - x.BuyPrice) / x.BuyPrice);
                         break;
                 }
+            else
+                archives = archives.OrderBy(x => x.Id);
 
             int archivesCount = await archives.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
 
-            archives = archives.Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize);
-
-            return Ok(new ArchivesResponse(archivesCount, pagesCount == 0 ? 1 : pagesCount,
-                GetArchivesResponse(archives, cancellationToken)));
+            (int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives) archivesResponse = 
+                GetArchivesResponse(archives, request.PageNumber, request.PageSize, cancellationToken);
+            
+            return Ok(new ArchivesResponse(archivesCount, 
+                pagesCount == 0 ? 1 : pagesCount,
+                archivesResponse.Count,
+                archivesResponse.InvestmentSum,
+                archivesResponse.SoldSum,
+                archivesResponse.Archives));
         }
 
         /// <summary>

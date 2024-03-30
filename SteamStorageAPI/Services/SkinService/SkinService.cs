@@ -33,7 +33,6 @@ namespace SteamStorageAPI.Services.SkinService
             Skin skin,
             CancellationToken cancellationToken = default)
         {
-            await _context.Entry(skin).Reference(x => x.Game).LoadAsync(cancellationToken);
             return new(
                 skin.Id,
                 SteamApi.GetSkinIconUrl(skin.SkinIconUrl),
@@ -52,6 +51,7 @@ namespace SteamStorageAPI.Services.SkinService
             IOrderedQueryable<SkinsDynamic> dynamics = _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
+                .AsNoTracking()
                 .OrderBy(x => x.DateUpdate);
 
             return dynamics.Any() ? (decimal)((double)dynamics.Last().Price * currencyExchangeRate) : 0;
@@ -73,6 +73,7 @@ namespace SteamStorageAPI.Services.SkinService
             return await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
+                .AsNoTracking()
                 .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
                 .OrderBy(x => x.DateUpdate)
                 .Select(x =>

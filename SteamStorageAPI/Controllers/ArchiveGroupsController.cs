@@ -188,6 +188,8 @@ namespace SteamStorageAPI.Controllers
                                 x.Archives.Sum(y => y.BuyPrice));
                         break;
                 }
+            else
+                groups = groups.OrderBy(x => x.Id);
 
             return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken),
                 await GetArchiveGroupsResponsesAsync(groups, user, cancellationToken)));

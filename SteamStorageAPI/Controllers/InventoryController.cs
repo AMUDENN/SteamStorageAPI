@@ -167,6 +167,7 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics)
+                .Include(x => x.Skin.Game)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
 
@@ -214,6 +215,8 @@ namespace SteamStorageAPI.Controllers
                             .Select(result => result.Inventory);
                         break;
                 }
+            else
+                inventories = inventories.OrderBy(x => x.Id);
 
             int inventoriesCount = await inventories.CountAsync(cancellationToken);
 

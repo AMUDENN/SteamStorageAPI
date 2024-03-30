@@ -218,6 +218,8 @@ namespace SteamStorageAPI.Controllers
                         //TODO: сортирока
                         break;
                 }
+            else
+                groups = groups.OrderBy(x => x.Id);
 
             return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken),
                 await GetActiveGroupsResponsesAsync(groups, user, cancellationToken)));

@@ -76,6 +76,9 @@ namespace SteamStorageAPI.Controllers
         public record ActivesResponse(
             int Count,
             int PagesCount,
+            int ActivesCount,
+            decimal InvestmentSum,
+            decimal CurrentSum,
             IEnumerable<ActiveResponse> Actives);
 
         public record ActivesPagesCountResponse(
@@ -144,15 +147,17 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<IEnumerable<ActiveResponse>> GetActivesResponseAsync(
-            IQueryable<Active> actives,
-            User user,
-            CancellationToken cancellationToken = default)
+        private async Task<(int Count, decimal InvestmentSum, decimal CurrentSum, IEnumerable<ActiveResponse> Actives)> GetActivesResponseAsync(
+                IQueryable<Active> actives,
+                int pageNumber,
+                int pageSize,
+                User user,
+                CancellationToken cancellationToken = default)
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Active> listActives = actives.AsNoTracking().ToList();
+            List<Active> listActives = actives.AsSplitQuery().AsNoTracking().ToList();
 
             var activePrices = listActives.ToDictionary(
                 active => active.Id,
@@ -165,23 +170,29 @@ namespace SteamStorageAPI.Controllers
                 }
             );
 
-            return listActives.Select(x =>
-                new ActiveResponse(
-                    x.Id,
-                    x.GroupId,
-                    _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
-                    x.BuyDate,
-                    x.Count,
-                    x.BuyPrice,
-                    (decimal)activePrices[x.Id].CurrentPrice,
-                    (decimal)activePrices[x.Id].CurrentPrice * x.Count,
-                    x.GoalPrice,
-                    x.GoalPrice == null
-                        ? null
-                        : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
-                    (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
-                    x.Description)
-            );
+            return (listActives.Sum(x => x.Count),
+                listActives.Sum(x => x.BuyPrice * x.Count),
+                listActives.Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count),
+                listActives
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x =>
+                    new ActiveResponse(
+                        x.Id,
+                        x.GroupId,
+                        _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken).Result,
+                        x.BuyDate,
+                        x.Count,
+                        x.BuyPrice,
+                        (decimal)activePrices[x.Id].CurrentPrice,
+                        (decimal)activePrices[x.Id].CurrentPrice * x.Count,
+                        x.GoalPrice,
+                        x.GoalPrice == null
+                            ? null
+                            : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
+                        (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
+                        x.Description)
+                ));
         }
 
         #endregion Methods
@@ -213,6 +224,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics)
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin.Game)
                 .SelectMany(x => x.Actives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
@@ -283,16 +296,22 @@ namespace SteamStorageAPI.Controllers
                             .Select(result => result.Active);
                         break;
                 }
+            else
+                actives = actives.OrderBy(x => x.Id);
 
             int activesCount = await actives.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
 
-            actives = actives.Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize);
+            (int Count, decimal InvestmentSum, decimal CurrentSum, IEnumerable<ActiveResponse> Actives) activesResponse =
+                await GetActivesResponseAsync(actives,  request.PageNumber, request.PageSize, user, cancellationToken);
 
-            return Ok(new ActivesResponse(activesCount, pagesCount == 0 ? 1 : pagesCount,
-                await GetActivesResponseAsync(actives, user, cancellationToken)));
+            return Ok(new ActivesResponse(activesCount,
+                pagesCount == 0 ? 1 : pagesCount,
+                activesResponse.Count,
+                activesResponse.InvestmentSum,
+                activesResponse.CurrentSum,
+                activesResponse.Actives));
         }
 
         /// <summary>
