@@ -68,11 +68,27 @@ namespace SteamStorageAPI.Controllers
             int Count,
             decimal CurrentPrice,
             decimal CurrentSum);
+
+        public record InventoryGameCountResponse(
+            string GameTitle,
+            double Percentage,
+            int Count);
+
+        public record InventoryGameSumResponse(
+            string GameTitle,
+            double Percentage,
+            decimal Sum);
         
         public record InventoriesResponse(
             int Count,
             int PagesCount,
             IEnumerable<InventoryResponse> Inventories);
+
+        public record InventoriesStatisticResponse(
+            int InventoriesCount,
+            decimal CurrentSum,
+            IEnumerable<InventoryGameCountResponse> GameCount,
+            IEnumerable<InventoryGameSumResponse> GameSum);
 
         public record InventoryPagesCountResponse(
             int Count);
@@ -88,6 +104,11 @@ namespace SteamStorageAPI.Controllers
             bool? IsAscending,
             int PageNumber,
             int PageSize);
+        
+        [Validator<GetInventoriesStatisticRequestValidator>]
+        public record GetInventoriesStatisticRequest(
+            int? GameId,
+            string? Filter);
 
         [Validator<GetInventoryPagesCountRequestValidator>]
         public record GetInventoryPagesCountRequest(
@@ -108,15 +129,20 @@ namespace SteamStorageAPI.Controllers
         
         #region Methods
 
-        private async Task<IEnumerable<InventoryResponse>> GetInventoriesResponseAsync(
+        private async Task<InventoriesResponse> GetInventoriesResponseAsync(
             IQueryable<Inventory> inventories,
+            int pageNumber,
+            int pageSize,
             User user,
             CancellationToken cancellationToken = default)
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Inventory> listInventories = inventories.AsNoTracking().ToList();
+            List<Inventory> listInventories = inventories.AsNoTracking()
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             var inventoryPrices = listInventories.ToDictionary(
                 inventory => inventory.Id,
@@ -129,14 +155,21 @@ namespace SteamStorageAPI.Controllers
                 }
             );
 
-            return await Task.WhenAll(listInventories.Select(async x =>
-                new InventoryResponse(
-                    x.Id,
-                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                    x.Count,
-                    (decimal)inventoryPrices[x.Id].CurrentPrice,
-                    (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count)
-            ));
+            int inventoriesCount = await inventories.CountAsync(cancellationToken);
+
+            int pagesCount = (int)Math.Ceiling((double)inventoriesCount / pageSize);
+            
+            return new(inventoriesCount,
+                pagesCount,
+                await Task.WhenAll(listInventories
+                    .Select(async x =>
+                        new InventoryResponse(
+                            x.Id,
+                            await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                            x.Count,
+                            (decimal)inventoryPrices[x.Id].CurrentPrice,
+                            (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count))
+                ));
         }
 
         #endregion Methods
@@ -218,15 +251,97 @@ namespace SteamStorageAPI.Controllers
             else
                 inventories = inventories.OrderBy(x => x.Id);
 
-            int inventoriesCount = await inventories.CountAsync(cancellationToken);
+            return Ok(await GetInventoriesResponseAsync(inventories, 
+                request.PageNumber, 
+                request.PageSize,
+                user,
+                cancellationToken));
+        }
 
-            int pagesCount = (int)Math.Ceiling((double)inventoriesCount / request.PageSize);
+        /// <summary>
+        /// Получение статистики по выборке предметов из инвентаря
+        /// </summary>
+        /// <response code="200">Возвращает статистику по выборке</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetInventoriesStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<InventoriesStatisticResponse>> GetInventoriesStatistic(
+            [FromQuery] GetInventoriesStatisticRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            inventories = inventories.Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize);
+            IQueryable<Inventory> inventories = _context.Entry(user)
+                .Collection(x => x.Inventories)
+                .Query()
+                .AsNoTracking()
+                .Include(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics)
+                .Include(x => x.Skin.Game)
+                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
 
-            return Ok(new InventoriesResponse(inventoriesCount, pagesCount == 0 ? 1 : pagesCount,
-                await GetInventoriesResponseAsync(inventories, user, cancellationToken)));
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
+            List<Inventory> listInventories = inventories.AsNoTracking().ToList();
+
+            var inventoryPrices = listInventories.ToDictionary(
+                inventory => inventory.Id,
+                inventory => new
+                {
+                    CurrentPrice = inventory.Skin.SkinsDynamics.Count != 0
+                        ? (double)inventory.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
+                          currencyExchangeRate
+                        : 0
+                }
+            );
+
+            int itemsCount = listInventories.Sum(x => x.Count);
+
+            decimal currentSum = listInventories.Sum(x => (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count);
+
+            List<Game> games = inventories.Select(x => x.Skin.Game)
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            List<InventoryGameCountResponse> gamesCountResponse = [];
+            gamesCountResponse.AddRange(
+                games.Select(item =>
+                    new InventoryGameCountResponse(
+                        item.Title,
+                        itemsCount == 0
+                            ? 0
+                            : (double)inventories.Where(x => x.Skin.Game.Id == item.Id)
+                                .Sum(x => x.Count) / itemsCount,
+                        inventories.Where(x => x.Skin.Game.Id == item.Id)
+                            .Sum(x => x.Count)))
+            );
+
+            List<InventoryGameSumResponse> gamesSumResponse = [];
+            gamesSumResponse.AddRange(
+                games.Select(item =>
+                    new InventoryGameSumResponse(
+                        item.Title,
+                        currentSum == 0
+                            ? 0
+                            : (double)(inventories
+                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .AsEnumerable()
+                                .Sum(x => (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count) / currentSum),
+                        inventories
+                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .AsEnumerable()
+                            .Sum(x => (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count)))
+            );
+
+            return Ok(new InventoriesStatisticResponse(itemsCount, currentSum, gamesCountResponse, gamesSumResponse));
         }
 
         /// <summary>
@@ -351,6 +466,8 @@ namespace SteamStorageAPI.Controllers
                     }, cancellationToken);
                 else
                     inventory.Count++;
+                
+                await _context.SaveChangesAsync(cancellationToken);
             }
 
             await _context.SaveChangesAsync(cancellationToken);

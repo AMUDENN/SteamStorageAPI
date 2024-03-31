@@ -87,16 +87,14 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .OrderBy(x => x.DateUpdate);
 
+            CurrencyDynamic? lastDynamic = await currencyDynamics.LastOrDefaultAsync(cancellationToken);
+
             return new(currency.Id,
                 currency.SteamCurrencyId,
                 currency.Title,
                 currency.Mark,
-                !await currencyDynamics.AnyAsync(cancellationToken) 
-                    ? 0 
-                    : currencyDynamics.Last().Price,
-                !await currencyDynamics.AnyAsync(cancellationToken)
-                    ? DateTime.Now
-                    : currencyDynamics.Last().DateUpdate);
+                lastDynamic?.Price ?? 0,
+                lastDynamic?.DateUpdate ?? DateTime.Now);
         }
 
         #endregion Methods
@@ -115,11 +113,21 @@ namespace SteamStorageAPI.Controllers
         public async Task<ActionResult<CurrenciesResponse>> GetCurrencies(
             CancellationToken cancellationToken = default)
         {
-            List<Currency> currencies = await _context.Currencies.AsNoTracking().ToListAsync(cancellationToken);
+            IQueryable<CurrencyResponse> currencies = _context.Currencies
+                .AsNoTracking()
+                .Include(x => x.CurrencyDynamics)
+                .Select(x => new CurrencyResponse(x.Id,
+                    x.SteamCurrencyId,
+                    x.Title,
+                    x.Mark,
+                    x.CurrencyDynamics.Count != 0
+                        ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().Price
+                        : 0,
+                    x.CurrencyDynamics.Count != 0
+                        ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().DateUpdate
+                        : DateTime.Now));
 
-            return Ok(new CurrenciesResponse(currencies.Count,
-                await Task.WhenAll(currencies.Select(async x =>
-                    await GetCurrencyResponseAsync(x, cancellationToken)))));
+            return Ok(new CurrenciesResponse(await currencies.CountAsync(cancellationToken), currencies));
         }
 
         /// <summary>

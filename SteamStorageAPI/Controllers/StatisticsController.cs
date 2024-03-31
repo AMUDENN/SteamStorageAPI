@@ -323,10 +323,10 @@ namespace SteamStorageAPI.Controllers
                 games.Select(item =>
                     new InventoryGameStatisticResponse(
                         item.Title,
-                        (double)inventories.Count(x => x.Skin.Game.Id == item.Id) / count,
-                        inventories.Count(x => x.Skin.Game.Id == item.Id)))
+                        (double)inventories.Where(x => x.Skin.Game.Id == item.Id).Sum(x => x.Count) / count,
+                        inventories.Where(x => x.Skin.Game.Id == item.Id).Sum(x => x.Count)))
             );
-            
+
             return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
         }
 

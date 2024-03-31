@@ -71,10 +71,12 @@ namespace SteamStorageAPI.Controllers
         public record ArchivesResponse(
             int Count,
             int PagesCount,
+            IEnumerable<ArchiveResponse> Archives);
+        
+        public record ArchivesStatisticResponse(
             int ArchivesCount,
             decimal InvestmentSum,
-            decimal SoldSum,
-            IEnumerable<ArchiveResponse> Archives);
+            decimal SoldSum);
 
         public record ArchivesPagesCountResponse(
             int Count);
@@ -91,6 +93,12 @@ namespace SteamStorageAPI.Controllers
             bool? IsAscending,
             int PageNumber,
             int PageSize);
+        
+        [Validator<GetArchivesStatisticRequestValidator>]
+        public record GetArchivesStatisticRequest(
+            int? GroupId,
+            int? GameId,
+            string? Filter);
 
         [Validator<GetArchivesPagesCountRequestValidator>]
         public record GetArchivesPagesCountRequest(
@@ -136,38 +144,38 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<(int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives)> GetArchivesResponse(
+        private async Task<ArchivesResponse> GetArchivesResponse(
             IQueryable<Archive> archives,
             int pageNumber,
             int pageSize,
             CancellationToken cancellationToken = default)
         {
-            IEnumerable<Archive> archivesEnumerable = archives
-                .AsNoTracking()
+            archives = archives.AsNoTracking()
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .AsEnumerable();
-            
-            IEnumerable<ArchiveResponse> result = await Task.WhenAll(archivesEnumerable.Select(async x =>
-                new ArchiveResponse(
-                    x.Id,
-                    x.GroupId,
-                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                    x.BuyDate,
-                    x.SoldDate,
-                    x.Count,
-                    x.BuyPrice,
-                    x.SoldPrice,
-                    x.SoldPrice * x.Count,
-                    (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice),
-                    x.Description)));
+                .Take(pageSize);
 
-            return (archives.Sum(x => x.Count),
-                archives.Sum(x => x.BuyPrice * x.Count),
-                archives.Sum(x => x.SoldPrice * x.Count),
-                result);
+            int archivesCount = await archives.CountAsync(cancellationToken);
+
+            int pagesCount = (int)Math.Ceiling((double)archivesCount / pageSize);
+
+            return new(archivesCount,
+                pagesCount,
+                await Task.WhenAll(archives.AsEnumerable()
+                    .Select(async x =>
+                        new ArchiveResponse(
+                            x.Id,
+                            x.GroupId,
+                            await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                            x.BuyDate,
+                            x.SoldDate,
+                            x.Count,
+                            x.BuyPrice,
+                            x.SoldPrice,
+                            x.SoldPrice * x.Count,
+                            (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice),
+                            x.Description))));
         }
-        
+
         #endregion Methods
 
         #region GET
@@ -240,19 +248,42 @@ namespace SteamStorageAPI.Controllers
             else
                 archives = archives.OrderBy(x => x.Id);
 
-            int archivesCount = await archives.CountAsync(cancellationToken);
+            return Ok(await GetArchivesResponse(archives, request.PageNumber, request.PageSize, cancellationToken));
+        }
 
-            int pagesCount = (int)Math.Ceiling((double)archivesCount / request.PageSize);
+        /// <summary>
+        /// Получение статистики по выборке элементов архива
+        /// </summary>
+        /// <response code="200">Возвращает статистику по выборке элементов архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetArchivesStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ArchivesStatisticResponse>> GetArchivesStatistic(
+            [FromQuery] GetArchivesStatisticRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            (int Count, decimal InvestmentSum, decimal SoldSum, IEnumerable<ArchiveResponse> Archives) archivesResponse = 
-                await GetArchivesResponse(archives, request.PageNumber, request.PageSize, cancellationToken);
-            
-            return Ok(new ArchivesResponse(archivesCount, 
-                pagesCount == 0 ? 1 : pagesCount,
-                archivesResponse.Count,
-                archivesResponse.InvestmentSum,
-                archivesResponse.SoldSum,
-                archivesResponse.Archives));
+            IQueryable<Archive> archives = _context.Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .AsNoTracking()
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin)
+                .SelectMany(x => x.Archives)
+                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
+                            && (request.GroupId == null || x.GroupId == request.GroupId));
+
+            return Ok(new ArchivesStatisticResponse(
+                archives.Sum(x => x.Count),
+                archives.Sum(x => x.BuyPrice * x.Count),
+                archives.Sum(x => x.SoldPrice * x.Count)));
         }
 
         /// <summary>

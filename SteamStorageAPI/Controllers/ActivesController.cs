@@ -76,10 +76,12 @@ namespace SteamStorageAPI.Controllers
         public record ActivesResponse(
             int Count,
             int PagesCount,
+            IEnumerable<ActiveResponse> Actives);
+
+        public record ActivesStatisticResponse(
             int ActivesCount,
             decimal InvestmentSum,
-            decimal CurrentSum,
-            IEnumerable<ActiveResponse> Actives);
+            decimal CurrentSum);
 
         public record ActivesPagesCountResponse(
             int Count);
@@ -96,6 +98,12 @@ namespace SteamStorageAPI.Controllers
             bool? IsAscending,
             int PageNumber,
             int PageSize);
+        
+        [Validator<GetActivesStatisticRequestValidator>]
+        public record GetActivesStatisticRequest(
+            int? GroupId,
+            int? GameId,
+            string? Filter);
 
         [Validator<GetActivesPagesCountRequestValidator>]
         public record GetActivesPagesCountRequest(
@@ -147,17 +155,20 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<(int Count, decimal InvestmentSum, decimal CurrentSum, IEnumerable<ActiveResponse> Actives)> GetActivesResponseAsync(
-                IQueryable<Active> actives,
-                int pageNumber,
-                int pageSize,
-                User user,
-                CancellationToken cancellationToken = default)
+        private async Task<ActivesResponse> GetActivesResponseAsync(
+            IQueryable<Active> actives,
+            int pageNumber,
+            int pageSize,
+            User user,
+            CancellationToken cancellationToken = default)
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Active> listActives = actives.AsSplitQuery().AsNoTracking().ToList();
+            List<Active> listActives = actives.AsNoTracking()
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             var activePrices = listActives.ToDictionary(
                 active => active.Id,
@@ -170,12 +181,13 @@ namespace SteamStorageAPI.Controllers
                 }
             );
 
-            return (listActives.Sum(x => x.Count),
-                listActives.Sum(x => x.BuyPrice * x.Count),
-                listActives.Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count),
+            int activesCount = await actives.CountAsync(cancellationToken);
+
+            int pagesCount = (int)Math.Ceiling((double)activesCount / pageSize);
+
+            return new(activesCount,
+                pagesCount,
                 await Task.WhenAll(listActives
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
                     .Select(async x =>
                         new ActiveResponse(
                             x.Id,
@@ -193,7 +205,7 @@ namespace SteamStorageAPI.Controllers
                             (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
                             x.Description)
                     ))
-                );
+            );
         }
 
         #endregion Methods
@@ -299,20 +311,67 @@ namespace SteamStorageAPI.Controllers
                 }
             else
                 actives = actives.OrderBy(x => x.Id);
+            
+            return Ok(await GetActivesResponseAsync(actives, 
+                request.PageNumber, 
+                request.PageSize, 
+                user,
+                cancellationToken));
+        }
 
-            int activesCount = await actives.CountAsync(cancellationToken);
+        /// <summary>
+        /// Получение статистики по выборке активов
+        /// </summary>
+        /// <response code="200">Возвращает статистику по выборке активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetActivesStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ActivesStatisticResponse>> GetActivesStatistic(
+            [FromQuery] GetActivesStatisticRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
 
-            int pagesCount = (int)Math.Ceiling((double)activesCount / request.PageSize);
+            IQueryable<Active> actives = _context.Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .AsNoTracking()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics)
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin.Game)
+                .SelectMany(x => x.Actives)
+                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
+                            && (request.GroupId == null || x.GroupId == request.GroupId));
 
-            (int Count, decimal InvestmentSum, decimal CurrentSum, IEnumerable<ActiveResponse> Actives) activesResponse =
-                await GetActivesResponseAsync(actives,  request.PageNumber, request.PageSize, user, cancellationToken);
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            return Ok(new ActivesResponse(activesCount,
-                pagesCount == 0 ? 1 : pagesCount,
-                activesResponse.Count,
-                activesResponse.InvestmentSum,
-                activesResponse.CurrentSum,
-                activesResponse.Actives));
+            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
+            List<Active> listActives = actives.AsNoTracking().ToList();
+
+            var activePrices = listActives.ToDictionary(
+                active => active.Id,
+                active => new
+                {
+                    CurrentPrice = active.Skin.SkinsDynamics.Count != 0
+                        ? (double)active.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
+                          currencyExchangeRate
+                        : 0
+                }
+            );
+
+            return Ok(new ActivesStatisticResponse(
+                listActives.Sum(x => x.Count),
+                listActives.Sum(x => x.BuyPrice * x.Count),
+                listActives.Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count)
+            ));
         }
 
         /// <summary>
