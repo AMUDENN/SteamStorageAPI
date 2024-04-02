@@ -68,6 +68,11 @@ namespace SteamStorageAPI.Controllers
             int Count,
             decimal CurrentPrice,
             decimal CurrentSum);
+        
+        public record InventoriesResponse(
+            int Count,
+            int PagesCount,
+            IEnumerable<InventoryResponse> Inventories);
 
         public record InventoryGameCountResponse(
             string GameTitle,
@@ -78,11 +83,6 @@ namespace SteamStorageAPI.Controllers
             string GameTitle,
             double Percentage,
             decimal Sum);
-        
-        public record InventoriesResponse(
-            int Count,
-            int PagesCount,
-            IEnumerable<InventoryResponse> Inventories);
 
         public record InventoriesStatisticResponse(
             int InventoriesCount,

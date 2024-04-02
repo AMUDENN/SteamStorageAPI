@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
@@ -32,7 +31,6 @@ namespace SteamStorageAPI.Controllers
         #region Fields
 
         private readonly IUserService _userService;
-        private readonly ICurrencyService _currencyService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -41,11 +39,9 @@ namespace SteamStorageAPI.Controllers
 
         public ArchiveGroupsController(
             IUserService userService,
-            ICurrencyService currencyService,
             SteamStorageContext context)
         {
             _userService = userService;
-            _currencyService = currencyService;
             _context = context;
         }
 
@@ -67,6 +63,29 @@ namespace SteamStorageAPI.Controllers
         public record ArchiveGroupsResponse(
             int Count,
             IEnumerable<ArchiveGroupResponse> ArchiveGroups);
+        
+        public record ArchiveGroupsGameCountResponse(
+            string GameTitle,
+            double Percentage,
+            int Count);
+
+        public record ArchiveGroupsGameBuySumResponse(
+            string GameTitle,
+            double Percentage,
+            decimal BuySum);
+        
+        public record ArchiveGroupsGameSoldSumResponse(
+            string GameTitle,
+            double Percentage,
+            decimal SoldSum);
+
+        public record ArchiveGroupsStatisticResponse(
+            int ArchivesCount,
+            decimal BuySum,
+            decimal SoldSum,
+            IEnumerable<ArchiveGroupsGameCountResponse> GameCount,
+            IEnumerable<ArchiveGroupsGameBuySumResponse> GameBuySum,
+            IEnumerable<ArchiveGroupsGameSoldSumResponse> GameSoldSum);
 
         public record ArchiveGroupsCountResponse(
             int Count);
@@ -190,6 +209,41 @@ namespace SteamStorageAPI.Controllers
 
             return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken),
                 await GetArchiveGroupsResponsesAsync(groups, cancellationToken)));
+        }
+
+        /// <summary>
+        /// Получение статистики групп архива
+        /// </summary>
+        /// <response code="200">Возвращает статистику групп архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetArchiveGroupsStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ArchiveGroupsStatisticResponse>> GetArchiveGroupsStatistic(
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            IQueryable<Archive> archives = _context.Entry(user)
+                .Collection(x => x.ArchiveGroups)
+                .Query()
+                .AsNoTracking()
+                .Include(x => x.Archives)
+                .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics)
+                .SelectMany(x => x.Archives);
+
+            return Ok(new ArchiveGroupsStatisticResponse(
+                archives.Sum(x => x.Count),
+                archives.Sum(x => x.BuyPrice * x.Count),
+                archives.Sum(x => x.SoldPrice * x.Count),
+                Enumerable.Empty<ArchiveGroupsGameCountResponse>(),
+                Enumerable.Empty<ArchiveGroupsGameBuySumResponse>(),
+                Enumerable.Empty<ArchiveGroupsGameSoldSumResponse>()));
         }
 
         /// <summary>

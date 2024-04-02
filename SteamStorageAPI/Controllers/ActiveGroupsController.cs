@@ -69,7 +69,30 @@ namespace SteamStorageAPI.Controllers
         public record ActiveGroupsResponse(
             int Count,
             IEnumerable<ActiveGroupResponse> ActiveGroups);
+        
+        public record ActiveGroupsGameCountResponse(
+            string GameTitle,
+            double Percentage,
+            int Count);
 
+        public record ActiveGroupsGameInvestmentSumResponse(
+            string GameTitle,
+            double Percentage,
+            decimal InvestmentSum);
+        
+        public record ActiveGroupsGameCurrentSumResponse(
+            string GameTitle,
+            double Percentage,
+            decimal CurrentSum);
+
+        public record ActiveGroupsStatisticResponse(
+            int ActivesCount,
+            decimal InvestmentSum,
+            decimal CurrentSum,
+            IEnumerable<ActiveGroupsGameCountResponse> GameCount,
+            IEnumerable<ActiveGroupsGameInvestmentSumResponse> GameInvestmentSum,
+            IEnumerable<ActiveGroupsGameCurrentSumResponse> GameCurrentSum);
+        
         public record ActiveGroupDynamicResponse(
             int Id,
             DateTime DateUpdate,
@@ -223,6 +246,57 @@ namespace SteamStorageAPI.Controllers
 
             return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken),
                 await GetActiveGroupsResponsesAsync(groups, user, cancellationToken)));
+        }
+
+        /// <summary>
+        /// Получение статистики групп активов
+        /// </summary>
+        /// <response code="200">Возвращает статистику групп активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetActiveGroupsStatistic")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ActiveGroupsStatisticResponse>> GetActiveGroupsStatistic(
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            IQueryable<ActiveGroup> groups = _context.Entry(user)
+                .Collection(x => x.ActiveGroups)
+                .Query()
+                .AsNoTracking()
+                .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.SkinsDynamics);
+
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+            
+            var activeSums = groups.AsNoTracking()
+                .ToDictionary(
+                    group => group.Id,
+                    group => new
+                    {
+                        BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate,
+                        LatestPriceSum = (double)group.Actives
+                                             .Where(y => y.Skin.SkinsDynamics.Count != 0)
+                                             .Sum(y => y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First()
+                                                 .Price * y.Count) *
+                                         currencyExchangeRate,
+                        Count = group.Actives.Sum(y => y.Count)
+                    }
+                );
+
+            return Ok(new ActiveGroupsStatisticResponse(
+                activeSums.Sum(x => x.Value.Count),
+                (decimal)activeSums.Sum(x => x.Value.BuyPriceSum),
+                (decimal)activeSums.Sum(x => x.Value.LatestPriceSum),
+                Enumerable.Empty<ActiveGroupsGameCountResponse>(),
+                Enumerable.Empty<ActiveGroupsGameInvestmentSumResponse>(),
+                Enumerable.Empty<ActiveGroupsGameCurrentSumResponse>()));
         }
 
         /// <summary>
