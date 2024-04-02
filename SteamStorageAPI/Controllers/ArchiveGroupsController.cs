@@ -99,11 +99,8 @@ namespace SteamStorageAPI.Controllers
 
         private async Task<IEnumerable<ArchiveGroupResponse>> GetArchiveGroupsResponsesAsync(
             IQueryable<ArchiveGroup> groups,
-            User user,
             CancellationToken cancellationToken = default)
         {
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
             groups = groups.AsNoTracking().Include(x => x.Archives);
 
             List<ArchiveGroupResponse> result = await groups.Select(x =>
@@ -113,8 +110,8 @@ namespace SteamStorageAPI.Controllers
                     x.Description,
                     $"#{x.Colour ?? ArchiveGroup.BASE_ARCHIVE_GROUP_COLOUR}",
                     x.Archives.Sum(y => y.Count),
-                    (decimal)((double)x.Archives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate),
-                    (decimal)((double)x.Archives.Sum(y => y.SoldPrice * y.Count) * currencyExchangeRate),
+                    x.Archives.Sum(y => y.BuyPrice * y.Count),
+                    x.Archives.Sum(y => y.SoldPrice * y.Count),
                     x.Archives.Sum(y => y.BuyPrice) != 0
                         ? ((double)x.Archives.Sum(y => y.SoldPrice) - (double)x.Archives.Sum(y => y.BuyPrice)) /
                           (double)x.Archives.Sum(y => y.BuyPrice)
@@ -192,7 +189,7 @@ namespace SteamStorageAPI.Controllers
                 groups = groups.OrderBy(x => x.Id);
 
             return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken),
-                await GetArchiveGroupsResponsesAsync(groups, user, cancellationToken)));
+                await GetArchiveGroupsResponsesAsync(groups, cancellationToken)));
         }
 
         /// <summary>

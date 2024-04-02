@@ -51,6 +51,7 @@ namespace SteamStorageAPI.Controllers
             string? Nickname,
             string Role,
             int StartPageId,
+            string StartPage,
             int CurrencyId,
             DateTime DateRegistration,
             decimal? GoalSum);
@@ -102,7 +103,11 @@ namespace SteamStorageAPI.Controllers
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            Role? role = await _context.Roles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user.RoleId, cancellationToken);
+            Role? role = await _context.Roles.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == user.RoleId, cancellationToken);
+
+            Page? page = await _context.Pages.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken);
             
             return new(user.Id,
                 user.SteamId.ToString(),
@@ -113,6 +118,7 @@ namespace SteamStorageAPI.Controllers
                 user.Username?.Trim([' ']),
                 role?.Title ?? "Роль не найдена",
                 user.StartPageId,
+                page?.Title ?? "Стартовая страница не найдена",
                 user.CurrencyId,
                 user.DateRegistration,
                 user.GoalSum);
