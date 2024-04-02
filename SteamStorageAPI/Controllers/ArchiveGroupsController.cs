@@ -236,14 +236,67 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics)
                 .SelectMany(x => x.Archives);
+            
+            List<Game> games = archives
+                .Select(x => x.Skin.Game)
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            int archivesCount = archives.Sum(x => x.Count);
+            decimal buySum = archives.Sum(x => x.BuyPrice * x.Count);
+            decimal soldSum = archives.Sum(x => x.SoldPrice * x.Count);
+            
+            List<ArchiveGroupsGameCountResponse> gamesCountResponse = [];
+            gamesCountResponse.AddRange(
+                games.Select(item =>
+                    new ArchiveGroupsGameCountResponse(
+                        item.Title,
+                        archivesCount == 0
+                            ? 0
+                            : (double)archives.Where(x => x.Skin.Game.Id == item.Id)
+                                .Sum(x => x.Count) / archivesCount,
+                        archives.Where(x => x.Skin.Game.Id == item.Id)
+                            .Sum(x => x.Count)))
+            );
+            
+            List<ArchiveGroupsGameBuySumResponse> gamesBuySumResponse = [];
+            gamesBuySumResponse.AddRange(
+                games.Select(item =>
+                    new ArchiveGroupsGameBuySumResponse(
+                        item.Title,
+                        buySum == 0
+                            ? 0
+                            : (double)(archives
+                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Sum(x => x.BuyPrice * x.Count) / buySum),
+                        archives
+                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Sum(x => x.BuyPrice * x.Count)))
+            );
+            
+            List<ArchiveGroupsGameSoldSumResponse> gamesSoldSumResponse = [];
+            gamesSoldSumResponse.AddRange(
+                games.Select(item =>
+                    new ArchiveGroupsGameSoldSumResponse(
+                        item.Title,
+                        soldSum == 0
+                            ? 0
+                            : (double)(archives
+                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Sum(x => x.SoldPrice * x.Count) / soldSum),
+                        archives
+                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Sum(x => x.SoldPrice * x.Count)))
+            );
 
             return Ok(new ArchiveGroupsStatisticResponse(
-                archives.Sum(x => x.Count),
-                archives.Sum(x => x.BuyPrice * x.Count),
-                archives.Sum(x => x.SoldPrice * x.Count),
-                Enumerable.Empty<ArchiveGroupsGameCountResponse>(),
-                Enumerable.Empty<ArchiveGroupsGameBuySumResponse>(),
-                Enumerable.Empty<ArchiveGroupsGameSoldSumResponse>()));
+                archivesCount,
+                buySum,
+                soldSum,
+                gamesCountResponse,
+                gamesBuySumResponse,
+                gamesSoldSumResponse));
         }
 
         /// <summary>

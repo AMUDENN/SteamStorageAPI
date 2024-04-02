@@ -152,7 +152,7 @@ namespace SteamStorageAPI.Controllers
                 group => group.Id,
                 group => new
                 {
-                    BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate,
+                    BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count),
                     LatestPriceSum = (double)group.Actives
                                          .Where(y => y.Skin.SkinsDynamics.Count != 0)
                                          .Sum(y => y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First()
@@ -280,7 +280,7 @@ namespace SteamStorageAPI.Controllers
                     group => group.Id,
                     group => new
                     {
-                        BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count) * currencyExchangeRate,
+                        BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count),
                         LatestPriceSum = (double)group.Actives
                                              .Where(y => y.Skin.SkinsDynamics.Count != 0)
                                              .Sum(y => y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First()
@@ -290,13 +290,82 @@ namespace SteamStorageAPI.Controllers
                     }
                 );
 
+            IQueryable<Active> actives = groups.SelectMany(x => x.Actives);
+            
+            var activePrices = actives.ToList().ToDictionary(
+                active => active.Id,
+                active => new
+                {
+                    CurrentPrice = active.Skin.SkinsDynamics.Count != 0
+                        ? (double)active.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
+                          currencyExchangeRate
+                        : 0
+                }
+            );
+            
+            List<Game> games = actives
+                .Select(x => x.Skin.Game)
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            int activesCount = activeSums.Sum(x => x.Value.Count);
+            decimal buyPriceSum = (decimal)activeSums.Sum(x => x.Value.BuyPriceSum);
+            decimal latestPriceSum = (decimal)activeSums.Sum(x => x.Value.LatestPriceSum);
+            
+            List<ActiveGroupsGameCountResponse> gamesCountResponse = [];
+            gamesCountResponse.AddRange(
+                games.Select(item =>
+                    new ActiveGroupsGameCountResponse(
+                        item.Title,
+                        activesCount == 0
+                            ? 0
+                            : (double)actives.Where(x => x.Skin.Game.Id == item.Id)
+                                .Sum(x => x.Count) / activesCount,
+                        actives.Where(x => x.Skin.Game.Id == item.Id)
+                            .Sum(x => x.Count)))
+            );
+            
+            List<ActiveGroupsGameInvestmentSumResponse> gamesInvestmentSumResponse = [];
+            gamesInvestmentSumResponse.AddRange(
+                games.Select(item =>
+                    new ActiveGroupsGameInvestmentSumResponse(
+                        item.Title,
+                        buyPriceSum == 0
+                            ? 0
+                            : (double)(actives
+                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Sum(x => x.BuyPrice * x.Count) / buyPriceSum),
+                        actives
+                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Sum(x => x.BuyPrice * x.Count)))
+            );
+            
+            List<ActiveGroupsGameCurrentSumResponse> gamesCurrentSumResponse = [];
+            gamesCurrentSumResponse.AddRange(
+                games.Select(item =>
+                    new ActiveGroupsGameCurrentSumResponse(
+                        item.Title,
+                        latestPriceSum == 0
+                            ? 0
+                            : (double)(actives
+                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .AsEnumerable()
+                                .Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count) / latestPriceSum),
+                        actives
+                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .AsEnumerable()
+                            .Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count)))
+            );
+
+
             return Ok(new ActiveGroupsStatisticResponse(
-                activeSums.Sum(x => x.Value.Count),
-                (decimal)activeSums.Sum(x => x.Value.BuyPriceSum),
-                (decimal)activeSums.Sum(x => x.Value.LatestPriceSum),
-                Enumerable.Empty<ActiveGroupsGameCountResponse>(),
-                Enumerable.Empty<ActiveGroupsGameInvestmentSumResponse>(),
-                Enumerable.Empty<ActiveGroupsGameCurrentSumResponse>()));
+                activesCount,
+                buyPriceSum,
+                latestPriceSum,
+                gamesCountResponse,
+                gamesInvestmentSumResponse,
+                gamesCurrentSumResponse));
         }
 
         /// <summary>
