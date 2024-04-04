@@ -59,6 +59,9 @@ namespace SteamStorageAPI.Controllers
         public record UsersResponse(
             int Count,
             IEnumerable<UserResponse?> Users);
+        
+        public record GoalSumResponse(
+            decimal? GoalSum);
 
         [Validator<GetUserRequestValidator>]
         public record GetUserRequest(
@@ -187,6 +190,26 @@ namespace SteamStorageAPI.Controllers
                             "Пользователя с таким Id не существует");
 
             return Ok(await GetUserResponseAsync(user, cancellationToken));
+        }
+        
+        /// <summary>
+        /// Получение информацию о финансовой цели текущего пользователя
+        /// </summary>
+        /// <response code="200">Возвращает финансовую цель текущего пользователя</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [HttpGet(Name = "GetCurrentUserGoalSum")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<GoalSumResponse>> GetCurrentUserGoalSum(
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            return Ok(new GoalSumResponse(user.GoalSum));
         }
 
         #endregion GET
