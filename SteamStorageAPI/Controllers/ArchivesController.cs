@@ -471,8 +471,11 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            Archive archive = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
-                .Include(x => x.Archives).SelectMany(x => x.Archives)
+            Archive archive = await _context.Entry(user)
+                .Collection(u => u.ArchiveGroups)
+                .Query()
+                .Include(x => x.Archives)
+                .SelectMany(x => x.Archives)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ?? throw new HttpResponseException(
                 StatusCodes.Status404NotFound,
                 "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
