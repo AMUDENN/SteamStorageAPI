@@ -41,22 +41,6 @@ namespace SteamStorageAPI.Services.SkinService
                 SteamApi.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
         }
 
-        public async Task<decimal> GetCurrentPriceAsync(
-            Skin skin,
-            User user,
-            CancellationToken cancellationToken = default)
-        {
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-            IOrderedQueryable<SkinsDynamic> dynamics = _context.Entry(skin)
-                .Collection(x => x.SkinsDynamics)
-                .Query()
-                .AsNoTracking()
-                .OrderBy(x => x.DateUpdate);
-
-            return dynamics.Any() ? (decimal)((double)dynamics.Last().Price * currencyExchangeRate) : 0;
-        }
-
         public async Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(
             Skin skin,
             User user,

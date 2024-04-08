@@ -9,11 +9,6 @@ namespace SteamStorageAPI.Services.SkinService
             Skin skin, 
             CancellationToken cancellationToken = default);
 
-        Task<decimal> GetCurrentPriceAsync(
-            Skin skin, 
-            User user,
-            CancellationToken cancellationToken = default);
-
         Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(
             Skin skin,
             User user,
