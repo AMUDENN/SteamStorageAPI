@@ -36,7 +36,7 @@ namespace SteamStorageAPI.Middlewares
                 context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>();
             string actionName = actionDescriptor?.ActionName ?? "Unknown Action";
 
-            _logger.LogInformation($"\n\tМетод: {actionName};\n\tВремя сервера: {DateTime.Now};\n\tВремя выполнения: {stopwatch.ElapsedMilliseconds} мс;");
+            _logger.LogInformation($"\n\tМетод: {actionName};\n\tВремя сервера: {DateTime.Now};\n\tВремя выполнения: {stopwatch.ElapsedMilliseconds} мс;\n");
         }
 
         #endregion Methods
