@@ -67,6 +67,32 @@ namespace SteamStorageAPI.Controllers
             return Ok(new PagesResponse(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title))));
         }
 
+        /// <summary>
+        /// Получение информации о текущей стартовой странице пользователя
+        /// </summary>
+        /// <response code="200">Возвращает информацию о текущей стартовой странице пользователя</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize]
+        [HttpGet(Name = "GetCurrentStartPage")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<PageResponse>> GetCurrentStartPage(
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            Page page =
+                await _context.Pages.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken) ??
+                throw new HttpResponseException(StatusCodes.Status404NotFound, "Страницы с таким Id не существует");
+
+            return Ok(new PageResponse(page.Id, page.Title));
+        }
+
         #endregion GET
 
         #region PUT

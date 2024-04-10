@@ -1,4 +1,6 @@
-﻿namespace SteamStorageAPI.Utilities.Steam
+﻿using SteamStorageAPI.DBEntities;
+
+namespace SteamStorageAPI.Utilities.Steam
 {
     public static class SteamApi
     {
@@ -49,11 +51,11 @@
         public static string GetSkinMarketUrl(int appId, string marketHashName) =>
             $"https://steamcommunity.com/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
 
-        public static string GetSkinsUrl(int appId, int count, int start) =>
-            $"https://steamcommunity.com/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}";
+        public static string GetSkinsUrl(int appId, int currencyId, int count, int start) =>
+            $"https://steamcommunity.com/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
 
         public static string GetMostPopularSkinUrl(int appId) =>
-            GetSkinsUrl(appId, 1, 0);
+            GetSkinsUrl(appId, Currency.BASE_CURRENCY_ID, 1, 0);
 
         public static string GetSkinInfoUrl(string marketHashName) =>
             $"https://steamcommunity.com/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";

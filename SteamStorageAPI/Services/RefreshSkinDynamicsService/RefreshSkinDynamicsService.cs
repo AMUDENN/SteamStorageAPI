@@ -51,11 +51,11 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     {
         //TODO: Performance Troubles
 
-        Currency dollar =
+        Currency ruble =
             await _context.Currencies.Include(x => x.CurrencyDynamics)
                 .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "В базе данных отсутствует базовая валюта (американский доллар)");
+                "В базе данных отсутствует базовая валюта");
 
         List<Game> games = await _context.Games.ToListAsync(cancellationToken);
 
@@ -69,7 +69,8 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
             int answerCount = BASE_RESPONSE_COUNT;
 
             SteamSkinResponse? response =
-                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
+                await client.GetFromJsonAsync<SteamSkinResponse>(
+                    SteamApi.GetSkinsUrl(game.SteamGameId, ruble.SteamCurrencyId, 1, 0),
                     cancellationToken);
 
             if (response is null)
@@ -88,7 +89,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         $"Процесс выполнения загрузки скинов:\nЗагружено: {start} / {totalCount}");
 
                     response = await client.GetFromJsonAsync<SteamSkinResponse>(
-                        SteamApi.GetSkinsUrl(game.SteamGameId, count, start), cancellationToken);
+                        SteamApi.GetSkinsUrl(game.SteamGameId, ruble.SteamCurrencyId, count, start), cancellationToken);
 
                     if (response is null)
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
@@ -124,10 +125,14 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         if (skin is null)
                             continue;
 
+                        _logger.LogInformation(item.sell_price_text); //TODO: Delete this
+
                         skinsDynamics.Add(new()
                         {
                             DateUpdate = DateTime.Now,
-                            Price = Convert.ToDecimal(item.sell_price_text.Replace(dollar.Mark, string.Empty)
+                            Price = Convert.ToDecimal(item.sell_price_text
+                                .Replace(ruble.Mark, string.Empty)
+                                .Replace(",", string.Empty)
                                 .Replace('.', ',')),
                             SkinId = skin.Id
                         });

@@ -31,8 +31,11 @@ public class CurrencyService : ICurrencyService
             await _context.Currencies.FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound, "Не найдена валюта пользователя");
 
-        CurrencyDynamic? dynamic = await _context.Entry(currency).Collection(x => x.CurrencyDynamics).Query()
-            .OrderByDescending(x => x.DateUpdate).FirstOrDefaultAsync(cancellationToken);
+        CurrencyDynamic? dynamic = await _context.Entry(currency)
+            .Collection(x => x.CurrencyDynamics)
+            .Query()
+            .OrderByDescending(x => x.DateUpdate)
+            .FirstOrDefaultAsync(cancellationToken);
 
         return dynamic?.Price ?? 1;
     }

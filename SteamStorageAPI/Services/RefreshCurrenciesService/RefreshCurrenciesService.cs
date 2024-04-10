@@ -48,12 +48,12 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
                 "Сегодня уже было выполнено обновление курса валют!");
 
-        IEnumerable<Currency> currencies = await _context.Currencies.ToListAsync(cancellationToken);
+        IQueryable<Currency> currencies = _context.Currencies.AsQueryable();
 
-        Currency dollar =
-            await _context.Currencies.FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
+        Currency baseCurrency =
+            await currencies.FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "В базе данных отсутствует базовая валюта (американский доллар)");
+                "В базе данных отсутствует базовая валюта");
 
         Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == Game.BASE_GAME_ID, cancellationToken) ??
                     throw new HttpResponseException(StatusCodes.Status400BadRequest, "В базе данных нет ни одной игры");
@@ -73,19 +73,23 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         Skin skin =
             await _context.Skins.Include(skin => skin.Game)
                 .FirstOrDefaultAsync(x => x.MarketHashName == skinResult.market_hash_name, cancellationToken) ??
-            await _skinService.AddSkinAsync(game.Id, skinResult.market_hash_name, skinResult.name,
+            await _skinService.AddSkinAsync(game.Id, 
+                skinResult.market_hash_name, 
+                skinResult.name,
                 skinResult.icon_url,
                 cancellationToken);
 
         SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
-            SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName, dollar.SteamCurrencyId),
+            SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId,
+                skin.MarketHashName, 
+                baseCurrency.SteamCurrencyId), 
             cancellationToken);
         if (response?.lowest_price is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "При получении данных с сервера Steam произошла ошибка");
 
-        double dollarPrice =
-            Convert.ToDouble(response.lowest_price.Replace(dollar.Mark, string.Empty).Replace('.', ','));
+        double baseCurrencyPrice =
+            Convert.ToDouble(response.lowest_price.Replace(baseCurrency.Mark, string.Empty).Replace('.', ','));
 
         foreach (Currency currency in currencies)
         {
@@ -94,8 +98,10 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 continue;
 
             response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, skin.MarketHashName,
-                    currency.SteamCurrencyId), cancellationToken);
+                SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, 
+                    skin.MarketHashName,
+                    currency.SteamCurrencyId),
+                cancellationToken);
 
             if (response is null)
                 continue;
@@ -107,7 +113,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             {
                 CurrencyId = currency.Id,
                 DateUpdate = DateTime.Now,
-                Price = price / dollarPrice
+                Price = price / baseCurrencyPrice
             });
 
             await Task.Delay(REFRESH_DELAY, cancellationToken);

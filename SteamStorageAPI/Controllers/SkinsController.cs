@@ -536,13 +536,14 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetSteamSkinsCountRequest request,
             CancellationToken cancellationToken = default)
         {
-            Game game = await _context.Games.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
+            Game game = await _context.Games.AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "Игры с таким Id не существует");
 
             HttpClient client = _httpClientFactory.CreateClient();
             SteamSkinResponse response =
-                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinsUrl(game.SteamGameId, 1, 0),
+                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetMostPopularSkinUrl(game.SteamGameId),
                     cancellationToken) ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                     "При получении данных с сервера Steam произошла ошибка");
 
