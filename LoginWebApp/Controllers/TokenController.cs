@@ -35,9 +35,9 @@ public class TokenController : Controller
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return RedirectToAction(nameof(Token), string.IsNullOrWhiteSpace(request.Token)); 
+        return RedirectToAction(nameof(Token), new {isTokenEmpty = string.IsNullOrWhiteSpace(request.Token)});
     }
-
+    
     public IActionResult Token(bool isTokenEmpty = true)
     {
         return View(new TokenViewModel
