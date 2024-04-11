@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace LoginWebApp.Controllers;
 
+[Route("[controller]/[action]")]
 public class TokenController : Controller
 {
     #region Fields
@@ -38,6 +39,7 @@ public class TokenController : Controller
         return RedirectToAction(nameof(Token), new {isTokenEmpty = string.IsNullOrWhiteSpace(request.Token)});
     }
     
+    [HttpGet(Name = "Token")]
     public IActionResult Token(bool isTokenEmpty = true)
     {
         return View(new TokenViewModel
