@@ -6,7 +6,7 @@
 
         public const string DATE_FORMAT = "dd.MM.yyyy";
         
-        public const string TOKEN_ADRESS = "https://steamstorage.ru/";
+        public const string TOKEN_ADRESS = "https://steamstorage.ru/token/";
 
         #endregion Constants
     }
