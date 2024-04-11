@@ -13,7 +13,7 @@ namespace SteamStorageAPI.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class ActiveGroupsController : ControllerBase
     {
         #region Enums

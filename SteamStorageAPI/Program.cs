@@ -236,18 +236,18 @@ public static class Program
         });
 
         // HealthChecks
-        app.MapHealthChecks("/health", CreateHealthCheckOptions(reg => !reg.Tags.Contains("steam")));
+        app.MapHealthChecks("/api/health", CreateHealthCheckOptions(reg => !reg.Tags.Contains("steam")));
 
-        app.MapHealthChecks("/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
-        app.MapHealthChecks("/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
+        app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
+        app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
 
-        app.MapHealthChecks("/health-all", CreateHealthCheckOptions(_ => true))
+        app.MapHealthChecks("/api/health-all", CreateHealthCheckOptions(_ => true))
             .RequireAuthorization();
         
-        app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
+        app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
             .RequireAuthorization();
 
-        app.MapHealthChecksUI(options => options.UIPath = "/health-ui");
+        app.MapHealthChecksUI(options => options.UIPath = "/api/health-ui");
 
         // RateLimit
         app.UseIpRateLimiting();
