@@ -34,18 +34,17 @@ public class TokenController : Controller
     [HttpGet(Name = "SetToken")]
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
-        TempData["Group"] = request.Group;
-        TempData["Token"] = request.Token;
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return RedirectToAction(nameof(Token));
+        
+        return View(nameof(Token), new TokenViewModel
+        {
+            IsTokenEmpty = string.IsNullOrWhiteSpace(request.Token)
+        });
     }
 
     public IActionResult Token()
     {
-        return View(new TokenViewModel
-        {
-            IsTokenEmpty = string.IsNullOrWhiteSpace(TempData["Group"] as string)
-        });
+        return View(new TokenViewModel());
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
