@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace LoginWebApp.Controllers;
 
-[Route("[controller]/[action]")]
 public class TokenController : Controller
 {
     #region Fields
