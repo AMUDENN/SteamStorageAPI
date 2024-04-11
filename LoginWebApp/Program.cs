@@ -34,10 +34,6 @@ public static class Program
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
 
-        //PathBase
-        string? pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
-        app.UsePathBase(new(pathBase));
-
         //app.UseHttpsRedirection();
         app.UseStaticFiles();
 
