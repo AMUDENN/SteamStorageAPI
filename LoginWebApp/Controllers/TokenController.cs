@@ -44,7 +44,7 @@ public class TokenController : Controller
     {
         return View(new TokenViewModel
         {
-            IsTokenEmpty = string.IsNullOrEmpty(TempData["Group"] as string)
+            IsTokenEmpty = string.IsNullOrWhiteSpace(TempData["Group"] as string)
         });
     }
 
