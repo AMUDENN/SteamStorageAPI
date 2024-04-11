@@ -1,0 +1,54 @@
+﻿.layout-page-content {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 60px 1fr 60px;
+    background: var(--bg-color-light);
+}
+
+.header, .footer, .main-content {
+    width: 100%;
+    height: 100%;
+}
+
+.header, .footer {
+    padding: 0 6%;
+    background: var(--bg-color-dark);
+    flex-direction: row;
+    align-items: center;
+}
+
+.left-header, .right-header, .left-footer, .right-footer {
+    width: 30%;
+}
+
+.center-header, .center-footer {
+    width: 40%;
+}
+
+.left-header, .right-header, .left-footer, .right-footer, .center-header, .center-footer {
+    height: 100%;
+    align-items: center;
+}
+
+.left-header {
+    flex-direction: row;
+    justify-content: start;
+}
+
+.left-header svg {
+    height: 50%;
+    margin-right: 15px;
+    fill: var(--fg-color-light);
+}
+
+.left-header a {
+    text-decoration: none;
+}
+
+.left-header a:hover {
+    text-decoration: underline;
+}
+
+.right-footer p {
+    width: 100%;
+}

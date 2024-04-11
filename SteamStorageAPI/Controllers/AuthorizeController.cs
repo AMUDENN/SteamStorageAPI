@@ -12,7 +12,7 @@ using static SteamStorageAPI.Utilities.ProgramConstants;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]/[action]")]
+    [Route("[controller]/[action]")]
     public class AuthorizeController : ControllerBase
     {
         #region Fields

@@ -22,11 +22,17 @@ namespace SteamStorageAPI.Utilities.Steam
 
         #region Methods
 
-        public static void Initialize(IConfiguration configuration)
+        public static void InitializeConfig(IConfiguration configuration)
         {
             IConfigurationSection steamSection = configuration.GetSection("Steam");
 
             SteamApiKey = steamSection.GetValue<string>("ApiKey") ??
+                          throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
+        }
+        
+        public static void InitializeEnvironmentVariables()
+        {
+            SteamApiKey = Environment.GetEnvironmentVariable("SteamApiKey") ??
                           throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
         }
 

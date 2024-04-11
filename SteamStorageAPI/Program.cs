@@ -11,6 +11,7 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Quartz;
 using SteamStorageAPI.Services.BackgroundServices;
 using SteamStorageAPI.Services.CryptographyService;
@@ -46,10 +47,10 @@ public static class Program
         builder.Services.AddEndpointsApiExplorer();
 
         //JwtOptions Initialize
-        JwtOptions.Initialize(builder.Configuration);
+        JwtOptions.InitializeEnvironmentVariables();
         
         //SteamApi Initialize
-        SteamApi.Initialize(builder.Configuration);
+        SteamApi.InitializeEnvironmentVariables();
 
         //Services
         builder.Services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
@@ -127,10 +128,10 @@ public static class Program
 
 
         //DataBase
-        string connectionStringSteamStorage = builder.Configuration.GetConnectionString("SteamStorage")
+        string connectionStringSteamStorage = Environment.GetEnvironmentVariable("SteamStorageDB")
                                               ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
 
-        string connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks")
+        string connectionStringHealthChecks = Environment.GetEnvironmentVariable("SteamStorageHealthChecksDB")
                                               ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
 
         builder.Services.AddDbContext<SteamStorageContext>(
@@ -151,10 +152,14 @@ public static class Program
             .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker), tags: new[] { "api" })
             .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker), tags: new[] { "steam" })
             .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker), tags: new[] { "steam" });
-
+        
         builder.Services
             .AddHealthChecksUI(setup =>
             {
+                setup.AddHealthCheckEndpoint("Health details", "https://steamstorage.ru/api/health-all");
+                setup.AddHealthCheckEndpoint("SteamStorageAPI", "https://steamstorage.ru/api/health-api");
+                setup.AddHealthCheckEndpoint("DataBase", "https://steamstorage.ru/api/health-db");
+                setup.AddHealthCheckEndpoint("Steam", "https://steamstorage.ru/api/health-steam");
                 setup.MaximumHistoryEntriesPerEndpoint(50);
                 setup.SetEvaluationTimeInSeconds(600);
                 setup.SetMinimumSecondsBetweenFailureNotifications(300);
@@ -223,16 +228,24 @@ public static class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+        
+        //ForwardedHeaders
+        app.UseForwardedHeaders(new()
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
 
         // HealthChecks
-        app.MapHealthChecks("/health", CreateHealthCheckOptions(_ => true))
-            .RequireAuthorization(policyBuilder => policyBuilder.RequireRole(nameof(Role.Roles.Admin)));
+        app.MapHealthChecks("/health", CreateHealthCheckOptions(reg => !reg.Tags.Contains("steam")));
 
         app.MapHealthChecks("/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
         app.MapHealthChecks("/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
 
+        app.MapHealthChecks("/health-all", CreateHealthCheckOptions(_ => true))
+            .RequireAuthorization();
+        
         app.MapHealthChecks("/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
-            .RequireAuthorization(policyBuilder => policyBuilder.RequireRole(nameof(Role.Roles.Admin)));
+            .RequireAuthorization();
 
         app.MapHealthChecksUI(options => options.UIPath = "/health-ui");
 
@@ -242,7 +255,7 @@ public static class Program
         //Middlewares
         app.UseMiddleware<RequestLoggingMiddleware>();
 
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
 
         app.MapControllers();
 

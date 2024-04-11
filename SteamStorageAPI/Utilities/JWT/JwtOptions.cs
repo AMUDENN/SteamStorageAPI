@@ -23,7 +23,7 @@ namespace SteamStorageAPI.Utilities.JWT
 
         #region Methods
 
-        public static void Initialize(IConfiguration configuration)
+        public static void InitializeConfig(IConfiguration configuration)
         {
             IConfigurationSection jwtOptionsSection = configuration.GetSection(nameof(JwtOptions));
 
@@ -35,6 +35,16 @@ namespace SteamStorageAPI.Utilities.JWT
                     throw new ArgumentNullException($"{jwtOptions} {nameof(Issuer)}");
             Audience = jwtOptionsSection.GetValue<string>(nameof(Audience)) ??
                     throw new ArgumentNullException($"{jwtOptions} {nameof(Audience)}");
+        }
+        
+        public static void InitializeEnvironmentVariables()
+        {
+            Key = Environment.GetEnvironmentVariable("JwtOptionsKey") ??
+                  throw new ArgumentNullException($"{nameof(JwtOptions)} {nameof(Key)}");
+            Issuer = Environment.GetEnvironmentVariable("JwtOptionsIssuer") ??
+                     throw new ArgumentNullException($"{nameof(JwtOptions)} {nameof(Issuer)}");
+            Audience = Environment.GetEnvironmentVariable("JwtOptionsAudience") ??
+                       throw new ArgumentNullException($"{nameof(JwtOptions)} {nameof(Audience)}");
         }
 
         public static SymmetricSecurityKey GetSymmetricSecurityKey()

@@ -11,7 +11,7 @@ namespace SteamStorageAPI.Controllers
 {
     [ApiController]
     [Authorize(Roles = nameof(Role.Roles.Admin))]
-    [Route("api/[controller]/[action]")]
+    [Route("[controller]/[action]")]
     public class RolesController : ControllerBase
     {
         #region Fields

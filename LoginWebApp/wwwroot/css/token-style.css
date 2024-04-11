@@ -1,0 +1,24 @@
+﻿.token-page-content {
+    height: 100%;
+    justify-content: center;
+}
+
+.token-content {
+    max-width: 50%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.token-content p {
+    margin-bottom: 15px;
+}
+
+.token-content svg {
+    width: 120px;
+    margin-bottom: 25px;
+}
+
+.token-content svg path {
+    fill: var(--fg-color-dark);
+}
