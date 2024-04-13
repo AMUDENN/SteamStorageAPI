@@ -12,6 +12,7 @@ using SteamStorageAPI.Utilities.Steam;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Inventory;
 using static SteamStorageAPI.Controllers.SkinsController;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace SteamStorageAPI.Controllers
 {

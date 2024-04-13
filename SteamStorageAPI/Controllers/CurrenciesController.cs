@@ -7,6 +7,7 @@ using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace SteamStorageAPI.Controllers
 {

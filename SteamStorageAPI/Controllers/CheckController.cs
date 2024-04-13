@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace SteamStorageAPI.Controllers
 {

@@ -48,7 +48,7 @@ public static class Program
 
         //JwtOptions Initialize
         JwtOptions.InitializeEnvironmentVariables();
-        
+
         //SteamApi Initialize
         SteamApi.InitializeEnvironmentVariables();
 
@@ -143,16 +143,21 @@ public static class Program
 
         //HealthCheck
         builder.Services.AddHealthChecks()
-            .AddSqlServer(name: "SteamStorageDB", connectionString: connectionStringSteamStorage,
+            .AddSqlServer(name: "SteamStorageDB",
+                connectionString: connectionStringSteamStorage,
                 tags: new[] { "db", "database" })
-            .AddSqlServer(name: "SteamStorageHealthChecksDB", connectionString: connectionStringHealthChecks,
+            .AddSqlServer(name: "SteamStorageHealthChecksDB",
+                connectionString: connectionStringHealthChecks,
                 tags: new[] { "db", "database" })
             .AddDbContextCheck<SteamStorageContext>(name: nameof(SteamStorageContext),
                 tags: new[] { "db", "db-context" })
-            .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker), tags: new[] { "api" })
-            .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker), tags: new[] { "steam" })
-            .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker), tags: new[] { "steam" });
-        
+            .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker),
+                tags: new[] { "api" })
+            .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker),
+                tags: new[] { "steam" })
+            .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker),
+                tags: new[] { "steam" });
+
         builder.Services
             .AddHealthChecksUI(setup =>
             {
@@ -174,7 +179,7 @@ public static class Program
             options.EnableEndpointRateLimiting = true;
             options.StackBlockedRequests = false;
             options.HttpStatusCode = 429;
-            options.RealIpHeader = "X-Real-IP";
+            options.RealIpHeader = "X-Forwarded-For";
             options.ClientIdHeader = "X-ClientId";
             options.GeneralRules =
             [
@@ -228,7 +233,7 @@ public static class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        
+
         //ForwardedHeaders
         app.UseForwardedHeaders(new()
         {
@@ -239,11 +244,12 @@ public static class Program
         app.MapHealthChecks("/api/health", CreateHealthCheckOptions(reg => !reg.Tags.Contains("steam")));
 
         app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
+        
         app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
 
         app.MapHealthChecks("/api/health-all", CreateHealthCheckOptions(_ => true))
             .RequireAuthorization();
-        
+
         app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
             .RequireAuthorization();
 

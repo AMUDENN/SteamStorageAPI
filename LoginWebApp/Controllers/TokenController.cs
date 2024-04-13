@@ -34,7 +34,7 @@ public class TokenController : Controller
     [HttpGet(Name = "SetToken")]
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Group))
+        if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
             return Token();
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
         return Token(string.IsNullOrWhiteSpace(request.Token));

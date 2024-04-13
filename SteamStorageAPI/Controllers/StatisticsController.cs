@@ -6,6 +6,7 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace SteamStorageAPI.Controllers
 {

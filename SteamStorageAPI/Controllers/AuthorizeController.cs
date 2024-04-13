@@ -5,9 +5,9 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Steam;
 using static SteamStorageAPI.Utilities.ProgramConstants;
+// ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace SteamStorageAPI.Controllers
 {
@@ -99,8 +99,7 @@ namespace SteamStorageAPI.Controllers
 
         private (string Url, string Group) GetSteamAuthInfo(string? group = null)
         {
-            Random rnd = new();
-            group ??= rnd.GenerateString(20);
+            group ??= Guid.NewGuid().ToString();
             string baseUrl =
                 $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/";
             return (SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback?group={group}", baseUrl), group);
