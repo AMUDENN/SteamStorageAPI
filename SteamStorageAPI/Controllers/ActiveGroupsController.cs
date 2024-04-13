@@ -208,7 +208,7 @@ namespace SteamStorageAPI.Controllers
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
-            
+
             IQueryable<ActiveGroup> groups = _context.Entry(user)
                 .Collection(x => x.ActiveGroups)
                 .Query()
@@ -217,36 +217,42 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin)
                 .ThenInclude(x => x.SkinsDynamics);
 
+            IEnumerable<ActiveGroupResponse> groupsResponse =
+                await GetActiveGroupsResponsesAsync(groups, user, cancellationToken);
+
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
                 {
                     case ActiveGroupOrderName.Title:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Title)
-                            : groups.OrderByDescending(x => x.Title);
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.Title)
+                            : groupsResponse.OrderByDescending(x => x.Title);
                         break;
                     case ActiveGroupOrderName.Count:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Actives.Sum(y => y.Count))
-                            : groups.OrderByDescending(x => x.Actives.Sum(y => y.Count));
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.Count)
+                            : groupsResponse.OrderByDescending(x => x.Count);
                         break;
                     case ActiveGroupOrderName.BuySum:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Actives.Sum(y => y.BuyPrice * y.Count))
-                            : groups.OrderByDescending(x => x.Actives.Sum(y => y.BuyPrice * y.Count));
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.BuySum)
+                            : groupsResponse.OrderByDescending(x => x.BuySum);
                         break;
                     case ActiveGroupOrderName.CurrentSum:
-                        //TODO: сортирока
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.CurrentSum)
+                            : groupsResponse.OrderByDescending(x => x.CurrentSum);
                         break;
                     case ActiveGroupOrderName.Change:
-                        //TODO: сортирока
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.Change)
+                            : groupsResponse.OrderByDescending(x => x.Change);
                         break;
                 }
             else
-                groups = groups.OrderBy(x => x.Id);
+                groupsResponse = groupsResponse.OrderBy(x => x.Id);
 
-            return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken),
-                await GetActiveGroupsResponsesAsync(groups, user, cancellationToken)));
+            return Ok(new ActiveGroupsResponse(await groups.CountAsync(cancellationToken), groupsResponse));
         }
 
         /// <summary>

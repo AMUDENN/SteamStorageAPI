@@ -170,46 +170,42 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Archives);
 
+            IEnumerable<ArchiveGroupResponse> groupsResponse =
+                await GetArchiveGroupsResponsesAsync(groups, cancellationToken);
+
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
                 {
                     case ArchiveGroupOrderName.Title:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Title)
-                            : groups.OrderByDescending(x => x.Title);
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.Title)
+                            : groupsResponse.OrderByDescending(x => x.Title);
                         break;
                     case ArchiveGroupOrderName.Count:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Archives.Sum(y => y.Count))
-                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.Count));
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.Count)
+                            : groupsResponse.OrderByDescending(x => x.Count);
                         break;
                     case ArchiveGroupOrderName.BuySum:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Archives.Sum(y => y.BuyPrice * y.Count))
-                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.BuyPrice * y.Count));
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.BuySum)
+                            : groupsResponse.OrderByDescending(x => x.BuySum);
                         break;
                     case ArchiveGroupOrderName.SoldSum:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x => x.Archives.Sum(y => y.SoldPrice * y.Count))
-                            : groups.OrderByDescending(x => x.Archives.Sum(y => y.SoldPrice * y.Count));
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.SoldSum)
+                            : groupsResponse.OrderByDescending(x => x.SoldSum);
                         break;
                     case ArchiveGroupOrderName.Change:
-                        groups = request.IsAscending.Value
-                            ? groups.OrderBy(x =>
-                                (x.Archives.Sum(y => y.SoldPrice) -
-                                 x.Archives.Sum(y => y.BuyPrice)) /
-                                x.Archives.Sum(y => y.BuyPrice))
-                            : groups.OrderByDescending(x =>
-                                (x.Archives.Sum(y => y.SoldPrice) -
-                                 x.Archives.Sum(y => y.BuyPrice)) /
-                                x.Archives.Sum(y => y.BuyPrice));
+                        groupsResponse = request.IsAscending.Value
+                            ? groupsResponse.OrderBy(x => x.Change)
+                            : groupsResponse.OrderByDescending(x => x.Change);
                         break;
                 }
             else
-                groups = groups.OrderBy(x => x.Id);
+                groupsResponse = groupsResponse.OrderBy(x => x.Id);
 
-            return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken),
-                await GetArchiveGroupsResponsesAsync(groups, cancellationToken)));
+            return Ok(new ArchiveGroupsResponse(await groups.CountAsync(cancellationToken), groupsResponse));
         }
 
         /// <summary>
