@@ -121,10 +121,10 @@ namespace SteamStorageAPI.Controllers
 
             double currentSum =
                 actives.Sum(x =>
-                    (x.Skin.SkinsDynamics.Count != 0
+                    x.Skin.SkinsDynamics.Count != 0
                         ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
                           currencyExchangeRate
-                        : 0) + (double)archives.Sum(y => y.SoldPrice * y.Count));
+                        : 0) + (double)archives.Sum(y => y.SoldPrice * y.Count);
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
@@ -176,10 +176,10 @@ namespace SteamStorageAPI.Controllers
 
             double currentSum =
                 actives.Sum(x =>
-                    (x.Skin.SkinsDynamics.Count != 0
+                    x.Skin.SkinsDynamics.Count != 0
                         ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
                           currencyExchangeRate
-                        : 0) + (double)archives.Sum(y => y.SoldPrice * y.Count));
+                        : 0)+ (double)archives.Sum(y => y.SoldPrice * y.Count);
 
             double percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
