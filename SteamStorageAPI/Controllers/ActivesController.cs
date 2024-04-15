@@ -301,8 +301,6 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin.Game)
                 .SelectMany(x => x.Actives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
@@ -313,7 +311,7 @@ namespace SteamStorageAPI.Controllers
             return Ok(new ActivesStatisticResponse(
                 actives.Sum(x => x.Count),
                 actives.Sum(x => x.BuyPrice * x.Count),
-                (decimal)actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
+                (decimal)actives.AsEnumerable().Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
             ));
         }
 
