@@ -186,8 +186,8 @@ namespace SteamStorageAPI.Controllers
                             x.BuyDate,
                             x.Count,
                             x.BuyPrice,
-                            x.Skin.CurrentPrice,
-                            x.Skin.CurrentPrice * x.Count,
+                            (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate),
+                            (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count),
                             x.GoalPrice,
                             x.GoalPrice == null
                                 ? null

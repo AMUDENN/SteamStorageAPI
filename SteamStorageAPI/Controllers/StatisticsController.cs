@@ -104,6 +104,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
 
@@ -158,6 +159,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
 
@@ -207,6 +209,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
+                .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
 
