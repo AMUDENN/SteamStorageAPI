@@ -311,7 +311,7 @@ namespace SteamStorageAPI.Controllers
             return Ok(new ActivesStatisticResponse(
                 actives.Sum(x => x.Count),
                 actives.Sum(x => x.BuyPrice * x.Count),
-                (decimal)actives.AsEnumerable().Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
+                (decimal)actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
             ));
         }
 
