@@ -168,30 +168,30 @@ namespace SteamStorageAPI.Controllers
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            List<SkinsDynamic> dynamics = await _context.Entry(skin)
+            List<SkinsDynamic> dynamic30 = await _context.Entry(skin)
                 .Collection(x => x.SkinsDynamics)
                 .Query()
                 .AsNoTracking()
+                .Where(x => x.DateUpdate > DateTime.Now.AddDays(-30))
                 .OrderBy(x => x.DateUpdate)
                 .ToListAsync(cancellationToken);
 
-            List<SkinsDynamic> dynamic7 = dynamics.Where(x => x.DateUpdate > DateTime.Now.AddDays(-7)).ToList();
-            List<SkinsDynamic> dynamic30 = dynamics.Where(x => x.DateUpdate > DateTime.Now.AddDays(-30)).ToList();
-
-            decimal currentPrice = dynamics.Count == 0 ? 0 : dynamics.Last().Price;
+            List<SkinsDynamic> dynamic7 = dynamic30.Where(x => x.DateUpdate > DateTime.Now.AddDays(-7)).ToList();
 
             double change7D = (double)(dynamic7.Count == 0
                 ? 0
-                : (currentPrice - dynamic7.First().Price) / dynamic7.First().Price);
+                : (skin.CurrentPrice - dynamic7.First().Price) / dynamic7.First().Price);
             double change30D = (double)(dynamic30.Count == 0
                 ? 0
-                : (currentPrice - dynamic30.First().Price) / dynamic30.First().Price);
+                : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price);
 
             bool isMarked = markedSkinsIds.Any(x => x == skin.Id);
 
             return new(await _skinService.GetBaseSkinResponseAsync(skin, cancellationToken),
-                (decimal)((double)currentPrice * currencyExchangeRate), change7D,
-                change30D, isMarked);
+                (decimal)((double)skin.CurrentPrice * currencyExchangeRate),
+                change7D,
+                change30D,
+                isMarked);
         }
 
         private async Task<IEnumerable<SkinResponse>> GetSkinsResponseAsync(
@@ -210,7 +210,6 @@ namespace SteamStorageAPI.Controllers
                 .Select(g => new
                 {
                     SkinID = g.Key,
-                    LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0,
                     Change7D = g.Any(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                         ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
                                         .OrderByDescending(sd => sd.DateUpdate).First().Price -
@@ -237,7 +236,6 @@ namespace SteamStorageAPI.Controllers
                     (s, d) => new
                     {
                         Skin = s,
-                        LastPrice = d.Any() ? d.First().LastPrice : 0,
                         Change7D = d.Any() ? d.First().Change7D : 0,
                         Change30D = d.Any() ? d.First().Change30D : 0
                     });
@@ -245,7 +243,7 @@ namespace SteamStorageAPI.Controllers
             return await Task.WhenAll(skinsResult.Select(async x =>
                 new SkinResponse(
                     await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                    (decimal)((double)x.LastPrice * currencyExchangeRate),
+                    (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate),
                     x.Change7D,
                     x.Change30D,
                     markedSkinsIds.Any(y => y == x.Skin.Id)))
@@ -358,27 +356,9 @@ namespace SteamStorageAPI.Controllers
                             : skins.OrderByDescending(x => x.Title);
                         break;
                     case SkinOrderName.Price:
-                        var skinsPriceResult = skins.GroupJoin(
-                            _context.SkinsDynamics
-                                .GroupBy(sd => sd.SkinId)
-                                .Select(g => new
-                                {
-                                    SkinID = g.Key,
-                                    LastPrice = g.Any() ? g.OrderByDescending(sd => sd.DateUpdate).First().Price : 0
-                                }), 
-                            s => s.Id, 
-                            d => d.SkinID,
-                            (s, d) => new
-                            {
-                                Skin = s,
-                                LastPrice = d.Any() ? d.First().LastPrice : 0
-                            });
-                        skins = (request.IsAscending.Value
-                                ? skinsPriceResult
-                                    .OrderBy(result => result.LastPrice)
-                                : skinsPriceResult
-                                    .OrderByDescending(result => result.LastPrice))
-                            .Select(result => result.Skin);
+                        skins = request.IsAscending.Value
+                            ? skins.OrderBy(x => x.CurrentPrice)
+                            : skins.OrderByDescending(x => x.CurrentPrice);
                         break;
                     case SkinOrderName.Change7D:
                         var skinsChange7DResult = skins.GroupJoin(
@@ -446,7 +426,8 @@ namespace SteamStorageAPI.Controllers
 
             skins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
 
-            return Ok(new SkinsResponse(skinsCount, pagesCount == 0 ? 1 : pagesCount,
+            return Ok(new SkinsResponse(skinsCount, 
+                pagesCount == 0 ? 1 : pagesCount,
                 await GetSkinsResponseAsync(skins, user, markedSkinsIds, cancellationToken)));
         }
 

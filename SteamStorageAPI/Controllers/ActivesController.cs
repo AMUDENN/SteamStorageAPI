@@ -171,17 +171,6 @@ namespace SteamStorageAPI.Controllers
                 .Take(pageSize)
                 .ToList();
 
-            var activePrices = listActives.ToDictionary(
-                active => active.Id,
-                active => new
-                {
-                    CurrentPrice = active.Skin.SkinsDynamics.Count != 0
-                        ? (double)active.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
-                          currencyExchangeRate
-                        : 0
-                }
-            );
-
             int activesCount = await actives.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)activesCount / pageSize);
@@ -197,13 +186,13 @@ namespace SteamStorageAPI.Controllers
                             x.BuyDate,
                             x.Count,
                             x.BuyPrice,
-                            (decimal)activePrices[x.Id].CurrentPrice,
-                            (decimal)activePrices[x.Id].CurrentPrice * x.Count,
+                            x.Skin.CurrentPrice,
+                            x.Skin.CurrentPrice * x.Count,
                             x.GoalPrice,
                             x.GoalPrice == null
                                 ? null
-                                : activePrices[x.Id].CurrentPrice / (double)x.GoalPrice,
-                            (double)(((decimal)activePrices[x.Id].CurrentPrice - x.BuyPrice) / x.BuyPrice),
+                                : (double)x.Skin.CurrentPrice * currencyExchangeRate / (double)x.GoalPrice,
+                            ((double)x.Skin.CurrentPrice * currencyExchangeRate - (double)x.BuyPrice) / (double)x.BuyPrice,
                             x.Description)
                     ))
             );
@@ -237,7 +226,6 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics)
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin.Game)
                 .SelectMany(x => x.Actives)
@@ -264,50 +252,19 @@ namespace SteamStorageAPI.Controllers
                             : actives.OrderByDescending(x => x.BuyPrice);
                         break;
                     case ActiveOrderName.CurrentPrice:
-                        var activesCurrentPriceResult = actives.Select(x => new
-                        {
-                            Active = x,
-                            CurrentPrice = x.Skin.SkinsDynamics.Count != 0
-                                ? x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price
-                                : 0
-                        });
-                        actives = (request.IsAscending.Value
-                                ? activesCurrentPriceResult
-                                    .OrderBy(result => result.CurrentPrice)
-                                : activesCurrentPriceResult
-                                    .OrderByDescending(result => result.CurrentPrice))
-                            .Select(result => result.Active);
+                        actives = request.IsAscending.Value
+                            ? actives.OrderBy(x => x.Skin.CurrentPrice)
+                            : actives.OrderByDescending(x => x.Skin.CurrentPrice);
                         break;
                     case ActiveOrderName.CurrentSum:
-                        var activesCurrentSumResult = actives.Select(x => new
-                        {
-                            Active = x,
-                            CurrentSum = x.Skin.SkinsDynamics.Count != 0
-                                ? x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price * x.Count
-                                : 0
-                        });
-                        actives = (request.IsAscending.Value
-                                ? activesCurrentSumResult
-                                    .OrderBy(result => result.CurrentSum)
-                                : activesCurrentSumResult
-                                    .OrderByDescending(result => result.CurrentSum))
-                            .Select(result => result.Active);
+                        actives = request.IsAscending.Value
+                            ? actives.OrderBy(x => x.Skin.CurrentPrice * x.Count)
+                            : actives.OrderByDescending(x => x.Skin.CurrentPrice * x.Count);
                         break;
                     case ActiveOrderName.Change:
-                        var activesChangeResult = actives.Select(x => new
-                        {
-                            Active = x,
-                            Change = x.Skin.SkinsDynamics.Count != 0
-                                ? (x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                   x.BuyPrice) / x.BuyPrice
-                                : -1
-                        });
-                        actives = (request.IsAscending.Value
-                                ? activesChangeResult
-                                    .OrderBy(result => result.Change)
-                                : activesChangeResult
-                                    .OrderByDescending(result => result.Change))
-                            .Select(result => result.Active);
+                        actives = request.IsAscending.Value
+                            ? actives.OrderBy(x => (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice)
+                            : actives.OrderByDescending(x => (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice);
                         break;
                 }
             else
@@ -344,7 +301,6 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics)
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin.Game)
                 .SelectMany(x => x.Actives)
@@ -354,24 +310,10 @@ namespace SteamStorageAPI.Controllers
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Active> listActives = actives.AsNoTracking().ToList();
-
-            var activePrices = listActives.ToDictionary(
-                active => active.Id,
-                active => new
-                {
-                    CurrentPrice = active.Skin.SkinsDynamics.Count != 0
-                        ? (double)active.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
-                          currencyExchangeRate
-                        : 0
-                }
-            );
-
             return Ok(new ActivesStatisticResponse(
-                listActives.Sum(x => x.Count),
-                listActives.Sum(x => x.BuyPrice * x.Count),
-                listActives.Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count)
+                actives.Sum(x => x.Count),
+                actives.Sum(x => x.BuyPrice * x.Count),
+                (decimal)actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
             ));
         }
 

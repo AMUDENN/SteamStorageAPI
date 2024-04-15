@@ -231,7 +231,6 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics)
                 .SelectMany(x => x.Archives);
             
             List<Game> games = archives

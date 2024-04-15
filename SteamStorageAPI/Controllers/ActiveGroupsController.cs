@@ -155,9 +155,7 @@ namespace SteamStorageAPI.Controllers
                 {
                     BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count),
                     LatestPriceSum = (double)group.Actives
-                                         .Where(y => y.Skin.SkinsDynamics.Count != 0)
-                                         .Sum(y => y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First()
-                                             .Price * y.Count) *
+                                         .Sum(y => y.Skin.CurrentPrice * y.Count) *
                                      currencyExchangeRate,
                     Count = group.Actives.Sum(y => y.Count)
                 }
@@ -214,8 +212,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics);
+                .ThenInclude(x => x.Skin);
 
             IEnumerable<ActiveGroupResponse> groupsResponse =
                 await GetActiveGroupsResponsesAsync(groups, user, cancellationToken);
@@ -277,8 +274,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics);
+                .ThenInclude(x => x.Skin);
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
             
@@ -289,26 +285,13 @@ namespace SteamStorageAPI.Controllers
                     {
                         BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count),
                         LatestPriceSum = (double)group.Actives
-                                             .Where(y => y.Skin.SkinsDynamics.Count != 0)
-                                             .Sum(y => y.Skin.SkinsDynamics.OrderByDescending(z => z.DateUpdate).First()
-                                                 .Price * y.Count) *
+                                             .Sum(y => y.Skin.CurrentPrice * y.Count) *
                                          currencyExchangeRate,
                         Count = group.Actives.Sum(y => y.Count)
                     }
                 );
 
             IQueryable<Active> actives = groups.SelectMany(x => x.Actives);
-            
-            var activePrices = actives.ToList().ToDictionary(
-                active => active.Id,
-                active => new
-                {
-                    CurrentPrice = active.Skin.SkinsDynamics.Count != 0
-                        ? (double)active.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
-                          currencyExchangeRate
-                        : 0
-                }
-            );
             
             List<Game> games = actives
                 .Select(x => x.Skin.Game)
@@ -358,11 +341,11 @@ namespace SteamStorageAPI.Controllers
                             : (double)(actives
                                 .Where(x => x.Skin.Game.Id == item.Id)
                                 .AsEnumerable()
-                                .Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count) / latestPriceSum),
+                                .Sum(x => x.Skin.CurrentPrice * x.Count) / latestPriceSum),
                         actives
                             .Where(x => x.Skin.Game.Id == item.Id)
                             .AsEnumerable()
-                            .Sum(x => (decimal)activePrices[x.Id].CurrentPrice * x.Count)))
+                            .Sum(x => x.Skin.CurrentPrice * x.Count)))
             );
 
 

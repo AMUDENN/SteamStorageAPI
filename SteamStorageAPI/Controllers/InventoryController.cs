@@ -145,21 +145,10 @@ namespace SteamStorageAPI.Controllers
                 .Take(pageSize)
                 .ToList();
 
-            var inventoryPrices = listInventories.ToDictionary(
-                inventory => inventory.Id,
-                inventory => new
-                {
-                    CurrentPrice = inventory.Skin.SkinsDynamics.Count != 0
-                        ? (double)inventory.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
-                          currencyExchangeRate
-                        : 0
-                }
-            );
-
             int inventoriesCount = await inventories.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)inventoriesCount / pageSize);
-            
+
             return new(inventoriesCount,
                 pagesCount,
                 await Task.WhenAll(listInventories
@@ -168,9 +157,9 @@ namespace SteamStorageAPI.Controllers
                             x.Id,
                             await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
                             x.Count,
-                            (decimal)inventoryPrices[x.Id].CurrentPrice,
-                            (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count))
-                ));
+                            (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate),
+                            (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
+                        ))));
         }
 
         #endregion Methods

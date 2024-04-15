@@ -104,7 +104,6 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin.SkinsDynamics)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
 
@@ -120,16 +119,13 @@ namespace SteamStorageAPI.Controllers
                 (double)(actives.Sum(y => y.BuyPrice * y.Count) + archives.Sum(y => y.BuyPrice * y.Count));
 
             double currentSum =
-                actives.Sum(x =>
-                    x.Skin.SkinsDynamics.Count != 0
-                        ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
-                          currencyExchangeRate
-                        : 0) + (double)archives.Sum(y => y.SoldPrice * y.Count);
+                actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count) +
+                (double)archives.Sum(y => y.SoldPrice * y.Count);
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
             return Ok(new InvestmentSumResponse(
-                currentSum, 
+                currentSum,
                 percentage));
         }
 
@@ -162,7 +158,6 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin.SkinsDynamics)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
 
@@ -175,11 +170,8 @@ namespace SteamStorageAPI.Controllers
                 .ToListAsync(cancellationToken);
 
             double currentSum =
-                actives.Sum(x =>
-                    x.Skin.SkinsDynamics.Count != 0
-                        ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
-                          currencyExchangeRate
-                        : 0)+ (double)archives.Sum(y => y.SoldPrice * y.Count);
+                actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count) +
+                (double)archives.Sum(y => y.SoldPrice * y.Count);
 
             double percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
@@ -215,7 +207,6 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin.SkinsDynamics)
                 .SelectMany(x => x.Actives)
                 .ToListAsync(cancellationToken);
 
@@ -223,11 +214,7 @@ namespace SteamStorageAPI.Controllers
 
             double investedSum = (double)actives.Sum(y => y.BuyPrice * y.Count);
 
-            double currentSum = actives.Sum(x =>
-                x.Skin.SkinsDynamics.Count != 0
-                    ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
-                      currencyExchangeRate
-                    : 0);
+            double currentSum = actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count);
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
@@ -302,17 +289,12 @@ namespace SteamStorageAPI.Controllers
                 .Collection(u => u.Inventories)
                 .Query()
                 .AsNoTracking()
-                .Include(x => x.Skin.SkinsDynamics)
                 .Include(x => x.Skin.Game)
                 .ToListAsync(cancellationToken);
 
             int count = inventories.Sum(x => x.Count);
 
-            double sum = inventories.Sum(x =>
-                x.Skin.SkinsDynamics.Count != 0
-                    ? (double)x.Skin.SkinsDynamics.OrderBy(y => y.DateUpdate).Last().Price * x.Count *
-                      currencyExchangeRate
-                    : 0);
+            double sum = inventories.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count);
 
             List<Game> games = inventories.Select(x => x.Skin.Game)
                 .GroupBy(x => x.Id)

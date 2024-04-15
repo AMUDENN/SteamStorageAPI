@@ -14,6 +14,8 @@ public class Skin
 
     public string SkinIconUrl { get; set; } = null!;
 
+    public decimal CurrentPrice { get; set; }
+
     public virtual ICollection<Active> Actives { get; set; } = new List<Active>();
 
     public virtual ICollection<Archive> Archives { get; set; } = new List<Archive>();
