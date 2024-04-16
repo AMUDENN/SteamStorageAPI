@@ -157,15 +157,15 @@ namespace SteamStorageAPI.Controllers
                         x.GoalSum,
                         x.GoalSum == null
                             ? null
-                            : (double)x.Actives.Sum(y => y.Skin.CurrentPrice) * currencyExchangeRate /
+                            : (double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate /
                               (double)x.GoalSum,
                         x.Actives.Sum(y => y.Count),
                         x.Actives.Sum(y => y.BuyPrice),
-                        (decimal)((double)x.Actives.Sum(y => y.Skin.CurrentPrice) * currencyExchangeRate),
+                        (decimal)((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate),
                         x.Actives.Sum(y => y.BuyPrice) != 0
-                            ? ((double)x.Actives.Sum(y => y.Skin.CurrentPrice) * currencyExchangeRate -
-                               (double)x.Actives.Sum(y => y.BuyPrice)) /
-                              (double)x.Actives.Sum(y => y.BuyPrice)
+                            ? ((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate -
+                               (double)x.Actives.Sum(y => y.BuyPrice * y.Count)) /
+                              (double)x.Actives.Sum(y => y.BuyPrice * y.Count)
                             : 1,
                         x.DateCreation))
                 .ToListAsync(cancellationToken);
@@ -276,8 +276,8 @@ namespace SteamStorageAPI.Controllers
                 .ToList();
 
             int activesCount = actives.Sum(x => x.Count);
-            decimal buyPriceSum = actives.Sum(x => x.BuyPrice);
-            decimal latestPriceSum = (decimal)((double)actives.Sum(x => x.Skin.CurrentPrice) * currencyExchangeRate);
+            decimal buyPriceSum = actives.Sum(x => x.BuyPrice * x.Count);
+            decimal latestPriceSum = (decimal)((double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate);
             
             List<ActiveGroupsGameCountResponse> gamesCountResponse = [];
             gamesCountResponse.AddRange(

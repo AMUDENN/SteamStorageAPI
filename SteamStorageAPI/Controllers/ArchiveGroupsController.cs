@@ -124,19 +124,20 @@ namespace SteamStorageAPI.Controllers
             groups = groups.AsNoTracking().Include(x => x.Archives);
 
             List<ArchiveGroupResponse> result = await groups.Select(x =>
-                new ArchiveGroupResponse(
-                    x.Id,
-                    x.Title,
-                    x.Description,
-                    $"#{x.Colour ?? ArchiveGroup.BASE_ARCHIVE_GROUP_COLOUR}",
-                    x.Archives.Sum(y => y.Count),
-                    x.Archives.Sum(y => y.BuyPrice * y.Count),
-                    x.Archives.Sum(y => y.SoldPrice * y.Count),
-                    x.Archives.Sum(y => y.BuyPrice) != 0
-                        ? ((double)x.Archives.Sum(y => y.SoldPrice) - (double)x.Archives.Sum(y => y.BuyPrice)) /
-                          (double)x.Archives.Sum(y => y.BuyPrice)
-                        : 1,
-                    x.DateCreation))
+                    new ArchiveGroupResponse(
+                        x.Id,
+                        x.Title,
+                        x.Description,
+                        $"#{x.Colour ?? ArchiveGroup.BASE_ARCHIVE_GROUP_COLOUR}",
+                        x.Archives.Sum(y => y.Count),
+                        x.Archives.Sum(y => y.BuyPrice * y.Count),
+                        x.Archives.Sum(y => y.SoldPrice * y.Count),
+                        x.Archives.Sum(y => y.BuyPrice) != 0
+                            ? ((double)x.Archives.Sum(y => y.SoldPrice * y.Count) -
+                               (double)x.Archives.Sum(y => y.BuyPrice * y.Count)) /
+                              (double)x.Archives.Sum(y => y.BuyPrice * y.Count)
+                            : 1,
+                        x.DateCreation))
                 .ToListAsync(cancellationToken);
 
             return result;
