@@ -375,7 +375,9 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            ArchiveGroup group = await _context.Entry(user).Collection(u => u.ArchiveGroups).Query()
+            ArchiveGroup group = await _context.Entry(user)
+                                     .Collection(u => u.ArchiveGroups)
+                                     .Query()
                                      .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
                                  throw new HttpResponseException(StatusCodes.Status404NotFound,
                                      "У вас нет доступа к изменению этой группы или группы с таким Id не существует");

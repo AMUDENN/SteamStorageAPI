@@ -147,20 +147,6 @@ namespace SteamStorageAPI.Controllers
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            var activeSums = groups.AsNoTracking()
-                .ToDictionary(
-                group => group.Id,
-                group => new
-                {
-                    BuyPriceSum = (double)group.Actives.Sum(y => y.BuyPrice * y.Count),
-                    LatestPriceSum = (double)group.Actives
-                                         .Sum(y => y.Skin.CurrentPrice * y.Count) *
-                                     currencyExchangeRate,
-                    Count = group.Actives.Sum(y => y.Count)
-                }
-            );
-
             List<ActiveGroupResponse> result = await groups
                 .Select(x =>
                     new ActiveGroupResponse(
@@ -171,13 +157,15 @@ namespace SteamStorageAPI.Controllers
                         x.GoalSum,
                         x.GoalSum == null
                             ? null
-                            : activeSums[x.Id].LatestPriceSum / (double)x.GoalSum,
-                        activeSums[x.Id].Count,
-                        (decimal)activeSums[x.Id].BuyPriceSum,
-                        (decimal)activeSums[x.Id].LatestPriceSum,
-                        activeSums[x.Id].BuyPriceSum != 0
-                            ? (activeSums[x.Id].LatestPriceSum - activeSums[x.Id].BuyPriceSum) /
-                              activeSums[x.Id].BuyPriceSum
+                            : (double)x.Actives.Sum(y => y.Skin.CurrentPrice) * currencyExchangeRate /
+                              (double)x.GoalSum,
+                        x.Actives.Sum(y => y.Count),
+                        x.Actives.Sum(y => y.BuyPrice),
+                        (decimal)((double)x.Actives.Sum(y => y.Skin.CurrentPrice) * currencyExchangeRate),
+                        x.Actives.Sum(y => y.BuyPrice) != 0
+                            ? ((double)x.Actives.Sum(y => y.Skin.CurrentPrice) * currencyExchangeRate -
+                               (double)x.Actives.Sum(y => y.BuyPrice)) /
+                              (double)x.Actives.Sum(y => y.BuyPrice)
                             : 1,
                         x.DateCreation))
                 .ToListAsync(cancellationToken);
@@ -288,7 +276,7 @@ namespace SteamStorageAPI.Controllers
 
             int activesCount = actives.Sum(x => x.Count);
             decimal buyPriceSum = actives.Sum(x => x.BuyPrice);
-            decimal latestPriceSum = actives.Sum(x => x.Skin.CurrentPrice);
+            decimal latestPriceSum = (decimal)((double)actives.Sum(x => x.Skin.CurrentPrice) * currencyExchangeRate);
             
             List<ActiveGroupsGameCountResponse> gamesCountResponse = [];
             gamesCountResponse.AddRange(
@@ -325,12 +313,12 @@ namespace SteamStorageAPI.Controllers
                         item.Title,
                         latestPriceSum == 0
                             ? 0
-                            : actives
+                            : (double)actives
                                 .Where(x => x.Skin.Game.Id == item.Id)
-                                .Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count) / (double)latestPriceSum,
-                        (decimal)actives
+                                .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate / (double)latestPriceSum,
+                        (decimal)((double)actives
                             .Where(x => x.Skin.Game.Id == item.Id)
-                            .Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)))
+                            .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate)))
             );
 
 
@@ -469,7 +457,9 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            ActiveGroup group = await _context.Entry(user).Collection(u => u.ActiveGroups).Query()
+            ActiveGroup group = await _context.Entry(user)
+                                    .Collection(u => u.ActiveGroups)
+                                    .Query()
                                     .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
                                     "У вас нет доступа к изменению этой группы или группы с таким Id не существует");

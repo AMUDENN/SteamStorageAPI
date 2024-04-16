@@ -73,8 +73,6 @@ namespace SteamStorageAPI.Controllers
         #endregion Records
 
         #region GET
-        
-        //TODO: ТУТ ВЕЗДЕ ToList , Это крах...
 
         /// <summary>
         /// Получение суммы инвестиций
@@ -99,28 +97,26 @@ namespace SteamStorageAPI.Controllers
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            List<Active> actives = await _context.Entry(user)
+            IQueryable<Active> actives = _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Actives);
 
-            List<Archive> archives = await _context.Entry(user)
+            IQueryable<Archive> archives = _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Archives)
-                .SelectMany(x => x.Archives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Archives);
 
             double investedSum =
                 (double)(actives.Sum(y => y.BuyPrice * y.Count) + archives.Sum(y => y.BuyPrice * y.Count));
 
             double currentSum =
-                actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count) +
+                (double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate +
                 (double)archives.Sum(y => y.SoldPrice * y.Count);
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
@@ -149,36 +145,34 @@ namespace SteamStorageAPI.Controllers
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
-            
+
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             double financialGoal = (double)(user.GoalSum ?? 0);
 
-            List<Active> actives = await _context.Entry(user)
+            IQueryable<Active> actives = _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Actives);
 
-            List<Archive> archives = await _context.Entry(user)
+            IQueryable<Archive> archives = _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Archives)
-                .SelectMany(x => x.Archives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Archives);
 
             double currentSum =
-                actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count) +
+                (double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate +
                 (double)archives.Sum(y => y.SoldPrice * y.Count);
 
             double percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
             return Ok(new FinancialGoalResponse(
-                financialGoal, 
+                financialGoal,
                 percentage));
         }
 
@@ -204,26 +198,25 @@ namespace SteamStorageAPI.Controllers
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            List<Active> actives = await _context.Entry(user)
+            IQueryable<Active> actives = _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Actives);
 
             int count = actives.Sum(x => x.Count);
 
             double investedSum = (double)actives.Sum(y => y.BuyPrice * y.Count);
 
-            double currentSum = actives.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count);
+            double currentSum = (double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate;
 
             double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
             return Ok(new ActiveStatisticResponse(
-                count, 
-                currentSum, 
+                count,
+                currentSum,
                 percentage));
         }
 
@@ -247,13 +240,12 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            List<Archive> archives = await _context.Entry(user)
+            IQueryable<Archive> archives = _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Archives)
-                .SelectMany(x => x.Archives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Archives);
 
             int count = archives.Sum(x => x.Count);
 
@@ -264,8 +256,8 @@ namespace SteamStorageAPI.Controllers
             double percentage = investedSum == 0 ? 1 : (soldSum - investedSum) / investedSum;
 
             return Ok(new ArchiveStatisticResponse(
-                count, 
-                soldSum, 
+                count,
+                soldSum,
                 percentage));
         }
 
@@ -288,16 +280,16 @@ namespace SteamStorageAPI.Controllers
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            List<Inventory> inventories = await _context.Entry(user)
+            IQueryable<Inventory> inventories = _context.Entry(user)
                 .Collection(u => u.Inventories)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Skin.Game)
-                .ToListAsync(cancellationToken);
+                .AsQueryable();
 
             int count = inventories.Sum(x => x.Count);
 
-            double sum = inventories.Sum(x => (double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count);
+            double sum = (double)inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate;
 
             List<Game> games = inventories.Select(x => x.Skin.Game)
                 .GroupBy(x => x.Id)
@@ -336,31 +328,28 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            List<Active> actives = await _context.Entry(user)
+            IQueryable<Active> actives = _context.Entry(user)
                 .Collection(u => u.ActiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .SelectMany(x => x.Actives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Actives);
 
             int activesCount = actives.Sum(x => x.Count);
 
-            List<Archive> archives = await _context.Entry(user)
+            IQueryable<Archive> archives = _context.Entry(user)
                 .Collection(u => u.ArchiveGroups)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Archives)
-                .SelectMany(x => x.Archives)
-                .ToListAsync(cancellationToken);
+                .SelectMany(x => x.Archives);
 
             int archivesCount = archives.Sum(x => x.Count);
 
-            List<Inventory> inventories = await _context.Entry(user)
+            IQueryable<Inventory> inventories = _context.Entry(user)
                 .Collection(u => u.Inventories)
                 .Query()
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                .AsNoTracking();
 
             int inventoriesCount = inventories.Sum(x => x.Count);
 

@@ -139,11 +139,9 @@ namespace SteamStorageAPI.Controllers
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Inventory> listInventories = inventories.AsNoTracking()
+            inventories = inventories.AsNoTracking()
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+                .Take(pageSize);
 
             int inventoriesCount = await inventories.CountAsync(cancellationToken);
 
@@ -151,7 +149,7 @@ namespace SteamStorageAPI.Controllers
 
             return new(inventoriesCount,
                 pagesCount,
-                await Task.WhenAll(listInventories
+                await Task.WhenAll(inventories.AsEnumerable()
                     .Select(async x =>
                         new InventoryResponse(
                             x.Id,
@@ -189,8 +187,7 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics)
-                .Include(x => x.Skin.Game)
+                .ThenInclude(x => x.Game)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
 
@@ -208,34 +205,14 @@ namespace SteamStorageAPI.Controllers
                             : inventories.OrderByDescending(x => x.Count);
                         break;
                     case InventoryOrderName.Price:
-                        var inventoriesPriceResult = inventories.Select(x => new
-                        {
-                            Inventory = x,
-                            CurrentPrice = x.Skin.SkinsDynamics.Count != 0
-                                ? x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price
-                                : 0
-                        });
-                        inventories = (request.IsAscending.Value
-                                ? inventoriesPriceResult
-                                    .OrderBy(result => result.CurrentPrice)
-                                : inventoriesPriceResult
-                                    .OrderByDescending(result => result.CurrentPrice))
-                            .Select(result => result.Inventory);
+                        inventories = request.IsAscending.Value
+                            ? inventories.OrderBy(x => x.Skin.CurrentPrice)
+                            : inventories.OrderByDescending(x => x.Skin.CurrentPrice);
                         break;
                     case InventoryOrderName.Sum:
-                        var inventoriesSumResult = inventories.Select(x => new
-                        {
-                            Inventory = x,
-                            Sum = x.Skin.SkinsDynamics.Count != 0
-                                ? x.Skin.SkinsDynamics.OrderByDescending(sd => sd.DateUpdate).First().Price * x.Count
-                                : 0
-                        });
-                        inventories = (request.IsAscending.Value
-                                ? inventoriesSumResult
-                                    .OrderBy(result => result.Sum)
-                                : inventoriesSumResult
-                                    .OrderByDescending(result => result.Sum))
-                            .Select(result => result.Inventory);
+                        inventories = request.IsAscending.Value
+                            ? inventories.OrderBy(x => x.Skin.CurrentPrice * x.Count)
+                            : inventories.OrderByDescending(x => x.Skin.CurrentPrice * x.Count);
                         break;
                 }
             else
@@ -271,30 +248,15 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics)
-                .Include(x => x.Skin.Game)
+                .ThenInclude(x => x.Game)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
                             && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-            List<Inventory> listInventories = inventories.AsNoTracking().ToList();
+            int itemsCount = inventories.Sum(x => x.Count);
 
-            var inventoryPrices = listInventories.ToDictionary(
-                inventory => inventory.Id,
-                inventory => new
-                {
-                    CurrentPrice = inventory.Skin.SkinsDynamics.Count != 0
-                        ? (double)inventory.Skin.SkinsDynamics.OrderByDescending(y => y.DateUpdate).First().Price *
-                          currencyExchangeRate
-                        : 0
-                }
-            );
-
-            int itemsCount = listInventories.Sum(x => x.Count);
-
-            decimal currentSum = listInventories.Sum(x => (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count);
+            decimal currentSum = (decimal)((double)inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate);
 
             List<Game> games = inventories.Select(x => x.Skin.Game)
                 .GroupBy(x => x.Id)
@@ -321,15 +283,15 @@ namespace SteamStorageAPI.Controllers
                         item.Title,
                         currentSum == 0
                             ? 0
-                            : (double)(inventories
+                            : (double)inventories
                                 .Where(x => x.Skin.Game.Id == item.Id)
                                 .AsEnumerable()
-                                .Sum(x => (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count) / currentSum),
-                        inventories
+                                .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate / (double)currentSum,
+                        (decimal)((double)inventories
                             .Where(x => x.Skin.Game.Id == item.Id)
                             .AsEnumerable()
-                            .Sum(x => (decimal)inventoryPrices[x.Id].CurrentPrice * x.Count)))
-            );
+                            .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate))
+            ));
 
             return Ok(new InventoriesStatisticResponse(itemsCount, currentSum, gamesCountResponse, gamesSumResponse));
         }
@@ -352,16 +314,19 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            IEnumerable<Inventory> inventories = _context.Entry(user)
+            int count = await _context
+                .Entry(user)
                 .Collection(x => x.Inventories)
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Skin)
-                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
+                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)),
+                    cancellationToken);
 
-            return Ok(new InventoryPagesCountResponse(
-                (int)Math.Ceiling((double)inventories.Count() / request.PageSize)));
+            int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+
+            return Ok(new InventoryPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
         }
 
         /// <summary>
