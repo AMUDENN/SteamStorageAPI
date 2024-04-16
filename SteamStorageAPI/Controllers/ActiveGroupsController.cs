@@ -160,7 +160,7 @@ namespace SteamStorageAPI.Controllers
                             : (double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate /
                               (double)x.GoalSum,
                         x.Actives.Sum(y => y.Count),
-                        x.Actives.Sum(y => y.BuyPrice),
+                        x.Actives.Sum(y => y.BuyPrice * y.Count),
                         (decimal)((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate),
                         x.Actives.Sum(y => y.BuyPrice) != 0
                             ? ((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate -
