@@ -231,6 +231,7 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.Game)
                 .SelectMany(x => x.Archives);
             
             List<Game> games = archives
@@ -250,9 +251,9 @@ namespace SteamStorageAPI.Controllers
                         item.Title,
                         archivesCount == 0
                             ? 0
-                            : (double)archives.Where(x => x.Skin.Game.Id == item.Id)
+                            : (double)archives.Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.Count) / archivesCount,
-                        archives.Where(x => x.Skin.Game.Id == item.Id)
+                        archives.Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.Count)))
             );
             
@@ -264,10 +265,10 @@ namespace SteamStorageAPI.Controllers
                         buySum == 0
                             ? 0
                             : (double)(archives
-                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.BuyPrice * x.Count) / buySum),
                         archives
-                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.BuyPrice * x.Count)))
             );
             
@@ -279,10 +280,10 @@ namespace SteamStorageAPI.Controllers
                         soldSum == 0
                             ? 0
                             : (double)(archives
-                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.SoldPrice * x.Count) / soldSum),
                         archives
-                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.SoldPrice * x.Count)))
             );
 

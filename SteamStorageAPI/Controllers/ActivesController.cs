@@ -165,13 +165,13 @@ namespace SteamStorageAPI.Controllers
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            actives = actives.AsNoTracking()
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
             int activesCount = await actives.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)activesCount / pageSize);
+
+            actives = actives.AsNoTracking()
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
 
             return new(activesCount,
                 pagesCount,

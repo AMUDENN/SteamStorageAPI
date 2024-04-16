@@ -151,13 +151,13 @@ namespace SteamStorageAPI.Controllers
             int pageSize,
             CancellationToken cancellationToken = default)
         {
-            archives = archives.AsNoTracking()
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
             int archivesCount = await archives.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)archivesCount / pageSize);
+
+            archives = archives.AsNoTracking()
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
 
             return new(archivesCount,
                 pagesCount,

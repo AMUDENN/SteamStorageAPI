@@ -139,13 +139,13 @@ namespace SteamStorageAPI.Controllers
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            inventories = inventories.AsNoTracking()
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
             int inventoriesCount = await inventories.CountAsync(cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)inventoriesCount / pageSize);
+
+            inventories = inventories.AsNoTracking()
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
 
             return new(inventoriesCount,
                 pagesCount,
@@ -256,7 +256,8 @@ namespace SteamStorageAPI.Controllers
 
             int itemsCount = inventories.Sum(x => x.Count);
 
-            decimal currentSum = (decimal)((double)inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate);
+            decimal currentSum =
+                (decimal)((double)inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate);
 
             List<Game> games = inventories.Select(x => x.Skin.Game)
                 .GroupBy(x => x.Id)
@@ -270,9 +271,9 @@ namespace SteamStorageAPI.Controllers
                         item.Title,
                         itemsCount == 0
                             ? 0
-                            : (double)inventories.Where(x => x.Skin.Game.Id == item.Id)
+                            : (double)inventories.Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.Count) / itemsCount,
-                        inventories.Where(x => x.Skin.Game.Id == item.Id)
+                        inventories.Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.Count)))
             );
 
@@ -284,14 +285,14 @@ namespace SteamStorageAPI.Controllers
                         currentSum == 0
                             ? 0
                             : (double)inventories
-                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Where(x => x.Skin.GameId == item.Id)
                                 .AsEnumerable()
                                 .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate / (double)currentSum,
                         (decimal)((double)inventories
-                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Where(x => x.Skin.GameId == item.Id)
                             .AsEnumerable()
                             .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate))
-            ));
+                ));
 
             return Ok(new InventoriesStatisticResponse(itemsCount, currentSum, gamesCountResponse, gamesSumResponse));
         }

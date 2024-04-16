@@ -262,7 +262,8 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin);
+                .ThenInclude(x => x.Skin)
+                .ThenInclude(x => x.Game);
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
@@ -285,9 +286,9 @@ namespace SteamStorageAPI.Controllers
                         item.Title,
                         activesCount == 0
                             ? 0
-                            : (double)actives.Where(x => x.Skin.Game.Id == item.Id)
+                            : (double)actives.Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.Count) / activesCount,
-                        actives.Where(x => x.Skin.Game.Id == item.Id)
+                        actives.Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.Count)))
             );
             
@@ -299,10 +300,10 @@ namespace SteamStorageAPI.Controllers
                         buyPriceSum == 0
                             ? 0
                             : (double)(actives
-                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.BuyPrice * x.Count) / buyPriceSum),
                         actives
-                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.BuyPrice * x.Count)))
             );
             
@@ -314,10 +315,10 @@ namespace SteamStorageAPI.Controllers
                         latestPriceSum == 0
                             ? 0
                             : (double)actives
-                                .Where(x => x.Skin.Game.Id == item.Id)
+                                .Where(x => x.Skin.GameId == item.Id)
                                 .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate / (double)latestPriceSum,
                         (decimal)((double)actives
-                            .Where(x => x.Skin.Game.Id == item.Id)
+                            .Where(x => x.Skin.GameId == item.Id)
                             .Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate)))
             );
 

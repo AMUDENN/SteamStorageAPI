@@ -284,7 +284,8 @@ namespace SteamStorageAPI.Controllers
                 .Collection(u => u.Inventories)
                 .Query()
                 .AsNoTracking()
-                .Include(x => x.Skin.Game)
+                .Include(x => x.Skin)
+                .ThenInclude(x => x.Game)
                 .AsQueryable();
 
             int count = inventories.Sum(x => x.Count);
@@ -301,8 +302,8 @@ namespace SteamStorageAPI.Controllers
                 games.Select(item =>
                     new InventoryGameStatisticResponse(
                         item.Title,
-                        (double)inventories.Where(x => x.Skin.Game.Id == item.Id).Sum(x => x.Count) / count,
-                        inventories.Where(x => x.Skin.Game.Id == item.Id).Sum(x => x.Count)))
+                        (double)inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / count,
+                        inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count)))
             );
 
             return Ok(new InventoryStatisticResponse(count, sum, gamesResponse));
