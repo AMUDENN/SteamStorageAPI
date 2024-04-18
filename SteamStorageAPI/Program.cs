@@ -78,7 +78,7 @@ public static class Program
             q.AddTrigger(t => t
                 .ForJob(nameof(RefreshActiveGroupsDynamicsJob))
                 .WithIdentity(nameof(RefreshActiveGroupsDynamicsJob) + "Trigger")
-                .WithCronSchedule("0 0 1 * * ?")); // 01:00 Every Day
+                .WithCronSchedule("0 0 3 * * ?")); // 01:00 Every Day
         });
 
         //Background Services

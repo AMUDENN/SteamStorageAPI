@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Utilities.Exceptions;
@@ -81,12 +82,14 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
             Random rnd = new();
 
+            Stopwatch stopwatch = new();
+
             while (count == answerCount || start < totalCount)
             {
                 try
                 {
-                    _logger.LogInformation(
-                        $"Процесс выполнения загрузки скинов:\nЗагружено: {start} / {totalCount}");
+                    stopwatch.Reset();
+                    stopwatch.Start();
 
                     response = await client.GetFromJsonAsync<SteamSkinResponse>(
                         SteamApi.GetSkinsUrl(game.SteamGameId, baseCurrency.SteamCurrencyId, count, start),
@@ -96,46 +99,59 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "При получении данных с сервера Steam произошла ошибка");
 
-                    List<SkinsDynamic> skinsDynamics = [];
+                    // List<SkinsDynamic> skinsDynamics = [];
 
                     List<string> marketHashNames =
                         await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken);
 
-                    await _context.Skins.AddRangeAsync(response.results.Where(x => marketHashNames.All(y => y != x.hash_name)).Select(x =>
-                        new Skin
-                        {
-                            GameId = game.Id,
-                            MarketHashName = x.hash_name,
-                            Title = x.name,
-                            SkinIconUrl = x.asset_description.icon_url
-                        }), cancellationToken);
+                    await _context.Skins.AddRangeAsync(response.results
+                        .Where(x => marketHashNames.All(y => y != x.hash_name)).Select(x =>
+                            new Skin
+                            {
+                                GameId = game.Id,
+                                MarketHashName = x.hash_name,
+                                Title = x.name,
+                                SkinIconUrl = x.asset_description.icon_url
+                            }), cancellationToken);
 
                     await _context.SaveChangesAsync(cancellationToken);
 
-                    foreach (SkinResult item in response.results)
+                    await _context.SkinsDynamics.AddRangeAsync(response.results.Select(x => new SkinsDynamic()
                     {
-                        Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.hash_name,
-                            cancellationToken);
+                        DateUpdate = DateTime.Now,
+                        Price = Convert.ToDecimal(x.sell_price_text
+                            .Replace(baseCurrency.Mark, string.Empty)
+                            .Replace(",", string.Empty)
+                            .Replace('.', ',')),
+                        SkinId = _context.Skins.First(y => y.MarketHashName == x.hash_name).Id
+                    }), cancellationToken);
 
-                        if (skin is null)
-                            continue;
-
-                        _logger.LogInformation(item.sell_price_text); //TODO: Delete this
-
-                        skinsDynamics.Add(new()
-                        {
-                            DateUpdate = DateTime.Now,
-                            Price = Convert.ToDecimal(item.sell_price_text
-                                .Replace(baseCurrency.Mark, string.Empty)
-                                .Replace(",", string.Empty)
-                                .Replace('.', ',')),
-                            SkinId = skin.Id
-                        });
-                    }
-
-                    await _context.SkinsDynamics.AddRangeAsync(skinsDynamics, cancellationToken);
+                    // foreach (SkinResult item in response.results)
+                    // {
+                    //     Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.hash_name,
+                    //         cancellationToken);
+                    //
+                    //     if (skin is null)
+                    //         continue;
+                    //
+                    //     skinsDynamics.Add(new()
+                    //     {
+                    //         DateUpdate = DateTime.Now,
+                    //         Price = Convert.ToDecimal(item.sell_price_text
+                    //             .Replace(baseCurrency.Mark, string.Empty)
+                    //             .Replace(",", string.Empty)
+                    //             .Replace('.', ',')),
+                    //         SkinId = skin.Id
+                    //     });
+                    // }
+                    //
+                    // await _context.SkinsDynamics.AddRangeAsync(skinsDynamics, cancellationToken);
 
                     await _context.SaveChangesAsync(cancellationToken);
+
+                    stopwatch.Stop();
+                    _logger.LogInformation(
+                        $"\n\tПроцесс выполнения загрузки скинов:\n\t\tЗагружено: {start} / {totalCount};\n\t\tВремя выполнения текущей итерации: {stopwatch.ElapsedMilliseconds} мс;\n");
 
                     answerCount = response.results.Length;
                     start += response.results.Length;
