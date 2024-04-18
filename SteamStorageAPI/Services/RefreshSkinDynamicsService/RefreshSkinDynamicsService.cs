@@ -99,7 +99,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "При получении данных с сервера Steam произошла ошибка");
 
-                    // List<SkinsDynamic> skinsDynamics = [];
+                    List<SkinsDynamic> skinsDynamics = [];
 
                     List<string> marketHashNames =
                         await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken);
@@ -116,47 +116,37 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
                     await _context.SaveChangesAsync(cancellationToken);
 
-                    await _context.SkinsDynamics.AddRangeAsync(response.results.Select(x => new SkinsDynamic()
+                    foreach (SkinResult item in response.results)
                     {
-                        DateUpdate = DateTime.Now,
-                        Price = Convert.ToDecimal(x.sell_price_text
-                            .Replace(baseCurrency.Mark, string.Empty)
-                            .Replace(",", string.Empty)
-                            .Replace('.', ',')),
-                        SkinId = _context.Skins.First(y => y.MarketHashName == x.hash_name).Id
-                    }), cancellationToken);
+                        Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.hash_name,
+                            cancellationToken);
 
-                    // foreach (SkinResult item in response.results)
-                    // {
-                    //     Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.hash_name,
-                    //         cancellationToken);
-                    //
-                    //     if (skin is null)
-                    //         continue;
-                    //
-                    //     skinsDynamics.Add(new()
-                    //     {
-                    //         DateUpdate = DateTime.Now,
-                    //         Price = Convert.ToDecimal(item.sell_price_text
-                    //             .Replace(baseCurrency.Mark, string.Empty)
-                    //             .Replace(",", string.Empty)
-                    //             .Replace('.', ',')),
-                    //         SkinId = skin.Id
-                    //     });
-                    // }
-                    //
-                    // await _context.SkinsDynamics.AddRangeAsync(skinsDynamics, cancellationToken);
+                        if (skin is null)
+                            continue;
+
+                        skinsDynamics.Add(new()
+                        {
+                            DateUpdate = DateTime.Now,
+                            Price = Convert.ToDecimal(item.sell_price_text
+                                .Replace(baseCurrency.Mark, string.Empty)
+                                .Replace(",", string.Empty)
+                                .Replace('.', ',')),
+                            SkinId = skin.Id
+                        });
+                    }
+
+                    await _context.SkinsDynamics.AddRangeAsync(skinsDynamics, cancellationToken);
 
                     await _context.SaveChangesAsync(cancellationToken);
-
-                    stopwatch.Stop();
-                    _logger.LogInformation(
-                        $"\n\tПроцесс выполнения загрузки скинов:\n\t\tЗагружено: {start} / {totalCount};\n\t\tВремя выполнения текущей итерации: {stopwatch.ElapsedMilliseconds} мс;\n");
 
                     answerCount = response.results.Length;
                     start += response.results.Length;
 
                     count = BASE_RESPONSE_COUNT;
+
+                    stopwatch.Stop();
+                    _logger.LogInformation(
+                        $"\n\tПроцесс выполнения загрузки скинов:\n\t\tЗагружено: {start} / {totalCount};\n\t\tВремя выполнения текущей итерации: {stopwatch.ElapsedMilliseconds} мс;\n");
 
                     await Task.Delay(rnd.Next(REFRESH_DELAY_MIN, REFRESH_DELAY_MAX), cancellationToken);
                 }
