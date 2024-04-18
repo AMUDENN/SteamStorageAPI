@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Models.SteamAPIModels.Price;
+using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Steam;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -193,8 +196,6 @@ namespace SteamStorageAPI.Controllers
             PostCurrencyRequest request,
             CancellationToken cancellationToken = default)
         {
-            //TODO: Проверка на существование валюты с таким Id в Steam
-
             await _context.Currencies.AddAsync(new()
             {
                 SteamCurrencyId = request.SteamCurrencyId,
