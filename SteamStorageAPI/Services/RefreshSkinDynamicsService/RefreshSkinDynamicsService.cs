@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
@@ -127,10 +128,8 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         skinsDynamics.Add(new()
                         {
                             DateUpdate = DateTime.Now,
-                            Price = Convert.ToDecimal(item.sell_price_text
-                                .Replace(baseCurrency.Mark, string.Empty)
-                                .Replace(",", string.Empty)
-                                .Replace('.', ',')),
+                            Price = Convert.ToDecimal(item.sell_price_text.Replace(baseCurrency.Mark, string.Empty),
+                                CultureInfo.InvariantCulture),
                             SkinId = skin.Id
                         });
                     }
