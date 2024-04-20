@@ -29,7 +29,8 @@ public static class Program
         }
         
         //PathBase
-        string? pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
+        string pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE") 
+                          ?? throw new ArgumentNullException(nameof(pathBase));
         app.UsePathBase(new(pathBase));
 
         //ForwardedHeaders
@@ -47,7 +48,7 @@ public static class Program
 
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Token}/{action=Token}/{id?}");
+            pattern: "{action=Token}/{id?}");
 
         app.Run();
     }
