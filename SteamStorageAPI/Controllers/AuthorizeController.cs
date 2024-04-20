@@ -172,7 +172,7 @@ namespace SteamStorageAPI.Controllers
             await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
             return Redirect(
-                $"{TOKEN_ADRESS}Token/SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
+                $"{TOKEN_ADRESS}SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
         }
 
         /// <summary>
