@@ -47,10 +47,28 @@ public static class Program
         builder.Services.AddEndpointsApiExplorer();
 
         //JwtOptions Initialize
-        JwtOptions.InitializeEnvironmentVariables();
+        try
+        {
+            //Environment
+            JwtOptions.InitializeEnvironmentVariables();
+        }
+        catch
+        {
+            //UserSecrets
+            JwtOptions.InitializeConfig(builder.Configuration);
+        }
 
         //SteamApi Initialize
-        SteamApi.InitializeEnvironmentVariables();
+        try
+        {
+            //Environment
+            SteamApi.InitializeEnvironmentVariables();
+        }
+        catch
+        {
+            //UserSecrets
+            SteamApi.InitializeConfig(builder.Configuration);
+        }
 
         //Services
         builder.Services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
@@ -128,11 +146,30 @@ public static class Program
 
 
         //DataBase
-        string connectionStringSteamStorage = Environment.GetEnvironmentVariable("SteamStorageDB")
-                                              ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
+        string connectionStringSteamStorage;
+        string connectionStringHealthChecks;
+        try
+        {
+            //Environment
+            connectionStringSteamStorage = Environment.GetEnvironmentVariable("SteamStorageDB")
+                                           ?? throw new ArgumentNullException(
+                                               nameof(connectionStringSteamStorage));
 
-        string connectionStringHealthChecks = Environment.GetEnvironmentVariable("SteamStorageHealthChecksDB")
-                                              ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
+            connectionStringHealthChecks = Environment.GetEnvironmentVariable("SteamStorageHealthChecksDB")
+                                           ?? throw new ArgumentNullException(
+                                               nameof(connectionStringHealthChecks));
+        }
+        catch
+        {
+            //UserSecrets
+            connectionStringSteamStorage = builder.Configuration.GetConnectionString("SteamStorage")
+                                           ?? throw new ArgumentNullException(
+                                               nameof(connectionStringSteamStorage));
+
+            connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks")
+                                           ?? throw new ArgumentNullException(
+                                               nameof(connectionStringHealthChecks));
+        }
 
         builder.Services.AddDbContext<SteamStorageContext>(
             options => options.UseSqlServer(connectionStringSteamStorage));

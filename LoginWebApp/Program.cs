@@ -27,6 +27,10 @@ public static class Program
         {
             app.UseHsts();
         }
+        
+        //PathBase
+        string? pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
+        app.UsePathBase(new(pathBase));
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new()

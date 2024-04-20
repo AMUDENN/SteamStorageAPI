@@ -4,6 +4,12 @@ namespace SteamStorageAPI.Utilities.Steam
 {
     public static class SteamApi
     {
+        #region Constants
+
+        private const string STEAM_COMMUNITY_BASE = "https://steamcommunity.com";
+
+        #endregion Constants
+
         #region Fields
 
         private static readonly Dictionary<string, string> _replaceChars = new()
@@ -29,7 +35,7 @@ namespace SteamStorageAPI.Utilities.Steam
             SteamApiKey = steamSection.GetValue<string>("ApiKey") ??
                           throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
         }
-        
+
         public static void InitializeEnvironmentVariables()
         {
             SteamApiKey = Environment.GetEnvironmentVariable("SteamApiKey") ??
@@ -40,7 +46,7 @@ namespace SteamStorageAPI.Utilities.Steam
             $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamApiKey}&steamids={steamProfileId}";
 
         public static string GetUserUrl(long steamProfileId) =>
-            $"https://steamcommunity.com/profiles/{steamProfileId}";
+            $"{STEAM_COMMUNITY_BASE}/profiles/{steamProfileId}";
 
         public static string GetUserIconUrl(string urlHash) =>
             $"https://avatars.steamstatic.com/{urlHash}";
@@ -55,25 +61,25 @@ namespace SteamStorageAPI.Utilities.Steam
             $"https://community.cloudflare.steamstatic.com/economy/image/{urlHash}";
 
         public static string GetSkinMarketUrl(int appId, string marketHashName) =>
-            $"https://steamcommunity.com/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
+            $"{STEAM_COMMUNITY_BASE}/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
 
         public static string GetSkinsUrl(int appId, int currencyId, int count, int start) =>
-            $"https://steamcommunity.com/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
+            $"{STEAM_COMMUNITY_BASE}/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
 
         public static string GetMostPopularSkinUrl(int appId) =>
             GetSkinsUrl(appId, Currency.BASE_CURRENCY_ID, 1, 0);
 
         public static string GetSkinInfoUrl(string marketHashName) =>
-            $"https://steamcommunity.com/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
+            $"{STEAM_COMMUNITY_BASE}/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
 
         public static string GetInventoryUrl(long steamProfileId, int appId, int count) =>
-            $"https://steamcommunity.com/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
+            $"{STEAM_COMMUNITY_BASE}/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
 
         public static string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId) =>
-            $"https://steamcommunity.com/market/priceoverview/?appid={appId}&market_hash_name={ReplaceMarketHashName(marketHashName)}&currency={steamCurrencyId}";
+            $"{STEAM_COMMUNITY_BASE}/market/priceoverview/?appid={appId}&market_hash_name={ReplaceMarketHashName(marketHashName)}&currency={steamCurrencyId}";
 
         public static string GetAuthUrl(string returnTo, string realm) =>
-            "https://steamcommunity.com/openid/login" +
+            $"{STEAM_COMMUNITY_BASE}/openid/login" +
             "?openid.ns=http://specs.openid.net/auth/2.0" +
             "&openid.mode=checkid_setup" +
             $"&openid.return_to={returnTo}" +
@@ -81,7 +87,7 @@ namespace SteamStorageAPI.Utilities.Steam
             "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select" +
             "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
 
-        public static string GetAuthCheckUrl() => "https://steamcommunity.com/openid/login";
+        public static string GetAuthCheckUrl() => $"{STEAM_COMMUNITY_BASE}/openid/login";
 
         public static HttpContent GetAuthCheckContent(string ns, string opEndpoint, string claimedId, string identity,
             string returnTo, string responseNonce, string assocHandle, string signed, string sig)

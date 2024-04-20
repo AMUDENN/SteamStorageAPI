@@ -154,6 +154,7 @@ public partial class SteamStorageContext : DbContext
             entity.HasIndex(e => e.SteamCurrencyId, "UQ__Currenci__E1F42BF7926A89FE").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CultureInfo).HasMaxLength(10);
             entity.Property(e => e.Mark).HasMaxLength(10);
             entity.Property(e => e.SteamCurrencyId).HasColumnName("SteamCurrencyID");
             entity.Property(e => e.Title).HasMaxLength(100);

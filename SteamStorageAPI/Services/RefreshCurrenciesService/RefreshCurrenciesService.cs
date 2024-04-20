@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
@@ -73,23 +74,23 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         Skin skin =
             await _context.Skins.Include(skin => skin.Game)
                 .FirstOrDefaultAsync(x => x.MarketHashName == skinResult.market_hash_name, cancellationToken) ??
-            await _skinService.AddSkinAsync(game.Id, 
-                skinResult.market_hash_name, 
+            await _skinService.AddSkinAsync(game.Id,
+                skinResult.market_hash_name,
                 skinResult.name,
                 skinResult.icon_url,
                 cancellationToken);
 
         SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
             SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId,
-                skin.MarketHashName, 
-                baseCurrency.SteamCurrencyId), 
+                skin.MarketHashName,
+                baseCurrency.SteamCurrencyId),
             cancellationToken);
         if (response?.lowest_price is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "При получении данных с сервера Steam произошла ошибка");
 
-        double baseCurrencyPrice =
-            Convert.ToDouble(response.lowest_price.Replace(baseCurrency.Mark, string.Empty).Replace('.', ','));
+        double baseCurrencyPrice = Convert.ToDouble(response.lowest_price.Replace(baseCurrency.Mark, string.Empty),
+            new CultureInfo(baseCurrency.CultureInfo));
 
         foreach (Currency currency in currencies)
         {
@@ -98,7 +99,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 continue;
 
             response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId, 
+                SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId,
                     skin.MarketHashName,
                     currency.SteamCurrencyId),
                 cancellationToken);
@@ -106,8 +107,9 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             if (response is null)
                 continue;
 
-            double price = Convert.ToDouble(response.lowest_price.Replace(currency.Mark, string.Empty)
-                .Replace('.', ','));
+            double price = Convert.ToDouble(response.lowest_price
+                    .Replace(currency.Mark, string.Empty),
+                new CultureInfo(currency.CultureInfo));
 
             _context.CurrencyDynamics.Add(new()
             {

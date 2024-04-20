@@ -65,8 +65,7 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Actives)
                 .SelectMany(x => x.Actives)
                 .Include(x => x.Skin)
-                .ThenInclude(x => x.SkinsDynamics)
-                .Include(x => x.Skin.Game)
+                .ThenInclude(x => x.Game)
                 .AsQueryable();
 
             IQueryable<Archive> archives = _context.Entry(user)
@@ -104,13 +103,11 @@ namespace SteamStorageAPI.Controllers
                 activesWorksheet.Cells[i, 3].Value = active.BuyPrice;
                 activesWorksheet.Cells[i, 4].Value = active.BuyPrice * active.Count;
                 activesWorksheet.Cells[i, 5].Value = active.BuyDate.ToString(ProgramConstants.DATE_FORMAT);
-                activesWorksheet.Cells[i, 6].Value =
-                    (double)(active.Skin.SkinsDynamics.MaxBy(x => x.DateUpdate)?.Price ?? 0) * currencyExchangeRate;
-                activesWorksheet.Cells[i, 7].Value = active.Skin.SkinsDynamics.Count != 0
-                    ? Math.Round(
-                        ((double)active.Skin.SkinsDynamics.OrderByDescending(x => x.DateUpdate).First().Price *
-                            currencyExchangeRate - (double)active.BuyPrice) / (double)active.BuyPrice * 100, 2)
-                    : -100;
+                activesWorksheet.Cells[i, 6].Value = (double)active.Skin.CurrentPrice * currencyExchangeRate;
+                activesWorksheet.Cells[i, 7].Value =
+                    Math.Round(
+                        ((double)active.Skin.CurrentPrice * currencyExchangeRate - (double)active.BuyPrice) /
+                        (double)active.BuyPrice * 100, 2);
                 activesWorksheet.Cells[i, 8].Value =
                     SteamApi.GetSkinMarketUrl(active.Skin.Game.SteamGameId, active.Skin.MarketHashName);
                 i++;
@@ -149,6 +146,8 @@ namespace SteamStorageAPI.Controllers
                 j++;
             }
 
+            //TODO: Statistics
+            
             return File(await package.GetAsByteArrayAsync(cancellationToken),
                 "application/octet-stream",
                 $"{DateTime.Now:dd.MM.yyyy#hh.mm}.xlsx");

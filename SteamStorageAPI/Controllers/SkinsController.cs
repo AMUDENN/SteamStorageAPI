@@ -68,7 +68,7 @@ namespace SteamStorageAPI.Controllers
             string Title,
             string MarketHashName,
             string MarketUrl);
-        
+
         public record BaseSkinsResponse(
             int Count,
             IEnumerable<BaseSkinResponse> Skins);
@@ -84,7 +84,7 @@ namespace SteamStorageAPI.Controllers
             int Count,
             int PagesCount,
             IEnumerable<SkinResponse> Skins);
-        
+
         public record SkinDynamicResponse(
             int Id,
             DateTime DateUpdate,
@@ -106,7 +106,7 @@ namespace SteamStorageAPI.Controllers
         [Validator<GetSkinRequestValidator>]
         public record GetSkinRequest(
             int SkinId);
-        
+
         public record GetBaseSkinsRequest(
             string? Filter);
 
@@ -195,59 +195,32 @@ namespace SteamStorageAPI.Controllers
         }
 
         private async Task<IEnumerable<SkinResponse>> GetSkinsResponseAsync(
-            IEnumerable<Skin> skins,
+            IQueryable<Skin> skins,
             User user,
             IEnumerable<int> markedSkinsIds,
             CancellationToken cancellationToken = default)
         {
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-            //TODO: Чисто на досуге посмотреть, можно ли это сделать через IQueryable
-
-            var skinsDynamics = _context.SkinsDynamics
-                .AsNoTracking()
-                .GroupBy(sd => sd.SkinId)
-                .Select(g => new
-                {
-                    SkinID = g.Key,
-                    Change7D = g.Any(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                        ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                        .OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                    g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                        .OrderBy(sd => sd.DateUpdate).First().Price) /
-                                   g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                       .OrderBy(sd => sd.DateUpdate).First().Price)
-                        : 0,
-                    Change30D = g.Any(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                        ? (double)((g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                        .OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                    g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                        .OrderBy(sd => sd.DateUpdate).First().Price) /
-                                   g.Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                       .OrderBy(sd => sd.DateUpdate).First().Price)
-                        : 0
-                });
-
-            var skinsResult = skins
-                .GroupJoin(
-                    skinsDynamics,
-                    s => s.Id,
-                    d => d.SkinID,
-                    (s, d) => new
-                    {
-                        Skin = s,
-                        Change7D = d.Any() ? d.First().Change7D : 0,
-                        Change30D = d.Any() ? d.First().Change30D : 0
-                    });
-
-            return await Task.WhenAll(skinsResult.Select(async x =>
-                new SkinResponse(
-                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                    (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate),
-                    x.Change7D,
-                    x.Change30D,
-                    markedSkinsIds.Any(y => y == x.Skin.Id)))
-            );
+            return await Task.WhenAll(skins
+                .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30)))
+                .AsEnumerable()
+                .Select(async x =>
+                    new SkinResponse(
+                        await _skinService.GetBaseSkinResponseAsync(x, cancellationToken),
+                        (decimal)((double)x.CurrentPrice * currencyExchangeRate),
+                        x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                            ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                           .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                       / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                           .OrderBy(y => y.DateUpdate).First().Price)
+                            : 0,
+                        x.SkinsDynamics.Count != 0
+                            ? (double)((x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                       / x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
+                            : 0,
+                        markedSkinsIds.Any(y => y == x.Id)))
+            ).WaitAsync(cancellationToken);
         }
 
         #endregion Methods
@@ -272,7 +245,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            Skin skin = await _context.Skins.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+            Skin skin = await _context.Skins.AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
 
@@ -311,7 +285,8 @@ namespace SteamStorageAPI.Controllers
 
             return Ok(new BaseSkinsResponse(await skins.CountAsync(cancellationToken),
                 await Task.WhenAll(skins.AsEnumerable()
-                    .Select(async x => await _skinService.GetBaseSkinResponseAsync(x, cancellationToken)))));
+                        .Select(async x => await _skinService.GetBaseSkinResponseAsync(x, cancellationToken)))
+                    .WaitAsync(cancellationToken)));
         }
 
         /// <summary>
@@ -343,9 +318,9 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Game)
                 .Where(x =>
-                (request.GameId == null || x.GameId == request.GameId)
-                && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
-                && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
+                    (request.GameId == null || x.GameId == request.GameId)
+                    && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
+                    && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -361,60 +336,36 @@ namespace SteamStorageAPI.Controllers
                             : skins.OrderByDescending(x => x.CurrentPrice);
                         break;
                     case SkinOrderName.Change7D:
-                        var skinsChange7DResult = skins.GroupJoin(
-                            _context.SkinsDynamics
-                                .Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-7))
-                                .GroupBy(sd => sd.SkinId)
-                                .Select(g => new
-                                {
-                                    SkinID = g.Key,
-                                    Change7D = g.Any()
-                                        ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                           g.OrderBy(sd => sd.DateUpdate).First().Price) /
-                                          g.OrderBy(sd => sd.DateUpdate).First().Price
-                                        : 0
-                                }),
-                            s => s.Id,
-                            d => d.SkinID,
-                            (s, d) => new
-                            {
-                                Skin = s,
-                                Change7D = d.Any() ? d.First().Change7D : 0
-                            });
-                        skins = (request.IsAscending.Value
-                                ? skinsChange7DResult
-                                    .OrderBy(result => result.Change7D)
-                                : skinsChange7DResult
-                                    .OrderByDescending(result => result.Change7D))
-                            .Select(result => result.Skin);
+                        skins = request.IsAscending.Value
+                            ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                               .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                           / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                               .OrderBy(y => y.DateUpdate).First().Price)
+                                : 0)
+                            : skins.OrderByDescending(x =>
+                                x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                    ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                                   .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                                   .OrderBy(y => y.DateUpdate).First().Price)
+                                    : 0);
                         break;
                     case SkinOrderName.Change30D:
-                        var skinsChange30DResult = skins.GroupJoin(
-                            _context.SkinsDynamics
-                                .Where(sd => sd.DateUpdate > DateTime.Now.AddDays(-30))
-                                .GroupBy(sd => sd.SkinId)
-                                .Select(g => new
-                                {
-                                    SkinID = g.Key,
-                                    Change30D = g.Any()
-                                        ? (g.OrderByDescending(sd => sd.DateUpdate).First().Price -
-                                           g.OrderBy(sd => sd.DateUpdate).First().Price) /
-                                          g.OrderBy(sd => sd.DateUpdate).First().Price
-                                        : 0
-                                }), 
-                            s => s.Id, 
-                            d => d.SkinID,
-                            (s, d) => new
-                            {
-                                Skin = s,
-                                Change30D = d.Any() ? d.First().Change30D : 0
-                            });
-                        skins = (request.IsAscending.Value
-                                ? skinsChange30DResult
-                                    .OrderBy(result => result.Change30D)
-                                : skinsChange30DResult
-                                    .OrderByDescending(result => result.Change30D))
-                            .Select(result => result.Skin);
+                        skins = request.IsAscending.Value
+                            ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                               .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                           / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                               .OrderBy(y => y.DateUpdate).First().Price)
+                                : 0)
+                            : skins.OrderByDescending(x =>
+                                x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                    ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                                   .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                                   .OrderBy(y => y.DateUpdate).First().Price)
+                                    : 0);
                         break;
                 }
             else
@@ -426,7 +377,7 @@ namespace SteamStorageAPI.Controllers
 
             skins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
 
-            return Ok(new SkinsResponse(skinsCount, 
+            return Ok(new SkinsResponse(skinsCount,
                 pagesCount == 0 ? 1 : pagesCount,
                 await GetSkinsResponseAsync(skins, user, markedSkinsIds, cancellationToken)));
         }
@@ -449,7 +400,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            Skin skin = await _context.Skins.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
+            Skin skin = await _context.Skins.AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
 

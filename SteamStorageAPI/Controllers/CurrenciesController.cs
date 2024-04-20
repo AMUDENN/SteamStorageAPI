@@ -3,11 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Models.SteamAPIModels.Price;
-using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Steam;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -39,12 +36,13 @@ namespace SteamStorageAPI.Controllers
         #endregion Constructor
 
         #region Records
-
+        
         public record CurrencyResponse(
             int Id,
             int SteamCurrencyId,
             string Title,
             string Mark,
+            string CultureInfo,
             double Price,
             DateTime DateUpdate);
         
@@ -60,13 +58,15 @@ namespace SteamStorageAPI.Controllers
         public record PostCurrencyRequest(
             int SteamCurrencyId,
             string Title,
-            string Mark);
+            string Mark,
+            string CultureInfo);
 
         [Validator<PutCurrencyRequestValidator>]
         public record PutCurrencyRequest(
             int CurrencyId,
             string Title,
-            string Mark);
+            string Mark,
+            string CultureInfo);
 
         [Validator<SetCurrencyRequestValidator>]
         public record SetCurrencyRequest(
@@ -97,6 +97,7 @@ namespace SteamStorageAPI.Controllers
                 currency.SteamCurrencyId,
                 currency.Title,
                 currency.Mark,
+                currency.CultureInfo,
                 lastDynamic?.Price ?? 0,
                 lastDynamic?.DateUpdate ?? DateTime.Now);
         }
@@ -124,6 +125,7 @@ namespace SteamStorageAPI.Controllers
                     x.SteamCurrencyId,
                     x.Title,
                     x.Mark,
+                    x.CultureInfo,
                     x.CurrencyDynamics.Count != 0
                         ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().Price
                         : 0,
@@ -200,7 +202,8 @@ namespace SteamStorageAPI.Controllers
             {
                 SteamCurrencyId = request.SteamCurrencyId,
                 Title = request.Title,
-                Mark = request.Mark
+                Mark = request.Mark,
+                CultureInfo = request.CultureInfo
             }, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -232,6 +235,7 @@ namespace SteamStorageAPI.Controllers
 
             currency.Title = request.Title;
             currency.Mark = request.Mark;
+            currency.CultureInfo = request.CultureInfo;
 
             await _context.SaveChangesAsync(cancellationToken);
 

@@ -174,7 +174,7 @@ namespace SteamStorageAPI.Controllers
                             x.SoldPrice,
                             x.SoldPrice * x.Count,
                             (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice),
-                            x.Description))));
+                            x.Description))).WaitAsync(cancellationToken));
         }
 
         #endregion Methods

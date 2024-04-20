@@ -52,7 +52,6 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
         CancellationToken cancellationToken = default)
     {
         //TODO: Performance Troubles
-
         Currency baseCurrency =
             await _context.Currencies.Include(x => x.CurrencyDynamics)
                 .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken) ??
@@ -129,7 +128,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         {
                             DateUpdate = DateTime.Now,
                             Price = Convert.ToDecimal(item.sell_price_text.Replace(baseCurrency.Mark, string.Empty),
-                                CultureInfo.InvariantCulture),
+                                new CultureInfo(baseCurrency.CultureInfo)),
                             SkinId = skin.Id
                         });
                     }

@@ -193,7 +193,7 @@ namespace SteamStorageAPI.Controllers
                             ((double)x.Skin.CurrentPrice * currencyExchangeRate - (double)x.BuyPrice) /
                             (double)x.BuyPrice,
                             x.Description)
-                    ))
+                    )).WaitAsync(cancellationToken)
             );
         }
 

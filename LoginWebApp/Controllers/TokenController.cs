@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace LoginWebApp.Controllers;
 
+[Route("[action]")]
 public class TokenController : Controller
 {
     #region Fields
@@ -27,6 +28,8 @@ public class TokenController : Controller
 
     public record SetTokenRequest(string Group, string Token);
 
+    public record TokenRequest(bool IsTokenEmpty = true);
+
     #endregion Records
 
     #region Methods
@@ -35,19 +38,18 @@ public class TokenController : Controller
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
-            return Token();
+            return RedirectToAction(nameof(Token), new { IsTokenEmpty = true });
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return Token(string.IsNullOrWhiteSpace(request.Token));
+        return RedirectToAction(nameof(Token), new { IsTokenEmpty = false });
     }
 
     [HttpGet(Name = "Token")]
-    public IActionResult Token(bool isTokenEmpty = true)
+    public IActionResult Token([FromQuery] TokenRequest request)
     {
-        return View(nameof(Token),
-            new TokenViewModel
-            {
-                IsTokenEmpty = isTokenEmpty
-            });
+        return View(new TokenViewModel
+        {
+            IsTokenEmpty = request.IsTokenEmpty
+        });
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

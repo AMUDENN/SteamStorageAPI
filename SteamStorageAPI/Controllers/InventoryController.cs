@@ -157,7 +157,7 @@ namespace SteamStorageAPI.Controllers
                             x.Count,
                             (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate),
                             (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count)
-                        ))));
+                        ))).WaitAsync(cancellationToken));
         }
 
         #endregion Methods

@@ -18,6 +18,8 @@ public class Currency
 
     public string Mark { get; set; } = null!;
 
+    public string CultureInfo { get; set; } = null!;
+
     public virtual ICollection<CurrencyDynamic> CurrencyDynamics { get; set; } = new List<CurrencyDynamic>();
 
     public virtual ICollection<User> Users { get; set; } = new List<User>();

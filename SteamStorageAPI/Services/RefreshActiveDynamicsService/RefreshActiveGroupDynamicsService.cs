@@ -37,15 +37,12 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
                 "Сегодня уже было выполнено обновление ActiveDynamics!");
 
-        //TODO: Оптимизировать надо
-
         List<ActiveGroupsDynamic> dynamics = [];
 
         IQueryable<ActiveGroup> activeGroups = _context.ActiveGroups
             .AsQueryable()
             .Include(x => x.Actives)
             .ThenInclude(x => x.Skin)
-            .ThenInclude(x => x.SkinsDynamics)
             .Include(x => x.User)
             .AsQueryable();
 

@@ -59,7 +59,7 @@ namespace SteamStorageAPI.Controllers
         
         public record UsersResponse(
             int Count,
-            IEnumerable<UserResponse?> Users);
+            IEnumerable<UserResponse> Users);
         
         public record GoalSumResponse(
             decimal? GoalSum);
@@ -76,13 +76,10 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<UserResponse?> GetUserResponseAsync(
-            User? user,
+        private async Task<UserResponse> GetUserResponseAsync(
+            User user,
             CancellationToken cancellationToken = default)
         {
-            if (user is null)
-                return null;
-
             if (user.Username is null || user.IconUrl is null || user.IconUrlMedium is null ||
                 user.IconUrlFull is null ||
                 (user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.Now.AddDays(-1)))
@@ -92,17 +89,18 @@ namespace SteamStorageAPI.Controllers
                     await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId),
                         cancellationToken);
 
-                if (steamUserResult is null)
-                    return null;
+                if (steamUserResult is not null)
+                {
+                    SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
 
-                SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
+                    user.Username = steamUser?.personaname;
+                    user.IconUrl = steamUser?.avatar.Replace("https://avatars.steamstatic.com/", string.Empty);
+                    user.IconUrlMedium =
+                        steamUser?.avatarmedium.Replace("https://avatars.steamstatic.com/", string.Empty);
+                    user.IconUrlFull = steamUser?.avatarfull.Replace("https://avatars.steamstatic.com/", string.Empty);
 
-                user.Username = steamUser?.personaname;
-                user.IconUrl = steamUser?.avatar.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.IconUrlMedium = steamUser?.avatarmedium.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.IconUrlFull = steamUser?.avatarfull.Replace("https://avatars.steamstatic.com/", string.Empty);
-
-                user.DateUpdate = DateTime.Now;
+                    user.DateUpdate = DateTime.Now;
+                }
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -112,7 +110,7 @@ namespace SteamStorageAPI.Controllers
 
             Page? page = await _context.Pages.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken);
-            
+
             return new(user.Id,
                 user.SteamId.ToString(),
                 SteamApi.GetUserUrl(user.SteamId),
@@ -148,7 +146,8 @@ namespace SteamStorageAPI.Controllers
             List<User> users = await _context.Users.AsNoTracking().ToListAsync(cancellationToken);
 
             return Ok(new UsersResponse(users.Count,
-                await Task.WhenAll(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)))));
+                await Task.WhenAll(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)))
+                    .WaitAsync(cancellationToken)));
         }
 
         /// <summary>

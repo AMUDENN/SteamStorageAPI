@@ -15,5 +15,8 @@ public sealed class PostCurrencyRequestValidator : AbstractValidator<CurrenciesC
         
         RuleFor(expression => expression.Mark)
             .Length(1, 10).WithMessage("Длина названия валюты должна быть от 1 до 10 символов");
+        
+        RuleFor(expression => expression.CultureInfo)
+            .Length(1, 10).WithMessage("Длина CultureInfo должна быть от 1 до 10 символов");
     }
 }
