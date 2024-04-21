@@ -27,11 +27,6 @@ public static class Program
         {
             app.UseHsts();
         }
-        
-        //PathBase
-        string pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE") 
-                          ?? throw new ArgumentNullException(nameof(pathBase));
-        app.UsePathBase(new(pathBase));
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new()

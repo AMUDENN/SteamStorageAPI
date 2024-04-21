@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using LoginWebApp.Models;
+using LoginWebApp.Utilities;
 using LoginWebApp.Utilities.TokenHub;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -38,9 +39,9 @@ public class TokenController : Controller
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
-            return RedirectToAction(nameof(Token), new { IsTokenEmpty = true });
+            return Redirect($"{ProgramConstants.TOKEN_ADRESS}/Token?IsTokenEmpty={true}");
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return RedirectToAction(nameof(Token), new { IsTokenEmpty = false });
+        return Redirect($"{ProgramConstants.TOKEN_ADRESS}/Token?IsTokenEmpty={false}");
     }
 
     [HttpGet(Name = "Token")]
