@@ -267,7 +267,19 @@ public static class Program
 
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
+            app.UseSwagger(c =>
+            {
+                c.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
+                {
+                    swaggerDoc.Servers = new List<OpenApiServer>
+                    {
+                        new()
+                        {
+                            Url = $"{httpReq.Scheme}://{httpReq.Host.Value}/api/"
+                        }
+                    };
+                });
+            });
             app.UseSwaggerUI();
         }
 
@@ -297,9 +309,6 @@ public static class Program
 
         //Middlewares
         app.UseMiddleware<RequestLoggingMiddleware>();
-        
-        //PathBase
-        app.UsePathBase(new("/api"));
 
         app.MapControllers();
 

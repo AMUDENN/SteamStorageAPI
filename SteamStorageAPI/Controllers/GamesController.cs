@@ -15,7 +15,7 @@ namespace SteamStorageAPI.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]/[action]")]
+    [Route("[controller]/[action]")]
 
     public class GamesController : ControllerBase
     {

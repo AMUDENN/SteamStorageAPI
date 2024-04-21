@@ -12,7 +12,7 @@ using SteamStorageAPI.Utilities.Validation.Validators.Pages;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]/[action]")]
+    [Route("[controller]/[action]")]
     public class PagesController : ControllerBase
     {
         #region Fields
