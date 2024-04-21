@@ -6,7 +6,7 @@ services:
     env_file:
       - env/api.env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Release
       - ASPNETCORE_URLS=https://+:443;http://+:80
     ports:
       - "8081:80"
@@ -22,7 +22,7 @@ services:
     env_file:
       - env/loginwebapp.env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Release
       - ASPNETCORE_URLS=https://+:443;http://+:80
     ports:
       - "8083:80"

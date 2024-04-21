@@ -46,28 +46,19 @@ public static class Program
             });
         builder.Services.AddEndpointsApiExplorer();
 
-        //JwtOptions Initialize
-        try
+        if (builder.Environment.IsDevelopment())
         {
-            //Environment
-            JwtOptions.InitializeEnvironmentVariables();
-        }
-        catch
-        {
-            //UserSecrets
+            //JwtOptions Initialize
             JwtOptions.InitializeConfig(builder.Configuration);
-        }
-
-        //SteamApi Initialize
-        try
-        {
-            //Environment
-            SteamApi.InitializeEnvironmentVariables();
-        }
-        catch
-        {
-            //UserSecrets
+            //SteamApi Initialize
             SteamApi.InitializeConfig(builder.Configuration);
+        }
+        else
+        {
+            //JwtOptions Initialize
+            JwtOptions.InitializeEnvironmentVariables();
+            //SteamApi Initialize
+            SteamApi.InitializeEnvironmentVariables();
         }
 
         //Services
@@ -148,27 +139,23 @@ public static class Program
         //DataBase
         string connectionStringSteamStorage;
         string connectionStringHealthChecks;
-        try
-        {
-            //Environment
-            connectionStringSteamStorage = Environment.GetEnvironmentVariable("SteamStorageDB")
-                                           ?? throw new ArgumentNullException(
-                                               nameof(connectionStringSteamStorage));
-
-            connectionStringHealthChecks = Environment.GetEnvironmentVariable("SteamStorageHealthChecksDB")
-                                           ?? throw new ArgumentNullException(
-                                               nameof(connectionStringHealthChecks));
-        }
-        catch
+        if (builder.Environment.IsDevelopment())
         {
             //UserSecrets
             connectionStringSteamStorage = builder.Configuration.GetConnectionString("SteamStorage")
-                                           ?? throw new ArgumentNullException(
-                                               nameof(connectionStringSteamStorage));
+                                           ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
 
             connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks")
-                                           ?? throw new ArgumentNullException(
-                                               nameof(connectionStringHealthChecks));
+                                           ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
+        }
+        else
+        {
+            //Environment
+            connectionStringSteamStorage = Environment.GetEnvironmentVariable("SteamStorageDB")
+                                           ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
+
+            connectionStringHealthChecks = Environment.GetEnvironmentVariable("SteamStorageHealthChecksDB")
+                                           ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
         }
 
         builder.Services.AddDbContext<SteamStorageContext>(
@@ -267,6 +254,11 @@ public static class Program
 
         if (app.Environment.IsDevelopment())
         {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+        else
+        {
             app.UseSwagger(swaggerOptions =>
             {
                 swaggerOptions.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
@@ -297,7 +289,7 @@ public static class Program
         app.MapHealthChecks("/api/health", CreateHealthCheckOptions(reg => !reg.Tags.Contains("steam")));
 
         app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
-        
+
         app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
 
         app.MapHealthChecks("/api/health-all", CreateHealthCheckOptions(_ => true))
