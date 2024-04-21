@@ -267,15 +267,19 @@ public static class Program
 
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger(c =>
+            app.UseSwagger(swaggerOptions =>
             {
-                c.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
+                swaggerOptions.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
                 {
                     swaggerDoc.Servers = new List<OpenApiServer>
                     {
                         new()
                         {
-                            Url = $"{httpReq.Scheme}://{httpReq.Host.Value}/api/"
+                            Url = $"https://{httpReq.Host.Value}/api/"
+                        },
+                        new()
+                        {
+                            Url = $"http://{httpReq.Host.Value}/api/"
                         }
                     };
                 });
