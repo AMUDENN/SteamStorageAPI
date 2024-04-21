@@ -297,8 +297,9 @@ public static class Program
 
         //Middlewares
         app.UseMiddleware<RequestLoggingMiddleware>();
-
-        //app.UseHttpsRedirection();
+        
+        //PathBase
+        app.UsePathBase(new("/api"));
 
         app.MapControllers();
 
