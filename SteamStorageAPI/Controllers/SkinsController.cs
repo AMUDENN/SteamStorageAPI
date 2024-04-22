@@ -210,13 +210,14 @@ namespace SteamStorageAPI.Controllers
                         await _skinService.GetBaseSkinResponseAsync(x, cancellationToken),
                         (decimal)((double)x.CurrentPrice * currencyExchangeRate),
                         x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                            ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                           .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                            ? (double)((x.CurrentPrice - x.SkinsDynamics
+                                           .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                           .OrderBy(y => y.DateUpdate).First().Price)
                                        / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
                                            .OrderBy(y => y.DateUpdate).First().Price)
                             : 0,
                         x.SkinsDynamics.Count != 0
-                            ? (double)((x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                            ? (double)((x.CurrentPrice - x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
                                        / x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
                             : 0,
                         markedSkinsIds.Any(y => y == x.Id)))
@@ -338,15 +339,17 @@ namespace SteamStorageAPI.Controllers
                     case SkinOrderName.Change7D:
                         skins = request.IsAscending.Value
                             ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                               .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                ? (double)((x.CurrentPrice - x.SkinsDynamics
+                                               .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                               .OrderBy(y => y.DateUpdate).First().Price)
                                            / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
                                                .OrderBy(y => y.DateUpdate).First().Price)
                                 : 0)
                             : skins.OrderByDescending(x =>
                                 x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                    ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                                   .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                    ? (double)((x.CurrentPrice - x.SkinsDynamics
+                                                   .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                                   .OrderBy(y => y.DateUpdate).First().Price)
                                                / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
                                                    .OrderBy(y => y.DateUpdate).First().Price)
                                     : 0);
@@ -354,15 +357,17 @@ namespace SteamStorageAPI.Controllers
                     case SkinOrderName.Change30D:
                         skins = request.IsAscending.Value
                             ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                               .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                ? (double)((x.CurrentPrice - x.SkinsDynamics
+                                               .Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                               .OrderBy(y => y.DateUpdate).First().Price)
                                            / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
                                                .OrderBy(y => y.DateUpdate).First().Price)
                                 : 0)
                             : skins.OrderByDescending(x =>
                                 x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                    ? (double)((x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                                   .OrderBy(y => y.DateUpdate).First().Price - x.CurrentPrice)
+                                    ? (double)((x.CurrentPrice - x.SkinsDynamics
+                                                   .Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
+                                                   .OrderBy(y => y.DateUpdate).First().Price)
                                                / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
                                                    .OrderBy(y => y.DateUpdate).First().Price)
                                     : 0);
