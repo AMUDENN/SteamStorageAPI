@@ -49,19 +49,29 @@ namespace SteamStorageAPI.Controllers
             string? ImageUrlMedium,
             string? ImageUrlFull,
             string? Nickname,
+            int RoleId,
             string Role,
             int StartPageId,
             string StartPage,
             int CurrencyId,
             DateTime DateRegistration,
             decimal? GoalSum);
-        
+
         public record UsersResponse(
             int Count,
+            int PagesCount,
             IEnumerable<UserResponse> Users);
-        
+
+        public record UsersCountResponse(
+            int Count);
+
         public record GoalSumResponse(
             decimal? GoalSum);
+
+        [Validator<GetUsersRequestValidator>]
+        public record GetUsersRequest(
+            int PageNumber,
+            int PageSize);
 
         [Validator<GetUserRequestValidator>]
         public record GetUserRequest(
@@ -117,6 +127,7 @@ namespace SteamStorageAPI.Controllers
                 user.IconUrlMedium is null ? null : SteamApi.GetUserIconUrl(user.IconUrlMedium),
                 user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),
                 user.Username?.Trim([' ']),
+                user.RoleId,
                 role?.Title ?? "Роль не найдена",
                 user.StartPageId,
                 page?.Title ?? "Стартовая страница не найдена",
@@ -140,13 +151,39 @@ namespace SteamStorageAPI.Controllers
         [HttpGet(Name = "GetUsers")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UsersResponse>> GetUsers(
+            [FromQuery] GetUsersRequest request,
             CancellationToken cancellationToken = default)
         {
-            List<User> users = await _context.Users.AsNoTracking().ToListAsync(cancellationToken);
+            IQueryable<User> users = _context.Users.AsNoTracking();
 
-            return Ok(new UsersResponse(users.Count,
-                await Task.WhenAll(users.Select(async x => await GetUserResponseAsync(x, cancellationToken)))
+            int usersCount = await users.CountAsync(cancellationToken);
+
+            int pagesCount = (int)Math.Ceiling((double)usersCount / request.PageSize);
+
+            users = users.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
+
+            return Ok(new UsersResponse(usersCount,
+                pagesCount == 0 ? 1 : pagesCount,
+                await Task.WhenAll(users
+                        .AsEnumerable()
+                        .Select(async x => await GetUserResponseAsync(x, cancellationToken)))
                     .WaitAsync(cancellationToken)));
+        }
+
+        /// <summary>
+        /// Получение количества пользователей
+        /// </summary>
+        /// <response code="200">Возвращает количество пользователей</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpGet(Name = "GetUsersCount")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<UsersCountResponse>> GetUsersCount(
+            CancellationToken cancellationToken = default)
+        {
+            return Ok(new UsersCountResponse(await _context.Users.CountAsync(cancellationToken)));
         }
 
         /// <summary>
@@ -164,7 +201,8 @@ namespace SteamStorageAPI.Controllers
             [FromQuery] GetUserRequest request,
             CancellationToken cancellationToken = default)
         {
-            User user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
+            User user = await _context.Users.AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
@@ -191,7 +229,7 @@ namespace SteamStorageAPI.Controllers
 
             return Ok(await GetUserResponseAsync(user, cancellationToken));
         }
-        
+
         /// <summary>
         /// Получение информацию о финансовой цели текущего пользователя
         /// </summary>
