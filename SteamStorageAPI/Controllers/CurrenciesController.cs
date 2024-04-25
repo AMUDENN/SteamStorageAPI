@@ -11,7 +11,6 @@ using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class CurrenciesController : ControllerBase
@@ -113,6 +112,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetCurrencies")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<CurrenciesResponse>> GetCurrencies(
@@ -144,6 +144,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Валюты с таким Id не существует</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetCurrency")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<CurrencyResponse>> GetCurrency(
@@ -165,6 +166,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetCurrentCurrency")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<CurrencyResponse>> GetCurrentCurrency(
@@ -192,8 +194,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
-        [HttpPost(Name = "PostCurrency")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpPost(Name = "PostCurrency")]
         public async Task<ActionResult> PostCurrency(
             PostCurrencyRequest request,
             CancellationToken cancellationToken = default)
@@ -223,8 +225,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Валюты с таким Id не существует</response>
         /// <response code="499">Операция отменена</response>
-        [HttpPut(Name = "PutCurrencyInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpPut(Name = "PutCurrencyInfo")]
         public async Task<ActionResult> PutCurrencyInfo(
             PutCurrencyRequest request,
             CancellationToken cancellationToken = default)
@@ -250,6 +252,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "SetCurrency")]
         public async Task<ActionResult> SetCurrency(
             SetCurrencyRequest request,
@@ -283,8 +286,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Валюты с таким Id не существует</response>
         /// <response code="499">Операция отменена</response>
-        [HttpDelete(Name = "DeleteCurrency")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpDelete(Name = "DeleteCurrency")]
         public async Task<ActionResult> DeleteCurrency(
             DeleteCurrencyRequest request,
             CancellationToken cancellationToken = default)

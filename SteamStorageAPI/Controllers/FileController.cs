@@ -14,7 +14,6 @@ using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class FileController : ControllerBase
@@ -50,6 +49,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetExcelFile")]
         [Produces(MediaTypeNames.Application.Octet)]
         public async Task<ActionResult> GetExcelFile(

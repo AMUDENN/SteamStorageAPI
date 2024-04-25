@@ -15,7 +15,6 @@ using SteamStorageAPI.Utilities.Validation.Validators.Skins;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class SkinsController : ControllerBase
@@ -236,6 +235,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSkinInfo")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinResponse>> GetSkinInfo(
@@ -271,6 +271,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetBaseSkins")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<BaseSkinsResponse>> GetBaseSkins(
@@ -298,6 +299,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSkins")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinsResponse>> GetSkins(
@@ -395,6 +397,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSkinDynamics")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinDynamicStatsResponse>> GetSkinDynamics(
@@ -429,6 +432,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSkinPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinPagesCountResponse>> GetSkinPagesCount(
@@ -469,6 +473,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSteamSkinsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount(
@@ -497,6 +502,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSavedSkinsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SavedSkinsCountResponse>> GetSavedSkinsCount(
@@ -539,8 +545,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
         /// <response code="499">Операция отменена</response>
-        [HttpPost(Name = "PostSkin")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpPost(Name = "PostSkin")]
         public async Task<ActionResult> PostSkin(
             PostSkinRequest request,
             CancellationToken cancellationToken = default)
@@ -587,6 +593,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPost(Name = "SetMarkedSkin")]
         public async Task<ActionResult> SetMarkedSkin(
             SetMarkedSkinRequest request,
@@ -630,6 +637,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Предмета с таким Id в таблице отмеченных предметов нет или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpDelete(Name = "DeleteMarkedSkin")]
         public async Task<ActionResult> DeleteMarkedSkin(
             DeleteMarkedSkinRequest request,

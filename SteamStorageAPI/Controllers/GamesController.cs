@@ -13,10 +13,8 @@ using SteamStorageAPI.Utilities.Validation.Validators.Games;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
-
     public class GamesController : ControllerBase
     {
         #region Fields
@@ -100,6 +98,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetGames")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<GamesResponse>> GetGames(
@@ -123,8 +122,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
-        [HttpPost(Name = "PostGame")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpPost(Name = "PostGame")]
         public async Task<ActionResult> PostGame(
             PostGameRequest request,
             CancellationToken cancellationToken = default)
@@ -160,8 +159,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
         /// <response code="499">Операция отменена</response>
-        [HttpPut(Name = "PutGameInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpPut(Name = "PutGameInfo")]
         public async Task<ActionResult> PutGameInfo(
             PutGameRequest request,
             CancellationToken cancellationToken = default)
@@ -193,8 +192,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует</response>
         /// <response code="499">Операция отменена</response>
-        [HttpDelete(Name = "DeleteGame")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpDelete(Name = "DeleteGame")]
         public async Task<ActionResult> DeleteGame(
             DeleteGameRequest request,
             CancellationToken cancellationToken = default)

@@ -11,7 +11,6 @@ using SteamStorageAPI.Utilities.Validation.Validators.Roles;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Authorize(Roles = nameof(Role.Roles.Admin))]
     [Route("[controller]/[action]")]
     public class RolesController : ControllerBase
     {
@@ -57,6 +56,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpGet(Name = "GetRoles")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<RolesResponse>> GetRoles(
@@ -79,6 +79,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Роли с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize(Roles = nameof(Role.Roles.Admin))]
         [HttpPut(Name = "SetRole")]
         public async Task<ActionResult> SetRole(
             SetRoleRequest request,

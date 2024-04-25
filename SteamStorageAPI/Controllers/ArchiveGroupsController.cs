@@ -11,7 +11,6 @@ using SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class ArchiveGroupsController : ControllerBase
@@ -155,6 +154,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchiveGroups")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchiveGroupsResponse>> GetArchiveGroups(
@@ -217,6 +217,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchiveGroupsStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchiveGroupsStatisticResponse>> GetArchiveGroupsStatistic(
@@ -305,6 +306,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchiveGroupsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchiveGroupsCountResponse>> GetArchiveGroupsCount(
@@ -333,6 +335,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPost(Name = "PostArchiveGroup")]
         public async Task<ActionResult> PostArchiveGroup(
             PostArchiveGroupRequest request,
@@ -368,6 +371,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "PutArchiveGroup")]
         public async Task<ActionResult> PutArchiveGroup(
             PutArchiveGroupRequest request,
@@ -405,6 +409,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpDelete(Name = "DeleteArchiveGroup")]
         public async Task<ActionResult> DeleteArchiveGroup(
             DeleteArchiveGroupRequest request,

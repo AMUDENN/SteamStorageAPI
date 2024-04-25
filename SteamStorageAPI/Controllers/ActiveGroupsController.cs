@@ -12,7 +12,6 @@ using SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class ActiveGroupsController : ControllerBase
@@ -185,6 +184,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActiveGroups")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActiveGroupsResponse>> GetActiveGroups(
@@ -248,6 +248,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActiveGroupsStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActiveGroupsStatisticResponse>> GetActiveGroupsStatistic(
@@ -340,6 +341,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActiveGroupDynamics")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActiveGroupDynamicStatsResponse>> GetActiveGroupDynamics(
@@ -385,6 +387,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActiveGroupsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActiveGroupsCountResponse>> GetActiveGroupsCount(
@@ -413,6 +416,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPost(Name = "PostActiveGroup")]
         public async Task<ActionResult> PostActiveGroup(
             PostActiveGroupRequest request,
@@ -449,6 +453,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "PutActiveGroup")]
         public async Task<ActionResult> PutActiveGroup(
             PutActiveGroupRequest request,
@@ -487,6 +492,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpDelete(Name = "DeleteActiveGroup")]
         public async Task<ActionResult> DeleteActiveGroup(
             DeleteActiveGroupRequest request,

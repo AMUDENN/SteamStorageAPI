@@ -10,7 +10,6 @@ using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class StatisticsController : ControllerBase
@@ -86,6 +85,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetInvestmentSum")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<InvestmentSumResponse>> GetInvestmentSum(
@@ -137,6 +137,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetFinancialGoal")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<FinancialGoalResponse>> GetFinancialGoal(
@@ -187,6 +188,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActiveStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActiveStatisticResponse>> GetActiveStatistic(
@@ -231,6 +233,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchiveStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchiveStatisticResponse>> GetArchiveStatistic(
@@ -269,6 +272,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetInventoryStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<InventoryStatisticResponse>> GetInventoryStatistic(
@@ -320,6 +324,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetItemsCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ItemsCountResponse>> GetItemsCount(

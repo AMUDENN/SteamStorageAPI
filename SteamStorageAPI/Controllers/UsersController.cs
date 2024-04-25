@@ -13,7 +13,6 @@ using SteamStorageAPI.Utilities.Validation.Validators.Users;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class UsersController : ControllerBase
@@ -137,8 +136,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="499">Операция отменена</response>
-        [HttpGet(Name = "GetUsers")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpGet(Name = "GetUsers")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UsersResponse>> GetUsers(
             CancellationToken cancellationToken = default)
@@ -158,8 +157,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
-        [HttpGet(Name = "GetUserInfo")]
         [Authorize(Roles = nameof(Role.Roles.Admin))]
+        [HttpGet(Name = "GetUserInfo")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UserResponse>> GetUserInfo(
             [FromQuery] GetUserRequest request,
@@ -180,6 +179,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetCurrentUserInfo")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<UserResponse>> GetCurrentUserInfo(
@@ -200,6 +200,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetCurrentUserGoalSum")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<GoalSumResponse>> GetCurrentUserGoalSum(
@@ -224,6 +225,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "PutGoalSum")]
         public async Task<ActionResult> PutGoalSum(
             PutGoalSumRequest request,
@@ -252,6 +254,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpDelete(Name = "DeleteUser")]
         public async Task<ActionResult> DeleteUser(
             CancellationToken cancellationToken = default)

@@ -13,7 +13,6 @@ using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class ArchivesController : ControllerBase
@@ -189,6 +188,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchives")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchivesResponse>> GetArchives(
@@ -260,6 +260,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchivesStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchivesStatisticResponse>> GetArchivesStatistic(
@@ -295,6 +296,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchivesPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchivesPagesCountResponse>> GetArchivesPagesCount(
@@ -330,6 +332,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetArchivesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ArchivesCountResponse>> GetArchivesCount(
@@ -365,6 +368,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPost(Name = "PostArchive")]
         public async Task<ActionResult> PostArchive(
             PostArchiveRequest request,
@@ -411,6 +415,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Элемента архива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "PutArchive")]
         public async Task<ActionResult> PutArchive(
             PutArchiveRequest request,
@@ -463,6 +468,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Элемента архива с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpDelete(Name = "DeleteArchive")]
         public async Task<ActionResult> DeleteArchive(
             DeleteArchiveRequest request,

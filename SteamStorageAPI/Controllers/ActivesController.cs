@@ -14,7 +14,6 @@ using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class ActivesController : ControllerBase
@@ -209,6 +208,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActives")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesResponse>> GetActives(
@@ -283,6 +283,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActivesStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesStatisticResponse>> GetActivesStatistic(
@@ -321,6 +322,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActivesPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesPagesCountResponse>> GetActivesPagesCount(
@@ -356,6 +358,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetActivesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<ActivesCountResponse>> GetActivesCount(
@@ -391,6 +394,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPost(Name = "PostActive")]
         public async Task<ActionResult> PostActive(
             PostActiveRequest request,
@@ -436,6 +440,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Актива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "PutActive")]
         public async Task<ActionResult> PutActive(
             PutActiveRequest request,
@@ -483,6 +488,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Актива с таким Id не существует, группы архива с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPut(Name = "SoldActive")]
         public async Task<ActionResult> SoldActive(
             SoldActiveRequest request,
@@ -539,6 +545,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpDelete(Name = "DeleteActive")]
         public async Task<ActionResult> DeleteActive(
             DeleteActiveRequest request,

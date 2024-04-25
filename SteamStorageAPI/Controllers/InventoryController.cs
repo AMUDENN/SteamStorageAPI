@@ -16,7 +16,6 @@ using static SteamStorageAPI.Controllers.SkinsController;
 
 namespace SteamStorageAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]/[action]")]
     public class InventoryController : ControllerBase
@@ -172,6 +171,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetInventory")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<InventoriesResponse>> GetInventory(
@@ -233,6 +233,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetInventoriesStatistic")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<InventoriesStatisticResponse>> GetInventoriesStatistic(
@@ -305,6 +306,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetInventoryPagesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<InventoryPagesCountResponse>> GetInventoryPagesCount(
@@ -338,6 +340,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpGet(Name = "GetSavedInventoriesCount")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SavedInventoriesCountResponse>> GetSavedInventoriesCount(
@@ -371,6 +374,7 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
+        [Authorize]
         [HttpPost(Name = "RefreshInventory")]
         public async Task<ActionResult> RefreshInventory(
             RefreshInventoryRequest request,

@@ -106,8 +106,8 @@ namespace SteamStorageAPI.Controllers
         /// <response code="401">Пользователь не прошёл авторизацию</response>
         /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
         /// <response code="499">Операция отменена</response>
-        [HttpPut(Name = "SetStartPage")]
         [Authorize]
+        [HttpPut(Name = "SetStartPage")]
         public async Task<ActionResult> SetStartPage(
             SetPageRequest request,
             CancellationToken cancellationToken = default)
