@@ -45,6 +45,9 @@ namespace SteamStorageAPI.Controllers
 
         #region Records
 
+        public record GetAuthUrlRequest(
+            string? ReturnTo);
+        
         public record AuthUrlResponse(
             string Url,
             string Group);
@@ -53,7 +56,7 @@ namespace SteamStorageAPI.Controllers
             string Token);
 
         public record SteamAuthRequest(
-            [FromQuery(Name = "group")] string Group,
+            [FromQuery(Name = "requestInfo")] string RequestInfo,
             [FromQuery(Name = "openid.ns")] string Ns,
             [FromQuery(Name = "openid.mode")] string Mode,
             [FromQuery(Name = "openid.op_endpoint")] string OpEndpoint,
@@ -93,12 +96,14 @@ namespace SteamStorageAPI.Controllers
             return user;
         }
 
-        private (string Url, string Group) GetSteamAuthInfo(string? group = null)
+        private (string Url, string Group) GetSteamAuthInfo(string? returnTo = null, string? group = null)
         {
             group ??= Guid.NewGuid().ToString();
             string baseUrl =
                 $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/";
-            return (SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback?group={group}", baseUrl), group);
+            return returnTo is null
+                ? (SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback?requestInfo={group}", baseUrl), group)
+                : (SteamApi.GetAuthUrl($"{baseUrl}api/Authorize/SteamAuthCallback?requestInfo={group}_{returnTo}", baseUrl), group);
         }
 
         private bool CheckCookieEqual(long steamId)
@@ -121,9 +126,10 @@ namespace SteamStorageAPI.Controllers
         [HttpGet(Name = "GetAuthUrl")]
         [Produces(MediaTypeNames.Application.Json)]
         public ActionResult<AuthUrlResponse> GetAuthUrl(
+            [FromQuery] GetAuthUrlRequest request,
             CancellationToken cancellationToken = default)
         {
-            (string Url, string Group) steamAuth = GetSteamAuthInfo();
+            (string Url, string Group) steamAuth = GetSteamAuthInfo(request.ReturnTo);
             return Ok(new AuthUrlResponse(steamAuth.Url, steamAuth.Group));
         }
 
@@ -141,11 +147,20 @@ namespace SteamStorageAPI.Controllers
 
             HttpRequestMessage request = new(HttpMethod.Post, SteamApi.GetAuthCheckUrl())
             {
-                Content = SteamApi.GetAuthCheckContent(steamAuthRequest.Ns, steamAuthRequest.OpEndpoint,
-                    steamAuthRequest.ClaimedId, steamAuthRequest.Identity, steamAuthRequest.ReturnTo,
-                    steamAuthRequest.ResponseNonce, steamAuthRequest.AssocHandle, steamAuthRequest.Signed,
+                Content = SteamApi.GetAuthCheckContent(steamAuthRequest.Ns,
+                    steamAuthRequest.OpEndpoint,
+                    steamAuthRequest.ClaimedId,
+                    steamAuthRequest.Identity,
+                    steamAuthRequest.ReturnTo,
+                    steamAuthRequest.ResponseNonce,
+                    steamAuthRequest.AssocHandle,
+                    steamAuthRequest.Signed,
                     steamAuthRequest.Sig)
             };
+
+            string[] info = steamAuthRequest.RequestInfo.Split('_');
+            string group = info.First();
+            string? returnTo = info.Length > 1 ? info[1] : null;
 
             HttpResponseMessage response =
                 await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -157,7 +172,7 @@ namespace SteamStorageAPI.Controllers
                 Convert.ToInt64(steamAuthRequest.ClaimedId[(steamAuthRequest.ClaimedId.LastIndexOf('/') + 1)..]);
 
             if (!(authResult || CheckCookieEqual(steamId)))
-                return Redirect(GetSteamAuthInfo(steamAuthRequest.Group).Url);
+                return Redirect(GetSteamAuthInfo(returnTo, group).Url);
 
             if (authResult)
                 HttpContext.Response.Cookies.Append(nameof(SteamAuthRequest), _cryptographyService.Sha512(steamId));
@@ -167,8 +182,9 @@ namespace SteamStorageAPI.Controllers
 
             await _context.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
 
-            return Redirect(
-                $"{TOKEN_ADRESS}SetToken?Group={steamAuthRequest.Group}&Token={_jwtProvider.Generate(user)}");
+            return Redirect(returnTo is not null
+                ? $"{returnTo}?Group={group}&Token={_jwtProvider.Generate(user)}"
+                : $"{TOKEN_ADRESS}SetToken?Group={group}&Token={_jwtProvider.Generate(user)}");
         }
 
         /// <summary>
