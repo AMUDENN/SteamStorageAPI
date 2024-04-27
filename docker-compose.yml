@@ -47,4 +47,4 @@ services:
       - ~/.aspnet/https:/https:ro
     build:
       context: .
-      dockerfile: LoginWebApp/Dockerfile
+      dockerfile: AdminPanel/Dockerfile
