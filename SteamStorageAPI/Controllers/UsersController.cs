@@ -67,6 +67,9 @@ namespace SteamStorageAPI.Controllers
 
         public record GoalSumResponse(
             decimal? GoalSum);
+        
+        public record HasAccessToAdminPanelResponse(
+            bool HasAccess);
 
         [Validator<GetUsersRequestValidator>]
         public record GetUsersRequest(
@@ -249,6 +252,27 @@ namespace SteamStorageAPI.Controllers
                             "Пользователя с таким Id не существует");
 
             return Ok(new GoalSumResponse(user.GoalSum));
+        }
+
+        /// <summary>
+        /// Получение информации о том, есть ли у текущего пользователя доступ к админ панели
+        /// </summary>
+        /// <response code="200">Возвращает информацию о том, есть ли у текущего пользователя доступ к админ панели</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize]
+        [HttpGet(Name = "GetHasAccessToAdminPanel")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<HasAccessToAdminPanelResponse>> GetHasAccessToAdminPanel(
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            return Ok(new HasAccessToAdminPanelResponse(user.Role.Title == Role.Roles.Admin.ToString()));
         }
 
         #endregion GET
