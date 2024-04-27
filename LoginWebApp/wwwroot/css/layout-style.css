@@ -52,3 +52,16 @@
 .right-footer p {
     width: 100%;
 }
+
+
+@media screen and (max-width: 930px) {
+    .center-header, .right-header, .left-footer, .center-footer {
+        display: none;
+    }
+    .left-header, .right-footer {
+        width: 100%;
+    }
+    .left-header {
+        justify-content: center;
+    }
+}

@@ -58,9 +58,25 @@ html, body {
     --bg-color-dark: #252C32;
     --fg-color-light: #D2DADD;
     --fg-color-dark: #0F141A;
+
+    --scrollbar-thumb-color: #7C8387;
     
     --large-text: 40px;
     --big-text: 32px;
     --middle-text: 24px;
     --small-text: 18px;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb-color);
+    border-radius: 20px;
+    border: 1px solid transparent;
 }
