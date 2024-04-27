@@ -1,25 +1,28 @@
 ﻿using System.Diagnostics;
 using LoginWebApp.Models;
-using LoginWebApp.Utilities;
 using LoginWebApp.Utilities.TokenHub;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
 namespace LoginWebApp.Controllers;
 
-[Route("[action]")]
+[Route("token/[action]")]
 public class TokenController : Controller
 {
     #region Fields
 
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IHubContext<TokenHub> _hubContext;
 
     #endregion Fields
 
     #region Constructor
 
-    public TokenController(IHubContext<TokenHub> hubContext)
+    public TokenController(
+        IHttpContextAccessor httpContextAccessor,
+        IHubContext<TokenHub> hubContext)
     {
+        _httpContextAccessor = httpContextAccessor;
         _hubContext = hubContext;
     }
 
@@ -34,17 +37,18 @@ public class TokenController : Controller
     #endregion Records
 
     #region Methods
-
-    [HttpGet(Name = "SetToken")]
+    
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
+        string baseUrl =
+            $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/token";
+        
         if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
-            return Redirect($"{ProgramConstants.TOKEN_ADRESS}/Token?IsTokenEmpty={true}");
+            return Redirect($"{baseUrl}/Token?IsTokenEmpty={true}");
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return Redirect($"{ProgramConstants.TOKEN_ADRESS}/Token?IsTokenEmpty={false}");
+        return Redirect($"{baseUrl}/Token?IsTokenEmpty={false}");
     }
-
-    [HttpGet(Name = "Token")]
+    
     public IActionResult Token([FromQuery] TokenRequest request)
     {
         return View(new TokenViewModel

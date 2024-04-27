@@ -12,6 +12,8 @@ public static class Program
         builder.Services.AddControllersWithViews();
 
         builder.Services.AddSignalR();
+        
+        builder.Services.AddHttpContextAccessor();
 
         return builder;
     }
@@ -43,7 +45,7 @@ public static class Program
 
         app.MapControllerRoute(
             name: "default",
-            pattern: "{action=Token}/{id?}");
+            pattern: "token/{action=Token}/{id?}");
 
         app.Run();
     }
