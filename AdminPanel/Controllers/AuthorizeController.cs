@@ -37,15 +37,16 @@ public class AuthorizeController : Controller
 
     public async Task<IActionResult> LogIn()
     {
+        string baseUrl =
+            $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/admin";
+
         Authorize.AuthUrlResponse? authUrlResponse =
             await _apiClient.GetAsync<Authorize.AuthUrlResponse, Authorize.GetAuthUrlRequest>(
                 ApiConstants.ApiMethods.GetAuthUrl,
                 new(
-                    $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/AdminPanel/CheckAdmin"));
+                    $"{baseUrl}/AdminPanel/CheckAdmin"));
 
-        if (authUrlResponse is null) return RedirectToAction(nameof(LogIn));
-
-        return Redirect(authUrlResponse.Url);
+        return Redirect(authUrlResponse is null ? $"{baseUrl}/Authorize/LogIn" : authUrlResponse.Url);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
