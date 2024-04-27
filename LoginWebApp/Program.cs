@@ -39,7 +39,7 @@ public static class Program
         //app.UseHttpsRedirection();
         app.UseStaticFiles();
 
-        app.MapHub<TokenHub>("/token-hub");
+        app.MapHub<TokenHub>("/token/token-hub");
 
         app.UseRouting();
 
