@@ -272,6 +272,8 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
+            await _context.Entry(user).Reference(x => x.Role).LoadAsync(cancellationToken);
+
             return Ok(new HasAccessToAdminPanelResponse(user.Role.Title == Role.Roles.Admin.ToString()));
         }
 
