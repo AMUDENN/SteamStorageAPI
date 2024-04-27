@@ -1,0 +1,31 @@
+.authorize-container {
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.authorize-content {
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.authorize-content p {
+    font-size: var(--large-text);
+    font-weight: 500;
+    color: var(--fg-color-dark);
+    text-align: center;
+    margin-bottom: 40px;
+    max-width: 800px;
+}
+
+.authorize-content input[type="button"] {
+    background: var(--bg-color-dark);
+    color: var(--fg-color-light);
+    border: 3px solid var(--accent-color);
+    border-radius: 16px;
+    font-size: var(--middle-text);
+    padding: 25px;
+    max-width: 600px;
+}

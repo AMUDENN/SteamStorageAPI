@@ -32,3 +32,19 @@ services:
     build:
       context: .
       dockerfile: LoginWebApp/Dockerfile
+      
+  adminpanel:
+    image: adminpanel
+    env_file:
+      - env/adminpanel.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Release
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+    ports:
+      - "8085:80"
+      - "8086:443"
+    volumes:
+      - ~/.aspnet/https:/https:ro
+    build:
+      context: .
+      dockerfile: LoginWebApp/Dockerfile

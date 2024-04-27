@@ -1,0 +1,28 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Steam Storage</title>
+    <link rel="stylesheet" type="text/css" href="~/css/main-style.css" runat="server" />
+    <link rel="stylesheet" type="text/css" href="~/css/authorize-style.css" runat="server" />
+</head>
+
+<body>
+
+<div class="wrapper">
+    <div class="authorize-container flex-container">
+        <div class="authorize-content flex-container">
+            <p>Для доступа к панели администратора пройдите авторизацию</p>
+            <input type="button" value="Авторизация через Steam" onclick="location.href='@Url.Action("LogIn", "Authorize")'" />
+        </div>
+    </div>
+</div>
+
+</body>
+
+</html>

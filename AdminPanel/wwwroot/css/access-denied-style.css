@@ -1,0 +1,13 @@
+.access-denied-container {
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.access-denied-content p {
+    font-size: var(--large-text);
+    font-weight: 500;
+    color: var(--fg-color-dark);
+    text-align: center;
+}
