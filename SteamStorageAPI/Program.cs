@@ -293,6 +293,7 @@ public static class Program
             options.UseRelativeApiPath = false;
             options.UseRelativeResourcesPath = false;
             options.UseRelativeWebhookPath = false;
+            options.AddCustomStylesheet("wwwroot/ui/css/health-ui-style.css");
         });
 
         // RateLimit
