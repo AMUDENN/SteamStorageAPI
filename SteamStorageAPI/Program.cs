@@ -254,15 +254,14 @@ public static class Program
 
         WebApplication app = builder.Build();
         
-        app.UseSwagger(c =>
+        app.UseSwagger(swaggerOptions =>
         {
-            c.RouteTemplate = "api/swagger/{documentname}/swagger.json";
+            swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json";
         });
-        app.UseSwaggerUI(swaggerOptions =>
+        app.UseSwaggerUI(swaggerUiOptions =>
         {
-            swaggerOptions.RoutePrefix = "api/swagger";
+            swaggerUiOptions.RoutePrefix = "api/swagger";
         });
-        app.UseDeveloperExceptionPage();
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new()
