@@ -1,3 +1,19 @@
+:root {
+    --primaryColor: #5ec297;
+    --secondaryColor: #349b72;
+    --darkColor: #000000;
+    --midDarkColor: #2f313a;
+    --grayColor: #444444;
+    --midGrayColor: #ebebeb;
+    --lightColor: #f6f6f7;
+    --dangerColor: #d26b4e;
+    --warningColor: #ff8f30;
+    --successColor: #3aaa97;
+    --logoImageUrl: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/.NET_Foundation_Logo.svg/1200px-.NET_Foundation_Logo.svg.png');
+}
+
+
+/* fallback */
 @font-face {
     font-family: 'Material Icons';
     font-style: normal;
@@ -19,19 +35,4 @@
     direction: ltr;
     -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
-}
-
-
-:root {
-    --primaryColor: #5ec297;
-    --secondaryColor: #349b72;
-    --darkColor: #000000;
-    --midDarkColor: #2f313a;
-    --grayColor: #444444;
-    --midGrayColor: #ebebeb;
-    --lightColor: #f6f6f7;
-    --dangerColor: #d26b4e;
-    --warningColor: #ff8f30;
-    --successColor: #3aaa97;
-    --logoImageUrl: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/.NET_Foundation_Logo.svg/1200px-.NET_Foundation_Logo.svg.png');
 }

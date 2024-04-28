@@ -257,7 +257,10 @@ public static class Program
 
         WebApplication app = builder.Build();
         
-        app.UseStaticFiles();
+        app.UseStaticFiles(new StaticFileOptions  
+        {
+            RequestPath = "/api"  
+        });
         
         app.UseSwagger(swaggerOptions =>
         {
