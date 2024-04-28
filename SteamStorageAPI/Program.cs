@@ -257,10 +257,6 @@ public static class Program
 
         WebApplication app = builder.Build();
         
-        app.UseStaticFiles(new StaticFileOptions  
-        {
-            RequestPath = "/api"  
-        });
         
         app.UseSwagger(swaggerOptions =>
         {
@@ -275,6 +271,11 @@ public static class Program
         app.UseForwardedHeaders(new()
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
+        
+        app.UseStaticFiles(new StaticFileOptions  
+        {
+            RequestPath = "/api"  
         });
 
         // HealthChecks
@@ -293,6 +294,7 @@ public static class Program
         app.MapHealthChecksUI(options =>
         {
             options.UIPath = "/api/health-ui";
+            options.ResourcesPath = "/api";
             options.UseRelativeApiPath = false;
             options.UseRelativeResourcesPath = false;
             options.UseRelativeWebhookPath = false;
