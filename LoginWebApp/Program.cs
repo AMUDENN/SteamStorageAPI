@@ -37,7 +37,10 @@ public static class Program
         });
 
         //app.UseHttpsRedirection();
-        app.UseStaticFiles();
+        app.UseStaticFiles(new StaticFileOptions  
+        {
+            RequestPath = "/token"  
+        });
 
         app.MapHub<TokenHub>("/token/token-hub");
 

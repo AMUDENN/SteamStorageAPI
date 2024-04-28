@@ -1,5 +1,7 @@
+using System.Reflection;
 using AdminPanel.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using SteamStorageAPI.SDK.Services.Logger.LoggerService;
 using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection;
@@ -47,9 +49,12 @@ public static class Program
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-
+        
         //app.UseHttpsRedirection();
-        app.UseStaticFiles();
+        app.UseStaticFiles(new StaticFileOptions  
+        {
+            RequestPath = "/admin"  
+        });
 
         app.UseRouting();
 
