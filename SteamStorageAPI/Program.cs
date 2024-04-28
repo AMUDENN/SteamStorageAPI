@@ -244,7 +244,10 @@ public static class Program
                     IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey()
                 };
             });
-
+        
+        //WebRoot
+        builder.WebHost.UseWebRoot("wwwroot");
+        
         return builder;
     }
 
@@ -253,6 +256,8 @@ public static class Program
         WebApplicationBuilder builder = ConfigureServices(WebApplication.CreateBuilder(args));
 
         WebApplication app = builder.Build();
+        
+        app.UseStaticFiles();
         
         app.UseSwagger(swaggerOptions =>
         {
@@ -282,7 +287,14 @@ public static class Program
         app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
             .RequireAuthorization();
 
-        app.MapHealthChecksUI(options => options.UIPath = "/api/health-ui");
+        app.MapHealthChecksUI(options =>
+        {
+            options.UIPath = "/api/health-ui";
+            options.ApiPath = "/api";
+            options.UseRelativeApiPath = false;
+            options.UseRelativeResourcesPath = false;
+            options.UseRelativeWebhookPath = false;
+        });
 
         // RateLimit
         app.UseIpRateLimiting();
