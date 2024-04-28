@@ -12,7 +12,7 @@ using SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class CurrenciesController : ControllerBase
     {
         #region Fields

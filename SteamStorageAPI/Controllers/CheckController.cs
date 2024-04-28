@@ -4,7 +4,7 @@
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class CheckController : ControllerBase
     {
         #region GET

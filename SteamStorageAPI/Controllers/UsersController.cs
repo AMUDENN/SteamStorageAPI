@@ -14,7 +14,7 @@ using SteamStorageAPI.Utilities.Validation.Validators.Users;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class UsersController : ControllerBase
     {
         #region Fields

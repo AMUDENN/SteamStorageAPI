@@ -11,7 +11,7 @@ using SteamStorageAPI.Utilities.Exceptions;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class StatisticsController : ControllerBase
     {
         #region Fields

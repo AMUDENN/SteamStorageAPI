@@ -15,7 +15,7 @@ using SteamStorageAPI.Utilities.Steam;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class FileController : ControllerBase
     {
         #region Fields

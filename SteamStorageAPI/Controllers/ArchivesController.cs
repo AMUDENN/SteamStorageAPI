@@ -14,7 +14,7 @@ using static SteamStorageAPI.Controllers.SkinsController;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class ArchivesController : ControllerBase
     {
         #region Enums

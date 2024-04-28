@@ -16,7 +16,7 @@ using SteamStorageAPI.Utilities.Validation.Validators.Skins;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class SkinsController : ControllerBase
     {
         #region Enums

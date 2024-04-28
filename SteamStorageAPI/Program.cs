@@ -130,6 +130,8 @@ public static class Program
 
                 string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+                
+                options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             });
 
         builder.Services.AddHttpClient();
@@ -251,33 +253,16 @@ public static class Program
         WebApplicationBuilder builder = ConfigureServices(WebApplication.CreateBuilder(args));
 
         WebApplication app = builder.Build();
-
-        if (app.Environment.IsDevelopment())
+        
+        app.UseSwagger(c =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-        else
+            c.RouteTemplate = "api/swagger/{documentname}/swagger.json";
+        });
+        app.UseSwaggerUI(swaggerOptions =>
         {
-            app.UseSwagger(swaggerOptions =>
-            {
-                swaggerOptions.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
-                {
-                    swaggerDoc.Servers = new List<OpenApiServer>
-                    {
-                        new()
-                        {
-                            Url = $"https://{httpReq.Host.Value}/api/"
-                        },
-                        new()
-                        {
-                            Url = $"http://{httpReq.Host.Value}/api/"
-                        }
-                    };
-                });
-            });
-            app.UseSwaggerUI();
-        }
+            swaggerOptions.RoutePrefix = "api/swagger";
+        });
+        app.UseDeveloperExceptionPage();
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new()

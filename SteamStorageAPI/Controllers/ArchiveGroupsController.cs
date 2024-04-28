@@ -12,7 +12,7 @@ using SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 namespace SteamStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class ArchiveGroupsController : ControllerBase
     {
         #region Enums
