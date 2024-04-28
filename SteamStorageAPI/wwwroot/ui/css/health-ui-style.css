@@ -1,15 +1,18 @@
 :root {
-    --primaryColor: #5ec297;
-    --secondaryColor: #349b72;
-    --darkColor: #000000;
-    --midDarkColor: #2f313a;
-    --grayColor: #444444;
-    --midGrayColor: #ebebeb;
-    --lightColor: #f6f6f7;
-    --dangerColor: #d26b4e;
+    --primaryColor: #6B51D9;
+    --secondaryColor: #6B51D9;
+    --darkColor: #252C32;
+    --midDarkColor: #0F141A;
+    --grayColor: #0F141A;
+    --midGrayColor: #D2DADD;
+    --lightColor: #D2DADD;
+    --dangerColor: #E03737;
     --warningColor: #ff8f30;
-    --successColor: #3aaa97;
+    --successColor: #1E9538;
     --logoImageUrl: url('https://steamstorage.hb.ru-msk.vkcs.cloud/icons/BlackIcon128.png');
+
+    --bgSecondary: #7C83877F;
+    --fcNegative: #D2DADD;
 }
 
 

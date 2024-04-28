@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>43e1735a-58f8-441a-a91b-c18be935ec7b</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <ApplicationIcon>wwwroot\img\favicon32.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup>
