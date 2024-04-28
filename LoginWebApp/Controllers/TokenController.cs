@@ -11,7 +11,6 @@ public class TokenController : Controller
 {
     #region Fields
 
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IHubContext<TokenHub> _hubContext;
 
     #endregion Fields
@@ -19,10 +18,8 @@ public class TokenController : Controller
     #region Constructor
 
     public TokenController(
-        IHttpContextAccessor httpContextAccessor,
         IHubContext<TokenHub> hubContext)
     {
-        _httpContextAccessor = httpContextAccessor;
         _hubContext = hubContext;
     }
 
@@ -40,13 +37,10 @@ public class TokenController : Controller
     
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
-        string baseUrl =
-            $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/token";
-        
         if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
-            return Redirect($"{baseUrl}/Token?IsTokenEmpty={true}");
+            return RedirectToAction(nameof(Token), new { IsTokenEmpty = true });
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return Redirect($"{baseUrl}/Token?IsTokenEmpty={false}");
+        return RedirectToAction(nameof(Token), new { IsTokenEmpty = false });
     }
     
     public IActionResult Token([FromQuery] TokenRequest request)

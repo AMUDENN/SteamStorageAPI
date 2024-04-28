@@ -43,10 +43,12 @@ public class AuthorizeController : Controller
         Authorize.AuthUrlResponse? authUrlResponse =
             await _apiClient.GetAsync<Authorize.AuthUrlResponse, Authorize.GetAuthUrlRequest>(
                 ApiConstants.ApiMethods.GetAuthUrl,
-                new(
-                    $"{baseUrl}/AdminPanel/CheckAdmin"));
+                new($"{baseUrl}/AdminPanel/CheckAdmin"));
 
-        return Redirect(authUrlResponse is null ? $"{baseUrl}/Authorize/LogIn" : authUrlResponse.Url);
+        if (authUrlResponse is null)
+            return RedirectToAction(nameof(LogIn));
+
+        return Redirect(authUrlResponse.Url);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

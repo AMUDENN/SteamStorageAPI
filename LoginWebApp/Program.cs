@@ -12,8 +12,6 @@ public static class Program
         builder.Services.AddControllersWithViews();
 
         builder.Services.AddSignalR();
-        
-        builder.Services.AddHttpContextAccessor();
 
         return builder;
     }
