@@ -22,6 +22,8 @@ public class AdminPanelViewModel
 
     public int UsersPageNumber { get; init; } = 1;
 
+    public int UsersPagesCount { get; init; } = 1;
+
     public List<Users.UserResponse> Users { get; init; } = [];
 
     #endregion Properties

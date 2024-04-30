@@ -1,7 +1,7 @@
 .admin-panel-content {
     height: 100%;
     width: 100%;
-    padding: 30px;
+    padding: 30px 30px 0 30px;
     grid-template-columns: 1fr 1fr 1fr;
     grid-gap: 30px;
 }
@@ -18,17 +18,17 @@
 }
 
 .currencies-container {
-    grid-template-rows: 50px 160px 160px 120px 290px;
+    grid-template-rows: 40px 160px 160px 120px 290px 0;
     grid-gap: 30px;
 }
 
 .games-container {
-    grid-template-rows: 50px 160px 160px 120px 290px;
+    grid-template-rows: 40px 160px 160px 120px 290px 0;
     grid-gap: 30px;
 }
 
 .users-container {
-    grid-template-rows: 50px 120px 350px 120px 140px;
+    grid-template-rows: 40px 120px 350px 120px 140px 0;
     grid-gap: 30px;
 }
 
@@ -111,7 +111,7 @@
 }
 
 .profile-content p:first-child {
-    font-size: var(--large-text);
+    font-size: var(--big-text);
     font-weight: 600;
     color: var(--fg-color-dark);
 }
@@ -223,8 +223,60 @@
     border-radius: 8px;
 }
 
-.user-items-footer {
-    
+.user-items-footer form {
+    justify-content: end;
+}
+
+.user-items-footer input[type="number"] {
+    border: 0;
+    border-bottom: 1px solid var(--fg-color-dark);
+    background: transparent;
+    text-align: center;
+    color: var(--fg-color-dark);
+    align-self: center;
+    padding: 5px;
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.user-items-footer input[type=number]::-webkit-inner-spin-button,
+.user-items-footer input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}
+
+.user-items-footer input[type="number"]:focus {
+    border: 0;
+    border-bottom: 2px solid var(--fg-color-dark);
+    background: transparent;
+    outline: none;
+}
+
+.user-items-footer button {
+    outline:none;
+    -webkit-appearance: none;
+    background-color: transparent;
+    border: none;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    cursor: pointer;
+    margin: 0;
+    position: relative;
+    color: var(--fg-color-dark);
+}
+
+.user-items-footer button:after {
+    display: inline-block;
+    position: absolute;
+    font-family: 'FontAwesome';
+    font-weight: 400;
+    content: '\f077';
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+.user-items-footer button.plus:after {
+    transform: translate(-50%, -50%) rotate(0deg);
 }
 
 .role-item {

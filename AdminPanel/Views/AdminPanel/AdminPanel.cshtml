@@ -11,6 +11,7 @@ Layout = "_Layout";
 <head runat="server">
     <meta charset="utf-8" />
     <title>@ViewData["Title"] - Steam Storage</title>
+    <link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css" runat="server" >
     <link rel="stylesheet" type="text/css" href="~/admin/css/main-style.css" runat="server" />
     <link rel="stylesheet" type="text/css" href="~/admin/css/admin-panel-style.css" runat="server" />
 </head>
@@ -159,7 +160,7 @@ Layout = "_Layout";
             @foreach (Games.GameResponse game in Model.Games)
             {
                 <div class="game-item grid-container">
-                    <img src="@game.GameIconUrl" alt=""/>
+                    <img src="@game.GameIconUrl" alt=""/>   
                     <p>@game.Id</p>
                     <p>@game.Title</p>
                     <p>@game.SteamGameId</p>
@@ -206,8 +207,20 @@ Layout = "_Layout";
                 </div>
             }
         </div>
-        <div class="user-items-footer">
-                    
+        <div class="user-items-footer flex-container">
+            <form class="flex-container"
+                  method="post"
+                  asp-controller="AdminPanel"
+                  asp-action="AdminPanel">
+                <button class="minus"></button>
+                <input name="usersPageNumber"
+                       type="number"
+                       value="@Model.UsersPageNumber"
+                       min="1"
+                       max="@Model.UsersPagesCount">
+                <button class="plus"></button>
+            </form>
+            
         </div>
     </div>
     <div class="border-container">
@@ -244,6 +257,8 @@ Layout = "_Layout";
 </div>
 </div>
 </div>
+
+<script src="~/admin/js/input-number.js"></script>
 
 </body>
 

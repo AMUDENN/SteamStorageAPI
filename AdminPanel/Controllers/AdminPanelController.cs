@@ -32,7 +32,7 @@ public class AdminPanelController : Controller
         string Token);
 
     public record AdminPanelRequest(
-        int? UsersPageNumber);
+        [FromForm(Name = "usersPageNumber")] int? UsersPageNumber);
 
     public record AddCurrencyRequest(
         [FromForm(Name = "steamCurrencyId")] int SteamCurrencyId,
@@ -82,7 +82,7 @@ public class AdminPanelController : Controller
     }
 
     public async Task<IActionResult> AdminPanel(
-        [FromQuery] AdminPanelRequest request,
+        AdminPanelRequest request,
         CancellationToken cancellationToken = default)
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
@@ -113,7 +113,7 @@ public class AdminPanelController : Controller
 
         Users.UsersResponse? users = await _apiClient.GetAsync<Users.UsersResponse, Users.GetUsersRequest>(
             ApiConstants.ApiMethods.GetUsers,
-            new (request.UsersPageNumber ?? 1, 10),
+            new (request.UsersPageNumber ?? 1, 7),
             cancellationToken);
 
         if (user is null)
@@ -129,6 +129,7 @@ public class AdminPanelController : Controller
             Games = games?.Games?.ToList() ?? [],
             Roles = roles?.Roles?.ToList() ?? [],
             UsersPageNumber = request.UsersPageNumber ?? 1,
+            UsersPagesCount = users?.PagesCount ?? 1,
             Users = users?.Users?.ToList() ?? []
         });
     }
