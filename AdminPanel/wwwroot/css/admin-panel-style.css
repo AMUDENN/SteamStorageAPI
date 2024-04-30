@@ -257,8 +257,6 @@
     -webkit-appearance: none;
     background-color: transparent;
     border: none;
-    align-items: center;
-    justify-content: center;
     width: 3rem;
     height: 3rem;
     cursor: pointer;
