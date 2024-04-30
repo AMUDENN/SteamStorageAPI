@@ -35,7 +35,8 @@ public class AuthorizeController : Controller
         return View();
     }
 
-    public async Task<IActionResult> LogIn()
+    public async Task<IActionResult> LogIn(
+        CancellationToken cancellationToken = default)
     {
         string baseUrl =
             $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/admin";
@@ -43,7 +44,8 @@ public class AuthorizeController : Controller
         Authorize.AuthUrlResponse? authUrlResponse =
             await _apiClient.GetAsync<Authorize.AuthUrlResponse, Authorize.GetAuthUrlRequest>(
                 ApiConstants.ApiMethods.GetAuthUrl,
-                new($"{baseUrl}/AdminPanel/CheckAdmin"));
+                new($"{baseUrl}/AdminPanel/CheckAdmin"), 
+                cancellationToken);
 
         if (authUrlResponse is null)
             return RedirectToAction(nameof(LogIn));

@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="SteamStorageAPI.SDK" Version="1.0.14" />
+      <PackageReference Include="SteamStorageAPI.SDK" Version="1.1.0" />
     </ItemGroup>
 
     <ItemGroup>

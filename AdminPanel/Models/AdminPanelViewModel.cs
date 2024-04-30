@@ -20,5 +20,9 @@ public class AdminPanelViewModel
     
     public List<Roles.RoleResponse> Roles { get; init; } = [];
 
+    public int UsersPageNumber { get; init; } = 1;
+
+    public List<Users.UserResponse> Users { get; init; } = [];
+
     #endregion Properties
 }

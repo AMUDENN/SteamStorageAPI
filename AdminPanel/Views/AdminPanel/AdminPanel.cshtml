@@ -18,186 +18,231 @@ Layout = "_Layout";
 <body>
 
 <div class="wrapper">
-    <div class="admin-panel-content grid-container">
-        <div class="chapter-container currencies-container grid-container">
-            <p>Валюта</p>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Добавить валюту</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>SteamCurrencyId:</p>
-                        <input type="text"/>
-                        <p>Mark:</p>
-                        <input type="text"/>
-                        <p>Title:</p>
-                        <input type="text"/>
-                        <p>CultureInfo:</p>
-                        <input type="text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
+<div class="admin-panel-content grid-container">
+<div class="chapter-container currencies-container grid-container">
+    <p>Валюта</p>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="AddCurrency">
+            <p>Добавить валюту</p>
+            <div class="method-content-container two-row-method-container grid-container">
+                <p>SteamCurrencyId:</p>
+                <input name="steamCurrencyId" type="text" pattern="\d*"/>
+                <p>Mark:</p>
+                <input name="mark" type="text"/>
+                <p>Title:</p>
+                <input name="title" type="text"/>
+                <p>CultureInfo:</p>
+                <input name="cultureInfo" type="text"/>
             </div>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Изменить валюту</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>CurrencyId:</p>
-                        <input type="text"/>
-                        <p>Mark:</p>
-                        <input type="text"/>
-                        <p>Title:</p>
-                        <input type="text"/>
-                        <p>CultureInfo:</p>
-                        <input type="text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="PutCurrency">
+            <p>Изменить валюту</p>
+            <div class="method-content-container two-row-method-container grid-container">
+                <p>CurrencyId:</p>
+                <input name="currencyId" type="text" pattern="\d*"/>
+                <p>Mark:</p>
+                <input name="mark" type="text"/>
+                <p>Title:</p>
+                <input name="title" type="text"/>
+                <p>CultureInfo:</p>
+                <input name="cultureInfo" type="text"/>
             </div>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Удалить валюту</p>
-                    <div class="method-content-container one-row-method-container grid-container">
-                        <p>CurrencyId:</p>
-                        <input type="text" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="DeleteCurrency">
+            <p>Удалить валюту</p>
+            <div class="method-content-container one-row-method-container grid-container">
+                <p>CurrencyId:</p>
+                <input name="currencyId" type="text" pattern="\d*" class="long-input-text"/>
             </div>
-            <div class="border-container list-container grid-container">
-                <p>Список валют</p>
-                <div class="currency-item items-title grid-container">
-                    <p>Id</p>
-                    <p>Title</p>
-                    <p>SteamCurrencyId</p>
-                    <p>Mark</p>
-                    <p>CultureInfo</p>
-                    <p>Price</p>
-                    <p>DateUpdate</p>
-                </div>
-                <div class="list-items">
-                    @foreach (Currencies.CurrencyResponse currency in Model.Currencies)
-                    {
-                        <div class="currency-item grid-container">
-                            <p>@currency.Id</p>
-                            <p>@currency.Title</p>
-                            <p>@currency.SteamCurrencyId</p>
-                            <p>@currency.Mark</p>
-                            <p>@currency.CultureInfo</p>
-                            <p>@currency.Price.ToString("N2")</p>
-                            <p>@currency.DateUpdate</p>
-                        </div>
-                    }
-                </div>
-            </div>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container list-container grid-container">
+        <p>Список валют</p>
+        <div class="currency-item items-title grid-container">
+            <p>Id</p>
+            <p>Title</p>
+            <p>SteamCurrencyId</p>
+            <p>Mark</p>
+            <p>CultureInfo</p>
+            <p>Price</p>
+            <p>DateUpdate</p>
         </div>
-        <div class="chapter-container games-container grid-container">
-            <p>Игры</p>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Добавить игру</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>SteamGameId:</p>
-                        <input type="text" class="long-input-text"/>
-                        <p>IconUrlHash:</p>
-                        <input type="text" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Изменить игру</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>GameId:</p>
-                        <input type="text"/>
-                        <p>Title:</p>
-                        <input type="text"/>
-                        <p>IconUrlHash:</p>
-                        <input type="text" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Удалить игру</p>
-                    <div class="method-content-container one-row-method-container grid-container">
-                        <p>GameId:</p>
-                        <input type="text" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container list-container grid-container">
-                <p>Список игр</p>
-                <div class="game-item items-title grid-container">
-                    <p>Icon</p>
-                    <p>Id</p>
-                    <p>Title</p>
-                    <p>SteamGameId</p>
-                    <p>GameIconUrl</p>
+        <div class="list-items">
+            @foreach (Currencies.CurrencyResponse currency in Model.Currencies)
+            {
+                <div class="currency-item grid-container">
+                    <p>@currency.Id</p>
+                    <p>@currency.Title</p>
+                    <p>@currency.SteamCurrencyId</p>
+                    <p>@currency.Mark</p>
+                    <p>@currency.CultureInfo</p>
+                    <p>@currency.Price.ToString("N2")</p>
+                    <p>@currency.DateUpdate</p>
                 </div>
-                <div class="list-items">
-                    @foreach (Games.GameResponse game in Model.Games)
-                    {
-                        <div class="game-item grid-container">
-                            <img src="@game.GameIconUrl" alt=""/>
-                            <p>@game.Id</p>
-                            <p>@game.Title</p>
-                            <p>@game.SteamGameId</p>
-                            <a href="@game.GameIconUrl">IconUrl</a>
-                        </div>
-                    }
-                </div>
-            </div>
+            }
         </div>
-        <div class="chapter-container users-container grid-container">
-            <p>Пользователи</p>
-            <div class="border-container">
-                <div class="profile-container grid-container">
-                    <div class="profile-image-container">
-                        <img src="@Model.ProfileImageUrl" alt=""/>
-                    </div>
-                    <div class="profile-content flex-container">
-                        <p>@Model.Nickname</p>
-                        <p>SteamID: @Model.SteamId</p>
-                        <p>Роль: @Model.Role</p>
-                    </div>
-                </div>
+    </div>
+</div>
+<div class="chapter-container games-container grid-container">
+    <p>Игры</p>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="AddGame">
+            <p>Добавить игру</p>
+            <div class="method-content-container two-row-method-container grid-container">
+                <p>SteamGameId:</p>
+                <input name="steamGameId" type="text" pattern="\d*" class="long-input-text"/>
+                <p>IconUrlHash:</p>
+                <input name="iconUrlHash" type="text" class="long-input-text"/>
             </div>
-            <div class="border-container list-container grid-container">
-                <p>Список пользователей</p>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="PutGame">
+            <p>Изменить игру</p>
+            <div class="method-content-container two-row-method-container grid-container">
+                <p>GameId:</p>
+                <input name="gameId" type="text" pattern="\d*"/>
+                <p>Title:</p>
+                <input name="title" type="text"/>
+                <p>IconUrlHash:</p>
+                <input name="iconUrlHash" type="text" class="long-input-text"/>
             </div>
-            <div class="border-container">
-                <form class="method-container grid-container">
-                    <p>Установить роль</p>
-                    <div class="method-content-container one-row-method-container grid-container">
-                        <p>UserId:</p>
-                        <input type="text"/>
-                        <p>RoleId:</p>
-                        <input type="text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="DeleteGame">
+            <p>Удалить игру</p>
+            <div class="method-content-container one-row-method-container grid-container">
+                <p>GameId:</p>
+                <input name="gameId" type="text" pattern="\d*" class="long-input-text"/>
             </div>
-            <div class="border-container list-container grid-container">
-                <p>Список ролей</p>
-                <div class="role-item items-title grid-container">
-                    <p>Id</p>
-                    <p>Title</p>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container list-container grid-container">
+        <p>Список игр</p>
+        <div class="game-item items-title grid-container">
+            <p>Icon</p>
+            <p>Id</p>
+            <p>Title</p>
+            <p>SteamGameId</p>
+            <p>GameIconUrl</p>
+        </div>
+        <div class="list-items">
+            @foreach (Games.GameResponse game in Model.Games)
+            {
+                <div class="game-item grid-container">
+                    <img src="@game.GameIconUrl" alt=""/>
+                    <p>@game.Id</p>
+                    <p>@game.Title</p>
+                    <p>@game.SteamGameId</p>
+                    <a href="@game.GameIconUrl">IconUrl</a>
                 </div>
-                <div class="list-items">
-                    @foreach (Roles.RoleResponse role in Model.Roles)
-                    {
-                        <div class="role-item grid-container">
-                            <p>@role.Id</p>
-                            <p>@role.Title</p>
-                        </div>
-                    } 
-                </div>
+            }
+        </div>
+    </div>
+</div>
+<div class="chapter-container users-container grid-container">
+    <p>Пользователи</p>
+    <div class="border-container">
+        <div class="profile-container grid-container">
+            <div class="profile-image-container">
+                <img src="@Model.ProfileImageUrl" alt=""/>
+            </div>
+            <div class="profile-content flex-container">
+                <p>@Model.Nickname</p>
+                <p>SteamID: @Model.SteamId</p>
+                <p>Роль: @Model.Role</p>
             </div>
         </div>
     </div>
+    <div class="border-container list-container page-list-container grid-container">
+        <p>Список пользователей</p>
+        <div class="user-item items-title grid-container">
+            <p>Image</p>
+            <p>Id</p>
+            <p>Nickname</p>
+            <p>Role</p>
+            <p>DateRegistration</p>
+            <p>Profile</p>
+        </div>
+        <div class="list-items">
+            @foreach (Users.UserResponse user in Model.Users)
+            {
+                <div class="user-item grid-container">
+                    <img src="@user.ImageUrlFull" alt=""/>
+                    <p>@user.UserId</p>
+                    <p>@user.Nickname</p>
+                    <p>@user.Role</p>
+                    <p>@user.DateRegistration</p>
+                    <a href="@user.ProfileUrl">Profile</a>
+                </div>
+            }
+        </div>
+        <div class="user-items-footer">
+                    
+        </div>
+    </div>
+    <div class="border-container">
+        <form class="method-container grid-container"
+              method="post"
+              asp-controller="AdminPanel"
+              asp-action="SetRole">
+            <p>Установить роль</p>
+            <div class="method-content-container one-row-method-container grid-container">
+                <p>UserId:</p>
+                <input name="userId" type="text" pattern="\d*"/>
+                <p>RoleId:</p>
+                <input name="roleId" type="text" pattern="\d*"/>
+            </div>
+            <input type="submit" value="Отправить"/>
+        </form>
+    </div>
+    <div class="border-container list-container grid-container">
+        <p>Список ролей</p>
+        <div class="role-item items-title grid-container">
+            <p>Id</p>
+            <p>Title</p>
+        </div>
+        <div class="list-items">
+            @foreach (Roles.RoleResponse role in Model.Roles)
+            {
+                <div class="role-item grid-container">
+                    <p>@role.Id</p>
+                    <p>@role.Title</p>
+                </div>
+            } 
+        </div>
+    </div>
+</div>
+</div>
 </div>
 
 </body>

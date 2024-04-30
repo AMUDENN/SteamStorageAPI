@@ -88,7 +88,26 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<UserResponse> GetUserResponseAsync(
+        private UserResponse GetUserResponse(
+            User user)
+        {
+            return new(user.Id,
+                user.SteamId.ToString(),
+                SteamApi.GetUserUrl(user.SteamId),
+                user.IconUrl is null ? null : SteamApi.GetUserIconUrl(user.IconUrl),
+                user.IconUrlMedium is null ? null : SteamApi.GetUserIconUrl(user.IconUrlMedium),
+                user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),
+                user.Username?.Trim([' ']),
+                user.RoleId,
+                user.Role.Title,
+                user.StartPageId,
+                user.StartPage.Title,
+                user.CurrencyId,
+                user.DateRegistration,
+                user.GoalSum);
+        }
+        
+        private async Task<UserResponse> GetCurrentUserResponseAsync(
             User user,
             CancellationToken cancellationToken = default)
         {
@@ -117,12 +136,6 @@ namespace SteamStorageAPI.Controllers
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            Role? role = await _context.Roles.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == user.RoleId, cancellationToken);
-
-            Page? page = await _context.Pages.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken);
-
             return new(user.Id,
                 user.SteamId.ToString(),
                 SteamApi.GetUserUrl(user.SteamId),
@@ -131,9 +144,9 @@ namespace SteamStorageAPI.Controllers
                 user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),
                 user.Username?.Trim([' ']),
                 user.RoleId,
-                role?.Title ?? "Роль не найдена",
+                user.Role.Title,
                 user.StartPageId,
-                page?.Title ?? "Стартовая страница не найдена",
+                user.StartPage.Title,
                 user.CurrencyId,
                 user.DateRegistration,
                 user.GoalSum);
@@ -163,14 +176,15 @@ namespace SteamStorageAPI.Controllers
 
             int pagesCount = (int)Math.Ceiling((double)usersCount / request.PageSize);
 
-            users = users.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
+            users = users
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Include(x => x.Role)
+                .Include(x => x.StartPage);
 
             return Ok(new UsersResponse(usersCount,
                 pagesCount == 0 ? 1 : pagesCount,
-                await Task.WhenAll(users
-                        .AsEnumerable()
-                        .Select(async x => await GetUserResponseAsync(x, cancellationToken)))
-                    .WaitAsync(cancellationToken)));
+                users.Select(x => GetUserResponse(x))));
         }
 
         /// <summary>
@@ -205,11 +219,13 @@ namespace SteamStorageAPI.Controllers
             CancellationToken cancellationToken = default)
         {
             User user = await _context.Users.AsNoTracking()
+                            .Include(x => x.Role)
+                            .Include(x => x.StartPage)
                             .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            return Ok(await GetUserResponseAsync(user, cancellationToken));
+            return Ok(await GetCurrentUserResponseAsync(user, cancellationToken));
         }
 
         /// <summary>
@@ -230,7 +246,11 @@ namespace SteamStorageAPI.Controllers
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");
 
-            return Ok(await GetUserResponseAsync(user, cancellationToken));
+            await _context.Entry(user).Reference(x => x.Role).LoadAsync(cancellationToken);
+
+            await _context.Entry(user).Reference(x => x.StartPage).LoadAsync(cancellationToken);
+
+            return Ok(await GetCurrentUserResponseAsync(user, cancellationToken));
         }
 
         /// <summary>
