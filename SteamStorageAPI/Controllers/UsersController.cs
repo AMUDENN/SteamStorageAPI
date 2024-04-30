@@ -125,10 +125,12 @@ namespace SteamStorageAPI.Controllers
                     SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
 
                     user.Username = steamUser?.personaname;
-                    user.IconUrl = steamUser?.avatar.Replace("https://avatars.steamstatic.com/", string.Empty);
-                    user.IconUrlMedium =
-                        steamUser?.avatarmedium.Replace("https://avatars.steamstatic.com/", string.Empty);
-                    user.IconUrlFull = steamUser?.avatarfull.Replace("https://avatars.steamstatic.com/", string.Empty);
+                    user.IconUrl = steamUser?.avatar
+                        .Replace("https://avatars.steamstatic.com/", string.Empty);
+                    user.IconUrlMedium = steamUser?.avatarmedium
+                        .Replace("https://avatars.steamstatic.com/", string.Empty);
+                    user.IconUrlFull = steamUser?.avatarfull
+                        .Replace("https://avatars.steamstatic.com/", string.Empty);
 
                     user.DateUpdate = DateTime.Now;
                 }

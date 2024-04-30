@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.CryptographyService;
 using SteamStorageAPI.Services.JwtProvider;
 using SteamStorageAPI.Utilities.Exceptions;
@@ -89,6 +90,27 @@ namespace SteamStorageAPI.Controllers
                 CurrencyId = Currency.BASE_CURRENCY_ID,
                 DateRegistration = DateTime.Now
             };
+            
+            HttpClient client = _httpClientFactory.CreateClient();
+            SteamUserResult? steamUserResult =
+                await client.GetFromJsonAsync<SteamUserResult>(SteamApi.GetUserInfoUrl(user.SteamId),
+                    cancellationToken);
+
+            if (steamUserResult is not null)
+            {
+                SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
+
+                user.Username = steamUser?.personaname;
+                user.IconUrl = steamUser?.avatar
+                    .Replace("https://avatars.steamstatic.com/", string.Empty);
+                user.IconUrlMedium = steamUser?.avatarmedium
+                    .Replace("https://avatars.steamstatic.com/", string.Empty);
+                user.IconUrlFull = steamUser?.avatarfull
+                    .Replace("https://avatars.steamstatic.com/", string.Empty);
+
+                user.DateUpdate = DateTime.Now;
+            }
+            
             await _context.Users.AddAsync(user, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
