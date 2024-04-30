@@ -154,12 +154,16 @@
     padding: 0 10px;
 }
 
-.list-container p:not(:first-child) {
+.list-container p {
     font-size: var(--table-text);
     text-align: center;
     overflow:hidden;
     white-space:nowrap;
     text-overflow: ellipsis;
+}
+
+.list-container > p {
+    font-size: var(--small-text);
 }
 
 .list-container a {
@@ -198,16 +202,25 @@
 }
 
 .game-item {
-    grid-template-columns: 30px 1fr 3fr 3fr 3fr;
+    grid-template-columns: 1fr 1fr 3fr 3fr 3fr;
 }
 
 .game-item img {
+    height: 30px;
+    width: 30px;
     justify-self: center;
     border-radius: 8px;
 }
 
 .user-item {
-    grid-template-columns: 30px 1fr 3fr 2fr 3fr 2fr;
+    grid-template-columns: 1fr 1fr 3fr 2fr 3fr 2fr;
+}
+
+.user-item img {
+    height: 30px;
+    width: 30px;
+    justify-self: center;
+    border-radius: 8px;
 }
 
 .user-items-footer {
