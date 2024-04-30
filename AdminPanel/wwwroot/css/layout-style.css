@@ -49,6 +49,10 @@
     text-decoration: underline;
 }
 
+.main-content {
+    overflow-y: scroll;
+}
+
 .right-footer p {
     width: 100%;
 }

@@ -1,4 +1,5 @@
-﻿using AdminPanel.Utilities;
+﻿using AdminPanel.Models;
+using AdminPanel.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.SDK;
 using SteamStorageAPI.SDK.ApiEntities;
@@ -54,7 +55,31 @@ public class AdminPanelController : Controller
         if (hasAccess is null || !hasAccess.HasAccess)
             return RedirectToAction(nameof(AccessDenied));
 
-        return View();
+        Users.UserResponse? user = await _apiClient.GetAsync<Users.UserResponse>(
+            ApiConstants.ApiMethods.GetCurrentUserInfo);
+
+        Currencies.CurrenciesResponse? currencies = await _apiClient.GetAsync<Currencies.CurrenciesResponse>(
+            ApiConstants.ApiMethods.GetCurrencies);
+        
+        Games.GamesResponse? games = await _apiClient.GetAsync<Games.GamesResponse>(
+            ApiConstants.ApiMethods.GetGames);
+        
+        Roles.RolesResponse? roles = await _apiClient.GetAsync<Roles.RolesResponse>(
+            ApiConstants.ApiMethods.GetRoles);
+
+        if (user is null)
+            return View();
+
+        return View(new AdminPanelViewModel
+        {
+            ProfileImageUrl = user.ImageUrlFull ?? string.Empty,
+            Nickname = user.Nickname ?? string.Empty,
+            SteamId = user.SteamId,
+            Role = user.Role,
+            Currencies = currencies?.Currencies?.ToList() ?? [],
+            Games = games?.Games?.ToList() ?? [],
+            Roles = roles?.Roles?.ToList() ?? []
+        });
     }
 
     #endregion Methods

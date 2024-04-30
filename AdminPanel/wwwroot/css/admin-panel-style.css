@@ -1,0 +1,207 @@
+.admin-panel-content {
+    height: 100%;
+    width: 100%;
+    padding: 30px;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-gap: 30px;
+}
+
+.chapter-container {
+    height: 100%;
+}
+
+.chapter-container > p {
+    font-size: var(--large-text);
+    font-weight: 500;
+    color: var(--fg-color-dark);
+    text-align: center;
+}
+
+.currencies-container {
+    grid-template-rows: 50px 160px 160px 120px 290px;
+    grid-gap: 30px;
+}
+
+.games-container {
+    grid-template-rows: 50px 160px 160px 120px 290px;
+    grid-gap: 30px;
+}
+
+.users-container {
+    grid-template-rows: 50px 120px 350px 120px 140px;
+    grid-gap: 30px;
+}
+
+.border-container {
+    height: 100%;
+    width: 100%;
+    border: 2px solid var(--fg-color-dark);
+    border-radius: 16px;
+}
+
+.border-container form {
+    height: 100%;
+    width: 100%;
+}
+
+.border-container p {
+    font-size: var(--small-text);
+    font-weight: 500;
+    color: var(--fg-color-dark);
+    text-align: center;
+    align-self: center;
+}
+
+.border-container form input[type="submit"] {
+    font-size: var(--small-text);
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    background: var(--fg-color-medium-dark);
+    color: var(--fg-color-light);
+    justify-self: center;
+    max-width: 140px;
+    width: 100%;
+    margin: 10px;
+}
+
+.method-container {
+    grid-template-rows: 40px 1fr 50px;
+}
+
+.list-container {
+    grid-template-rows: 40px 30px 1fr;
+    padding: 0 10px 10px 10px;
+}
+
+.profile-container {
+    height: 100%;
+    width: 100%;
+    padding: 10px;
+    grid-template-columns: auto 1fr;
+    grid-gap: 20px;
+}
+
+.profile-image-container {
+    height: 96px;
+}
+
+.profile-image-container img{
+    height: 100%;
+    border-radius: 8px;
+}
+
+.profile-content {
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.profile-content p {
+    width: 100%;
+    text-align: left;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--small-text);
+    font-weight: 500;
+    color: var(--fg-color-medium-dark);
+}
+
+.profile-content p:first-child {
+    font-size: var(--large-text);
+    font-weight: 600;
+    color: var(--fg-color-dark);
+}
+
+.method-content-container p {
+    text-align: right;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
+}
+
+.method-content-container input[type="text"] {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--fg-color-medium-dark);
+    border-radius: 8px;
+    background: transparent;
+    padding: 5px;
+}
+
+.method-content-container input[type="text"]:focus {
+    border: 1px solid var(--fg-color-dark);
+    outline: none;
+}
+
+.method-content-container input[type="text"].long-input-text {
+    grid-column: span 3;
+}
+
+.one-row-method-container {
+    grid-template-columns: 1.2fr 1fr 1.2fr 1fr;
+    grid-gap: 10px;
+    padding: 0 10px;
+}
+
+.two-row-method-container {
+    grid-template-columns: 1.2fr 1fr 1.2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-gap: 10px;
+    padding: 0 10px;
+}
+
+.list-container p:not(:first-child) {
+    font-size: var(--table-text);
+    text-align: center;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
+}
+
+.list-container a {
+    font-size: var(--table-text);
+    color: var(--fg-color-dark);
+    text-align: center;
+    align-self: center;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
+}
+
+.items-title {
+    height: 30px;
+    margin-bottom: 10px;
+}
+
+.items-title p {
+    font-size: var(--little-text);
+    font-weight: 600;
+}
+
+.list-items {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.list-items div {
+    height: 30px;
+    margin-bottom: 5px;
+}
+
+.currency-item {
+    grid-template-columns: 1fr 2fr 2fr 1fr 2fr 2fr 4fr;
+}
+
+.game-item {
+    grid-template-columns: 2fr 1fr 3fr 3fr 3fr;
+}
+
+.game-item img {
+    justify-self: center;
+    border-radius: 8px;
+}
+
+.role-item {
+    grid-template-columns: 1fr 4fr;
+}

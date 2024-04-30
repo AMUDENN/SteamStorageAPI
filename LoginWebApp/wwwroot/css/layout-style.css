@@ -1,5 +1,6 @@
 ﻿.layout-page-content {
     height: 100%;
+    width: 100%;
     display: grid;
     grid-template-rows: 60px 1fr 60px;
     background: var(--bg-color-light);
@@ -47,6 +48,10 @@
 
 .left-header a:hover {
     text-decoration: underline;
+}
+
+.main-content {
+    overflow-y: scroll;
 }
 
 .right-footer p {
