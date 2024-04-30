@@ -88,7 +88,7 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private UserResponse GetUserResponse(
+        private static UserResponse GetUserResponse(
             User user)
         {
             return new(user.Id,
