@@ -6,13 +6,17 @@ let minus = document.querySelector('.user-items-footer .minus');
 let input = document.querySelector('.user-items-footer input[type=number]');
 
 plus.addEventListener('click', event => {
+    let value = input.valueAsNumber;
     input.stepUp();
-    invokeChange(input);
+    if (input.valueAsNumber !== value)
+        invokeChange(input);
 })
 
 minus.addEventListener('click', event => {
+    let value = input.valueAsNumber;
     input.stepDown();
-    invokeChange(input);
+    if (input.valueAsNumber !== value)
+        invokeChange(input);
 })
 
 input.addEventListener('change', event => {

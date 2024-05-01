@@ -34,37 +34,6 @@ public class AdminPanelController : Controller
     public record AdminPanelRequest(
         [FromForm(Name = "usersPageNumber")] int? UsersPageNumber);
 
-    public record AddCurrencyRequest(
-        [FromForm(Name = "steamCurrencyId")] int SteamCurrencyId,
-        [FromForm(Name = "mark")] string Mark,
-        [FromForm(Name = "title")] string Title,
-        [FromForm(Name = "cultureInfo")] string CultureInfo);
-
-    public record PutCurrencyRequest(
-        [FromForm(Name = "currencyId")] int CurrencyId,
-        [FromForm(Name = "mark")] string Mark,
-        [FromForm(Name = "title")] string Title,
-        [FromForm(Name = "cultureInfo")] string CultureInfo);
-
-    public record DeleteCurrencyRequest(
-        [FromForm(Name = "currencyId")] int CurrencyId);
-
-    public record AddGameRequest(
-        [FromForm(Name = "steamGameId")] int SteamGameId,
-        [FromForm(Name = "iconUrlHash")] string IconUrlHash);
-
-    public record PutGameRequest(
-        [FromForm(Name = "gameId")] int GameId,
-        [FromForm(Name = "title")] string Title,
-        [FromForm(Name = "iconUrlHash")] string IconUrlHash);
-
-    public record DeleteGameRequest(
-        [FromForm(Name = "gameId")] int GameId);
-
-    public record SetRoleRequest(
-        [FromForm(Name = "userId")] int UserId,
-        [FromForm(Name = "roleId")] int RoleId);
-
     #endregion Records
 
     #region Methods
@@ -86,8 +55,8 @@ public class AdminPanelController : Controller
         CancellationToken cancellationToken = default)
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-
         _apiClient.Token = token ?? string.Empty;
+        
         Users.HasAccessToAdminPanelResponse? hasAccess = await _apiClient.GetAsync<Users.HasAccessToAdminPanelResponse>(
             ApiConstants.ApiMethods.GetHasAccessToAdminPanel,
             cancellationToken);
@@ -113,7 +82,7 @@ public class AdminPanelController : Controller
 
         Users.UsersResponse? users = await _apiClient.GetAsync<Users.UsersResponse, Users.GetUsersRequest>(
             ApiConstants.ApiMethods.GetUsers,
-            new (request.UsersPageNumber ?? 1, 7),
+            new(request.UsersPageNumber ?? 1, 7),
             cancellationToken);
 
         if (user is null)
@@ -132,62 +101,6 @@ public class AdminPanelController : Controller
             UsersPagesCount = users?.PagesCount ?? 1,
             Users = users?.Users?.ToList() ?? []
         });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> AddCurrency(
-        AddCurrencyRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> PutCurrency(
-        PutCurrencyRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> DeleteCurrency(
-        DeleteCurrencyRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> AddGame(
-        AddGameRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> PutGame(
-        PutGameRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> DeleteGame(
-        DeleteGameRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> SetRole(
-        SetRoleRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return RedirectToAction(nameof(AdminPanel));
     }
 
     #endregion Methods
