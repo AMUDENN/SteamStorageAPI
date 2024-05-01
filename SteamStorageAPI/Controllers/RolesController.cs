@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
+using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Roles;
@@ -16,6 +17,7 @@ namespace SteamStorageAPI.Controllers
     {
         #region Fields
 
+        private readonly IUserService _userService;
         private readonly SteamStorageContext _context;
 
         #endregion Fields
@@ -23,8 +25,10 @@ namespace SteamStorageAPI.Controllers
         #region Constructor
 
         public RolesController(
+            IUserService userService,
             SteamStorageContext context)
         {
+            _userService = userService;
             _context = context;
         }
 
@@ -85,6 +89,13 @@ namespace SteamStorageAPI.Controllers
             SetRoleRequest request,
             CancellationToken cancellationToken = default)
         {
+            User currentUser = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                               throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                   "Текущий пользователь не найден");
+
+            if (request.UserId == currentUser.Id)
+                throw new HttpResponseException(StatusCodes.Status400BadRequest, "Нельзя изменить свою роль");
+            
             User user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Пользователя с таким Id не существует");

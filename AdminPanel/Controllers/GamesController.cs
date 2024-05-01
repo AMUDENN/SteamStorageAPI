@@ -1,6 +1,8 @@
 ﻿using AdminPanel.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.SDK;
+using SteamStorageAPI.SDK.ApiEntities;
+using SteamStorageAPI.SDK.Utilities;
 
 namespace AdminPanel.Controllers;
 
@@ -47,7 +49,12 @@ public class GamesController : Controller
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
         _apiClient.Token = token ?? string.Empty;
-        
+
+        await _apiClient.PostAsync(
+            ApiConstants.ApiMethods.PostGame,
+            new Games.PostGameRequest(request.SteamGameId, request.IconUrlHash),
+            cancellationToken);
+
         return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
     }
 
@@ -58,7 +65,12 @@ public class GamesController : Controller
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
         _apiClient.Token = token ?? string.Empty;
-        
+
+        await _apiClient.PutAsync(
+            ApiConstants.ApiMethods.PutGameInfo,
+            new Games.PutGameRequest(request.GameId, request.IconUrlHash, request.Title),
+            cancellationToken);
+
         return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
     }
 
@@ -69,9 +81,14 @@ public class GamesController : Controller
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
         _apiClient.Token = token ?? string.Empty;
-        
+
+        await _apiClient.DeleteAsync(
+            ApiConstants.ApiMethods.DeleteGame,
+            new Games.DeleteGameRequest(request.GameId),
+            cancellationToken);
+
         return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
     }
-    
+
     #endregion Methods
 }

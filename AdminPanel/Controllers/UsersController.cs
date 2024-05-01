@@ -1,6 +1,8 @@
 ﻿using AdminPanel.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.SDK;
+using SteamStorageAPI.SDK.ApiEntities;
+using SteamStorageAPI.SDK.Utilities;
 
 namespace AdminPanel.Controllers;
 
@@ -39,7 +41,12 @@ public class UsersController : Controller
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
         _apiClient.Token = token ?? string.Empty;
-        
+
+        await _apiClient.PutAsync(
+            ApiConstants.ApiMethods.SetRole,
+            new Roles.SetRoleRequest(request.UserId, request.RoleId),
+            cancellationToken);
+
         return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
     }
 
