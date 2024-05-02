@@ -191,6 +191,7 @@ namespace SteamStorageAPI.Controllers
                                      .Collection(x => x.ArchiveGroups)
                                      .Query()
                                      .AsNoTracking()
+                                     .Include(x => x.Archives)
                                      .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
                                  throw new HttpResponseException(StatusCodes.Status404NotFound,
                                      "Группы архива с таким Id не существует");

@@ -255,6 +255,7 @@ namespace SteamStorageAPI.Controllers
                                     .AsNoTracking()
                                     .SelectMany(x => x.Actives)
                                     .Include(x => x.Skin)
+                                    .ThenInclude(x => x.Game)
                                     .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
                                     "Группы активов с таким Id не существует");
