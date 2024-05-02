@@ -142,8 +142,6 @@ namespace SteamStorageAPI.Controllers
             IQueryable<ArchiveGroup> groups,
             CancellationToken cancellationToken = default)
         {
-            groups = groups.AsNoTracking().Include(x => x.Archives);
-
             List<ArchiveGroupResponse> result = await groups.Select(x =>
                     new ArchiveGroupResponse(
                         x.Id,
