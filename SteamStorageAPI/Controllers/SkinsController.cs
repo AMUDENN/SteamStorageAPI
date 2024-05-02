@@ -280,10 +280,10 @@ namespace SteamStorageAPI.Controllers
         {
             IQueryable<Skin> skins = _context.Skins
                 .AsNoTracking()
-                .Include(x => x.Game)
                 .Where(x => string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter));
 
-            skins = skins.OrderBy(x => x.Id).Take(20);
+            skins = skins.Take(20)
+                .Include(x => x.Game);
 
             return Ok(new BaseSkinsResponse(await skins.CountAsync(cancellationToken),
                 await Task.WhenAll(skins.AsEnumerable()
