@@ -102,8 +102,8 @@ namespace SteamStorageAPI.Controllers
         public record SavedSkinsCountResponse(
             int Count);
 
-        [Validator<GetSkinRequestValidator>]
-        public record GetSkinRequest(
+        [Validator<GetSkinInfoRequestValidator>]
+        public record GetSkinInfoRequest(
             int SkinId);
 
         public record GetBaseSkinsRequest(
@@ -239,7 +239,7 @@ namespace SteamStorageAPI.Controllers
         [HttpGet(Name = "GetSkinInfo")]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<ActionResult<SkinResponse>> GetSkinInfo(
-            [FromQuery] GetSkinRequest request,
+            [FromQuery] GetSkinInfoRequest request,
             CancellationToken cancellationToken = default)
         {
             User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
@@ -247,11 +247,10 @@ namespace SteamStorageAPI.Controllers
                             "Пользователя с таким Id не существует");
 
             Skin skin = await _context.Skins.AsNoTracking()
+                            .Include(x => x.Game)
                             .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status404NotFound,
                             "Предмета с таким Id не существует");
-
-            await _context.Entry(skin).Reference(x => x.Game).LoadAsync(cancellationToken);
 
             List<int> markedSkinsIds = await _context.Entry(user)
                 .Collection(x => x.MarkedSkins)

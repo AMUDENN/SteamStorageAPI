@@ -104,6 +104,10 @@ namespace SteamStorageAPI.Controllers
 
         public record ActiveGroupsCountResponse(
             int Count);
+        
+        [Validator<GetActiveGroupInfoRequestValidator>]
+        public record GetActiveGroupInfoRequest(
+            int GroupId);
 
         [Validator<GetActiveGroupsRequestValidator>]
         public record GetActiveGroupsRequest(
@@ -139,7 +143,34 @@ namespace SteamStorageAPI.Controllers
         
         #region Methods
 
-        private async Task<IEnumerable<ActiveGroupResponse>> GetActiveGroupsResponsesAsync(
+        private async Task<ActiveGroupResponse> GetActiveGroupResponseAsync(
+            ActiveGroup group,
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            return new(group.Id,
+                group.Title,
+                group.Description,
+                $"#{group.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
+                group.GoalSum,
+                group.GoalSum == null
+                    ? null
+                    : (double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate /
+                      (double)group.GoalSum,
+                group.Actives.Sum(y => y.Count),
+                group.Actives.Sum(y => y.BuyPrice * y.Count),
+                (decimal)((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate),
+                group.Actives.Sum(y => y.BuyPrice) != 0
+                    ? ((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate -
+                       (double)group.Actives.Sum(y => y.BuyPrice * y.Count)) /
+                      (double)group.Actives.Sum(y => y.BuyPrice * y.Count)
+                    : 1,
+                group.DateCreation);
+        }
+        
+        private async Task<IEnumerable<ActiveGroupResponse>> GetActiveGroupsResponseAsync(
             IQueryable<ActiveGroup> groups,
             User user,
             CancellationToken cancellationToken = default)
@@ -177,6 +208,38 @@ namespace SteamStorageAPI.Controllers
         #region GET
 
         /// <summary>
+        /// Получение информации об одной группе активов
+        /// </summary>
+        /// <response code="200">Возвращает подробную информацию о группе активов</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы активов с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize]
+        [HttpGet(Name = "GetActiveGroupInfo")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ActiveGroupResponse>> GetActiveGroupInfo(
+            [FromQuery] GetActiveGroupInfoRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            ActiveGroup group = await _context.Entry(user)
+                                    .Collection(x => x.ActiveGroups)
+                                    .Query()
+                                    .AsNoTracking()
+                                    .Include(x => x.Actives)
+                                    .ThenInclude(x => x.Skin)
+                                    .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
+                                throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                    "Группы активов с таким Id не существует");
+
+            return Ok(await GetActiveGroupResponseAsync(group, user, cancellationToken));
+        }
+
+        /// <summary>
         /// Получение списка групп активов
         /// </summary>
         /// <response code="200">Возвращает список групп активов</response>
@@ -203,7 +266,7 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin);
 
             IEnumerable<ActiveGroupResponse> groupsResponse =
-                await GetActiveGroupsResponsesAsync(groups, user, cancellationToken);
+                await GetActiveGroupsResponseAsync(groups, user, cancellationToken);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)

@@ -89,6 +89,10 @@ namespace SteamStorageAPI.Controllers
 
         public record ArchiveGroupsCountResponse(
             int Count);
+        
+        [Validator<GetArchiveGroupInfoRequestValidator>]
+        public record GetArchiveGroupInfoRequest(
+            int GroupId);
 
         [Validator<GetArchiveGroupsRequestValidator>]
         public record GetArchiveGroupsRequest(
@@ -116,7 +120,25 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<IEnumerable<ArchiveGroupResponse>> GetArchiveGroupsResponsesAsync(
+        private ArchiveGroupResponse GetArchiveGroupResponse(
+            ArchiveGroup group)
+        {
+            return new(group.Id,
+                group.Title,
+                group.Description,
+                $"#{group.Colour ?? ArchiveGroup.BASE_ARCHIVE_GROUP_COLOUR}",
+                group.Archives.Sum(y => y.Count),
+                group.Archives.Sum(y => y.BuyPrice * y.Count),
+                group.Archives.Sum(y => y.SoldPrice * y.Count),
+                group.Archives.Sum(y => y.BuyPrice) != 0
+                    ? ((double)group.Archives.Sum(y => y.SoldPrice * y.Count) -
+                       (double)group.Archives.Sum(y => y.BuyPrice * y.Count)) /
+                      (double)group.Archives.Sum(y => y.BuyPrice * y.Count)
+                    : 1,
+                group.DateCreation);
+        }
+
+        private async Task<IEnumerable<ArchiveGroupResponse>> GetArchiveGroupsResponseAsync(
             IQueryable<ArchiveGroup> groups,
             CancellationToken cancellationToken = default)
         {
@@ -147,6 +169,36 @@ namespace SteamStorageAPI.Controllers
         #region GET
 
         /// <summary>
+        /// Получение информации об одной группе архива
+        /// </summary>
+        /// <response code="200">Возвращает подробную информацию о группе архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Группы архива с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize]
+        [HttpGet(Name = "GetArchiveGroupInfo")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ArchiveGroupResponse>> GetArchiveGroupInfo(
+            [FromQuery] GetArchiveGroupInfoRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            ArchiveGroup group = await _context.Entry(user)
+                                     .Collection(x => x.ArchiveGroups)
+                                     .Query()
+                                     .AsNoTracking()
+                                     .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken) ??
+                                 throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                     "Группы архива с таким Id не существует");
+
+            return Ok(GetArchiveGroupResponse(group));
+        }
+
+        /// <summary>
         /// Получение списка групп архива
         /// </summary>
         /// <response code="200">Возвращает список групп архива</response>
@@ -172,7 +224,7 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Archives);
 
             IEnumerable<ArchiveGroupResponse> groupsResponse =
-                await GetArchiveGroupsResponsesAsync(groups, cancellationToken);
+                await GetArchiveGroupsResponseAsync(groups, cancellationToken);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)

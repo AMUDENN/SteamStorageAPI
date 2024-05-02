@@ -88,6 +88,10 @@ namespace SteamStorageAPI.Controllers
 
         public record ActivesCountResponse(
             int Count);
+        
+        [Validator<GetActiveInfoRequestValidator>]
+        public record GetActiveInfoRequest(
+            int Id);
 
         [Validator<GetActivesRequestValidator>]
         public record GetActivesRequest(
@@ -149,11 +153,37 @@ namespace SteamStorageAPI.Controllers
             string? Description);
 
         [Validator<DeleteActiveRequestValidator>]
-        public record DeleteActiveRequest(int Id);
+        public record DeleteActiveRequest(
+            int Id);
 
         #endregion Records
 
         #region Methods
+
+        private async Task<ActiveResponse> GetActiveResponseAsync(
+            Active active,
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+            return new(
+                active.Id,
+                active.GroupId,
+                await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
+                active.BuyDate,
+                active.Count,
+                active.BuyPrice,
+                (decimal)((double)active.Skin.CurrentPrice * currencyExchangeRate),
+                (decimal)((double)active.Skin.CurrentPrice * currencyExchangeRate * active.Count),
+                active.GoalPrice,
+                active.GoalPrice == null
+                    ? null
+                    : (double)active.Skin.CurrentPrice * currencyExchangeRate / (double)active.GoalPrice,
+                ((double)active.Skin.CurrentPrice * currencyExchangeRate - (double)active.BuyPrice) /
+                (double)active.BuyPrice,
+                active.Description);
+        }
 
         private async Task<ActivesResponse> GetActivesResponseAsync(
             IQueryable<Active> actives,
@@ -199,6 +229,38 @@ namespace SteamStorageAPI.Controllers
         #endregion Methods
 
         #region GET
+
+        /// <summary>
+        /// Получение информации об активе
+        /// </summary>
+        /// <response code="200">Возвращает подробную информацию об активе</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize]
+        [HttpGet(Name = "GetActiveInfo")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ActiveResponse>> GetActiveInfo(
+            [FromQuery] GetActiveInfoRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            Active active = await _context.Entry(user)
+                                    .Collection(x => x.ActiveGroups)
+                                    .Query()
+                                    .AsNoTracking()
+                                    .SelectMany(x => x.Actives)
+                                    .Include(x => x.Skin)
+                                    .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                                throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                    "Группы активов с таким Id не существует");
+
+            return Ok(await GetActiveResponseAsync(active, user, cancellationToken));
+        }
 
         /// <summary>
         /// Получение списка активов

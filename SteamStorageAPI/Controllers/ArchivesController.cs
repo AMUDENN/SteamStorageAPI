@@ -84,6 +84,10 @@ namespace SteamStorageAPI.Controllers
         public record ArchivesCountResponse(
             int Count);
 
+        [Validator<GetArchiveInfoRequestValidator>]
+        public record GetArchiveInfoRequest(
+            int Id);
+        
         [Validator<GetArchivesRequestValidator>]
         public record GetArchivesRequest(
             int? GroupId,
@@ -144,7 +148,24 @@ namespace SteamStorageAPI.Controllers
 
         #region Methods
 
-        private async Task<ArchivesResponse> GetArchivesResponse(
+        private async Task<ArchiveResponse> GetArchiveResponseAsync(
+            Archive archive,
+            CancellationToken cancellationToken = default)
+        {
+            return new(archive.Id,
+                archive.GroupId,
+                await _skinService.GetBaseSkinResponseAsync(archive.Skin, cancellationToken),
+                archive.BuyDate,
+                archive.SoldDate,
+                archive.Count,
+                archive.BuyPrice,
+                archive.SoldPrice,
+                archive.SoldPrice * archive.Count,
+                (double)((archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice),
+                archive.Description);
+        }
+
+        private async Task<ArchivesResponse> GetArchivesResponseAsync(
             IQueryable<Archive> archives,
             int pageNumber,
             int pageSize,
@@ -179,6 +200,37 @@ namespace SteamStorageAPI.Controllers
         #endregion Methods
 
         #region GET
+
+        /// <summary>
+        /// Получение информации об элементе архива
+        /// </summary>
+        /// <response code="200">Возвращает подробную информацию об элементе архива</response>
+        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
+        /// <response code="401">Пользователь не прошёл авторизацию</response>
+        /// <response code="404">Элемента архива с таким Id не существует или пользователь не найден</response>
+        /// <response code="499">Операция отменена</response>
+        [Authorize]
+        [HttpGet(Name = "GetArchiveInfo")]
+        [Produces(MediaTypeNames.Application.Json)]
+        public async Task<ActionResult<ArchiveResponse>> GetArchiveInfo(
+            [FromQuery] GetArchiveInfoRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
+            Archive archive = await _context.Entry(user)
+                                  .Collection(x => x.ArchiveGroups)
+                                  .Query()
+                                  .AsNoTracking()
+                                  .SelectMany(x => x.Archives)
+                                  .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                              throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                  "Группы активов с таким Id не существует");
+
+            return Ok(await GetArchiveResponseAsync(archive, cancellationToken));
+        }
 
         /// <summary>
         /// Получение списка элементов архива
@@ -249,7 +301,7 @@ namespace SteamStorageAPI.Controllers
             else
                 archives = archives.OrderBy(x => x.Id);
 
-            return Ok(await GetArchivesResponse(archives, request.PageNumber, request.PageSize, cancellationToken));
+            return Ok(await GetArchivesResponseAsync(archives, request.PageNumber, request.PageSize, cancellationToken));
         }
 
         /// <summary>
