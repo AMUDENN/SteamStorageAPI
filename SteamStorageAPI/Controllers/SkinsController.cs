@@ -8,6 +8,7 @@ using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Steam;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Skins;
@@ -279,7 +280,7 @@ namespace SteamStorageAPI.Controllers
         {
             IQueryable<Skin> skins = _context.Skins
                 .AsNoTracking()
-                .Where(x => string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter));
+                .WhereMatchFilter(x => x.Title, request.Filter);
 
             skins = skins.Take(20)
                 .Include(x => x.Game);
@@ -321,8 +322,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Game)
                 .Where(x =>
                     (request.GameId == null || x.GameId == request.GameId)
-                    && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
-                    && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)));
+                    && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)))
+                .WhereMatchFilter(x => x.Title, request.Filter);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -453,8 +454,8 @@ namespace SteamStorageAPI.Controllers
                     .ToListAsync(cancellationToken);
 
             int count = await _context.Skins.AsNoTracking()
+                .WhereMatchFilter(x => x.Title, request.Filter)
                 .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                                  && (request.IsMarked == null ||
                                      request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
                     cancellationToken);
@@ -523,8 +524,8 @@ namespace SteamStorageAPI.Controllers
                     .ToListAsync(cancellationToken: cancellationToken);
 
             int count = await _context.Skins.AsNoTracking()
+                .WhereMatchFilter(x => x.Title, request.Filter)
                 .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Title.Contains(request.Filter))
                                  && (request.IsMarked == null ||
                                      request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
                     cancellationToken);

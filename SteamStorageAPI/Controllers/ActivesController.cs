@@ -7,6 +7,7 @@ using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Actives;
 using static SteamStorageAPI.Controllers.SkinsController;
@@ -88,7 +89,7 @@ namespace SteamStorageAPI.Controllers
 
         public record ActivesCountResponse(
             int Count);
-        
+
         [Validator<GetActiveInfoRequestValidator>]
         public record GetActiveInfoRequest(
             int Id);
@@ -250,15 +251,15 @@ namespace SteamStorageAPI.Controllers
                             "Пользователя с таким Id не существует");
 
             Active active = await _context.Entry(user)
-                                    .Collection(x => x.ActiveGroups)
-                                    .Query()
-                                    .AsNoTracking()
-                                    .SelectMany(x => x.Actives)
-                                    .Include(x => x.Skin)
-                                    .ThenInclude(x => x.Game)
-                                    .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
-                                throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                    "Группы активов с таким Id не существует");
+                                .Collection(x => x.ActiveGroups)
+                                .Query()
+                                .AsNoTracking()
+                                .SelectMany(x => x.Actives)
+                                .Include(x => x.Skin)
+                                .ThenInclude(x => x.Game)
+                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
+                            throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "Группы активов с таким Id не существует");
 
             return Ok(await GetActiveResponseAsync(active, user, cancellationToken));
         }
@@ -291,8 +292,8 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Game)
                 .SelectMany(x => x.Actives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
-                            && (request.GroupId == null || x.GroupId == request.GroupId));
+                            && (request.GroupId == null || x.GroupId == request.GroupId))
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -365,8 +366,8 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
-                            && (request.GroupId == null || x.GroupId == request.GroupId));
+                            && (request.GroupId == null || x.GroupId == request.GroupId))
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
@@ -404,8 +405,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                                  && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
@@ -440,8 +441,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Actives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Actives)
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                                  && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
         }
 

@@ -8,6 +8,7 @@ using SteamStorageAPI.Services.CurrencyService;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Steam;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Inventory;
@@ -61,14 +62,14 @@ namespace SteamStorageAPI.Controllers
         #endregion Constructor
 
         #region Records
-        
+
         public record InventoryResponse(
             int Id,
             BaseSkinResponse Skin,
             int Count,
             decimal CurrentPrice,
             decimal CurrentSum);
-        
+
         public record InventoriesResponse(
             int Count,
             int PagesCount,
@@ -104,7 +105,7 @@ namespace SteamStorageAPI.Controllers
             bool? IsAscending,
             int PageNumber,
             int PageSize);
-        
+
         [Validator<GetInventoriesStatisticRequestValidator>]
         public record GetInventoriesStatisticRequest(
             int? GameId,
@@ -126,7 +127,7 @@ namespace SteamStorageAPI.Controllers
             int GameId);
 
         #endregion Records
-        
+
         #region Methods
 
         private async Task<InventoriesResponse> GetInventoriesResponseAsync(
@@ -188,8 +189,8 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Skin)
                 .ThenInclude(x => x.Game)
-                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
+                .Where(x => request.GameId == null || x.Skin.GameId == request.GameId)
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -218,8 +219,8 @@ namespace SteamStorageAPI.Controllers
             else
                 inventories = inventories.OrderBy(x => x.Id);
 
-            return Ok(await GetInventoriesResponseAsync(inventories, 
-                request.PageNumber, 
+            return Ok(await GetInventoriesResponseAsync(inventories,
+                request.PageNumber,
                 request.PageSize,
                 user,
                 cancellationToken));
@@ -250,8 +251,8 @@ namespace SteamStorageAPI.Controllers
                 .AsNoTracking()
                 .Include(x => x.Skin)
                 .ThenInclude(x => x.Game)
-                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)));
+                .Where(x => request.GameId == null || x.Skin.GameId == request.GameId)
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
@@ -323,8 +324,8 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Skin)
-                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)),
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
+                .CountAsync(x => request.GameId == null || x.Skin.GameId == request.GameId,
                     cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
@@ -357,8 +358,8 @@ namespace SteamStorageAPI.Controllers
                 .Query()
                 .AsNoTracking()
                 .Include(x => x.Skin)
-                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter)),
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
+                .CountAsync(x => request.GameId == null || x.Skin.GameId == request.GameId,
                     cancellationToken)));
         }
 
@@ -387,7 +388,7 @@ namespace SteamStorageAPI.Controllers
             Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "Игры с таким Id не существует");
-            
+
             HttpClient client = _httpClientFactory.CreateClient();
             SteamInventoryResponse? response =
                 await client.GetFromJsonAsync<SteamInventoryResponse>(
@@ -398,11 +399,11 @@ namespace SteamStorageAPI.Controllers
                     "При получении данных с сервера Steam произошла ошибка");
 
             _context.Inventories.RemoveRange(_context.Entry(user)
-                            .Collection(x => x.Inventories)
-                            .Query()
-                            .Include(x => x.Skin)
-                            .Where(x => x.Skin.GameId == game.Id));
-            
+                .Collection(x => x.Inventories)
+                .Query()
+                .Include(x => x.Skin)
+                .Where(x => x.Skin.GameId == game.Id));
+
             foreach (InventoryDescription item in response.descriptions)
             {
                 if (item is { marketable: 0, tradable: 0 })
@@ -426,7 +427,7 @@ namespace SteamStorageAPI.Controllers
                     }, cancellationToken);
                 else
                     inventory.Count++;
-                
+
                 await _context.SaveChangesAsync(cancellationToken);
             }
 

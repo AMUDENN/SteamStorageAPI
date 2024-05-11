@@ -6,6 +6,7 @@ using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Services.SkinService;
 using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.Validation.Tools;
 using SteamStorageAPI.Utilities.Validation.Validators.Archives;
 using static SteamStorageAPI.Controllers.SkinsController;
@@ -263,8 +264,8 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin.Game)
                 .SelectMany(x => x.Archives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
-                            && (request.GroupId == null || x.GroupId == request.GroupId));
+                            && (request.GroupId == null || x.GroupId == request.GroupId))
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
             if (request is { OrderName: not null, IsAscending: not null })
                 switch (request.OrderName)
@@ -333,8 +334,8 @@ namespace SteamStorageAPI.Controllers
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Archives)
                 .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
-                            && (request.GroupId == null || x.GroupId == request.GroupId));
+                            && (request.GroupId == null || x.GroupId == request.GroupId))
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
             return Ok(new ArchivesStatisticResponse(
                 archives.Sum(x => x.Count),
@@ -369,8 +370,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Archives)
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                                  && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
 
             int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
@@ -405,8 +406,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Archives)
                 .ThenInclude(x => x.Skin)
                 .SelectMany(x => x.Archives)
+                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
                 .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (string.IsNullOrEmpty(request.Filter) || x.Skin.Title.Contains(request.Filter))
                                  && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
         }
 
