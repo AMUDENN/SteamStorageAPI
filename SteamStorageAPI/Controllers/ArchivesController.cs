@@ -487,9 +487,9 @@ namespace SteamStorageAPI.Controllers
                 .SelectMany(x => x.Archives)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ?? throw new HttpResponseException(
                 StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+                "У вас нет доступа к изменению этого элемента архива или элемента архива с таким Id не существует");
 
-            if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
+            if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
                     .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
                 throw new HttpResponseException(StatusCodes.Status404NotFound,
                     "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
@@ -540,7 +540,7 @@ namespace SteamStorageAPI.Controllers
                 .SelectMany(x => x.Archives)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ?? throw new HttpResponseException(
                 StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+                "У вас нет доступа к изменению этого элемента архива или элемента архива с таким Id не существует");
 
             _context.Archives.Remove(archive);
 
