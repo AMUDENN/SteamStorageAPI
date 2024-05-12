@@ -24,6 +24,7 @@ using SteamStorageAPI.Services.RefreshSkinDynamicsService;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.HealthCheck;
+using SteamStorageAPI.Utilities.HealthCheck.Steam;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
 using SteamStorageAPI.Utilities.Steam;
 
@@ -179,6 +180,10 @@ public static class Program
                 tags: new[] { "db", "db-context" })
             .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker),
                 tags: new[] { "api" })
+            .AddCheck<AdminPanelHealthChecker>(name: nameof(AdminPanelHealthChecker),
+                tags: new[] { "api", "ap", "admin", "admin panel" })
+            .AddCheck<LoginWebAppHealthChecker>(name: nameof(LoginWebAppHealthChecker),
+                tags: new[] { "api", "lwa", "loginwebapp", "login web app" })
             .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker),
                 tags: new[] { "steam" })
             .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker),
@@ -294,7 +299,6 @@ public static class Program
         app.MapHealthChecksUI(options =>
         {
             options.UIPath = "/api/health-ui";
-            options.ApiPath = "/api";
             options.ResourcesPath = "/api";
             options.UseRelativeApiPath = false;
             options.UseRelativeResourcesPath = false;

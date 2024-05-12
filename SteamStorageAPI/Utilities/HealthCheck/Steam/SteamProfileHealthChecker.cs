@@ -2,7 +2,7 @@
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities.Steam;
 
-namespace SteamStorageAPI.Utilities.HealthCheck
+namespace SteamStorageAPI.Utilities.HealthCheck.Steam
 {
     public class SteamProfileHealthChecker : IHealthCheck
     {
@@ -15,7 +15,9 @@ namespace SteamStorageAPI.Utilities.HealthCheck
 
         #region Constructor
 
-        public SteamProfileHealthChecker(IHttpClientFactory httpClientFactory, SteamStorageContext context)
+        public SteamProfileHealthChecker(
+            IHttpClientFactory httpClientFactory, 
+            SteamStorageContext context)
         {
             _httpClientFactory = httpClientFactory;
             _context = context;

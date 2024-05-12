@@ -2,7 +2,7 @@
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Utilities.Steam;
 
-namespace SteamStorageAPI.Utilities.HealthCheck
+namespace SteamStorageAPI.Utilities.HealthCheck.Steam
 {
     public class SteamMarketHealthChecker : IHealthCheck
     {
@@ -15,7 +15,9 @@ namespace SteamStorageAPI.Utilities.HealthCheck
 
         #region Constructor
 
-        public SteamMarketHealthChecker(IHttpClientFactory httpClientFactory, SteamStorageContext context)
+        public SteamMarketHealthChecker(
+            IHttpClientFactory httpClientFactory, 
+            SteamStorageContext context)
         {
             _httpClientFactory = httpClientFactory;
             _context = context;

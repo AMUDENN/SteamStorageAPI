@@ -3,11 +3,11 @@ using SteamStorageAPI.Utilities.HealthCheck.Tools;
 
 namespace SteamStorageAPI.Utilities.HealthCheck
 {
-    public class ApiHealthChecker : BaseHealthChecker
+    public class LoginWebAppHealthChecker : BaseHealthChecker
     {
         #region Constructor
 
-        public ApiHealthChecker(
+        public LoginWebAppHealthChecker(
             IHttpContextAccessor httpContextAccessor, 
             IHttpClientFactory httpClientFactory) : base(httpContextAccessor, httpClientFactory)
         {
@@ -25,16 +25,16 @@ namespace SteamStorageAPI.Utilities.HealthCheck
             try
             {
                 HttpClient client = HttpClientFactory.CreateClient();
-                string apiUrl = $"{HostUrl}/api/Check/GetApiStatus";
+                string apiUrl = $"{HostUrl}/token/Token";
                 HttpResponseMessage response = await client.GetAsync(apiUrl, cancellationToken);
 
                 return response.IsSuccessStatusCode
-                    ? HealthCheckResult.Healthy("API is working")
-                    : HealthCheckResult.Unhealthy($"API status code: {response.StatusCode}.");
+                    ? HealthCheckResult.Healthy("LoginWebApp is working")
+                    : HealthCheckResult.Unhealthy($"LoginWebApp status code: {response.StatusCode}.");
             }
             catch (Exception ex)
             {
-                return HealthCheckResult.Unhealthy($"API error: {ex.Message}");
+                return HealthCheckResult.Unhealthy($"LoginWebApp error: {ex.Message}");
             }
         }
 
