@@ -299,6 +299,7 @@ public static class Program
         app.MapHealthChecksUI(options =>
         {
             options.UIPath = "/api/health-ui";
+            options.ApiPath = "/api";
             options.ResourcesPath = "/api";
             options.UseRelativeApiPath = false;
             options.UseRelativeResourcesPath = false;
