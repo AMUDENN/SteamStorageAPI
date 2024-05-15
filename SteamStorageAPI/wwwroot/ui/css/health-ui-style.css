@@ -13,6 +13,12 @@
 
     --bgSecondary: #7C83877F;
     --fcNegative: #D2DADD;
+
+    --bgImageLigthen: linear-gradient(rgba(255,255,255,0.4),rgba(255,255,255,0.4));
+}
+
+.tag {
+    border: none;
 }
 
 
