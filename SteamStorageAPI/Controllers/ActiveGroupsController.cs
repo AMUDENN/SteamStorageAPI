@@ -166,7 +166,7 @@ namespace SteamStorageAPI.Controllers
                     ? ((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate -
                        (double)group.Actives.Sum(y => y.BuyPrice * y.Count)) /
                       (double)group.Actives.Sum(y => y.BuyPrice * y.Count)
-                    : 1,
+                    : 0,
                 group.DateCreation);
         }
         
@@ -196,7 +196,7 @@ namespace SteamStorageAPI.Controllers
                             ? ((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * currencyExchangeRate -
                                (double)x.Actives.Sum(y => y.BuyPrice * y.Count)) /
                               (double)x.Actives.Sum(y => y.BuyPrice * y.Count)
-                            : 1,
+                            : 0,
                         x.DateCreation))
                 .ToListAsync(cancellationToken);
 

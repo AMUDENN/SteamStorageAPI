@@ -134,7 +134,7 @@ namespace SteamStorageAPI.Controllers
                     ? ((double)group.Archives.Sum(y => y.SoldPrice * y.Count) -
                        (double)group.Archives.Sum(y => y.BuyPrice * y.Count)) /
                       (double)group.Archives.Sum(y => y.BuyPrice * y.Count)
-                    : 1,
+                    : 0,
                 group.DateCreation);
         }
 
@@ -155,7 +155,7 @@ namespace SteamStorageAPI.Controllers
                             ? ((double)x.Archives.Sum(y => y.SoldPrice * y.Count) -
                                (double)x.Archives.Sum(y => y.BuyPrice * y.Count)) /
                               (double)x.Archives.Sum(y => y.BuyPrice * y.Count)
-                            : 1,
+                            : 0,
                         x.DateCreation))
                 .ToListAsync(cancellationToken);
 
