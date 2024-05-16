@@ -104,15 +104,18 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                     List<string> marketHashNames =
                         await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken);
 
-                    await _context.Skins.AddRangeAsync(response.results
-                        .Where(x => marketHashNames.All(y => y != x.hash_name)).Select(x =>
+                    IEnumerable<Skin> skins = response.results
+                        .Where(x => marketHashNames.All(y => y != x.hash_name))
+                        .Select(x =>
                             new Skin
                             {
                                 GameId = game.Id,
                                 MarketHashName = x.hash_name,
                                 Title = x.name,
                                 SkinIconUrl = x.asset_description.icon_url
-                            }), cancellationToken);
+                            });
+
+                    await _context.Skins.AddRangeAsync(skins, cancellationToken);
 
                     await _context.SaveChangesAsync(cancellationToken);
 
