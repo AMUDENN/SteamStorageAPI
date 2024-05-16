@@ -46,8 +46,7 @@ public class RefreshSkinDynamicsBackgroundService : BackgroundServiceBase
                     IRefreshSkinDynamicsService refreshSkinDynamicsService =
                         scope.ServiceProvider.GetRequiredService<IRefreshSkinDynamicsService>();
                     
-                    //TODO: Временно выключено)
-                    //await refreshSkinDynamicsService.RefreshSkinDynamicsAsync(stoppingToken);
+                    await refreshSkinDynamicsService.RefreshSkinDynamicsAsync(stoppingToken);
                 }
 
                 _logger.LogInformation("Обновление стоимости предметов завершено");
