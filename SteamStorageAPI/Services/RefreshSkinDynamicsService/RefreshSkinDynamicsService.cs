@@ -105,7 +105,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken);
 
                     List<Skin> skins = response.results
-                        .Where(x => marketHashNames.All(y => y.Trim() != x.hash_name.Trim()))
+                        .Where(x => !marketHashNames.Contains(x.hash_name))
                         .Select(x =>
                             new Skin
                             {
@@ -115,11 +115,11 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                                 SkinIconUrl = x.asset_description.icon_url
                             })
                         .ToList();
-
+                    
                     if (skins.Count > 0)
                         _logger.LogInformation(
                             $"Добавлены скины:\n {string.Join("\n", skins.Select(x => x.MarketHashName))}");
-                    
+
                     await _context.Skins.AddRangeAsync(skins, cancellationToken);
 
                     await _context.SaveChangesAsync(cancellationToken);
