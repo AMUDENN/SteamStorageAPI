@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
+using SteamStorageAPI.Utilities.Comparers;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Steam;
 
@@ -105,7 +106,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken);
 
                     List<Skin> skins = response.results
-                        .Where(x => !marketHashNames.Contains(x.hash_name))
+                        .Where(x => !marketHashNames.Contains(x.hash_name, new InvariantCaseStringComparer()))
                         .Select(x =>
                             new Skin
                             {
