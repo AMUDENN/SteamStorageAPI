@@ -17,7 +17,7 @@
     --bgImageLigthen: linear-gradient(rgba(255,255,255,0.4),rgba(255,255,255,0.4));
 }
 
-.tag span {
+span.tag {
     border: none;
 }
     
