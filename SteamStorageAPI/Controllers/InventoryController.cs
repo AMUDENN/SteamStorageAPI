@@ -404,6 +404,8 @@ namespace SteamStorageAPI.Controllers
                 .Include(x => x.Skin)
                 .Where(x => x.Skin.GameId == game.Id));
 
+            await _context.SaveChangesAsync(cancellationToken);
+
             foreach (InventoryDescription item in response.descriptions)
             {
                 if (item is { marketable: 0, tradable: 0 })
