@@ -644,8 +644,13 @@ namespace SteamStorageAPI.Controllers
             DeleteMarkedSkinRequest request,
             CancellationToken cancellationToken = default)
         {
+            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
+                        throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Пользователя с таким Id не существует");
+
             MarkedSkin? markedSkin =
-                await _context.MarkedSkins.FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
+                await _context.MarkedSkins.Where(x => x.UserId == user.Id)
+                    .FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
 
             if (markedSkin is null)
                 throw new HttpResponseException(StatusCodes.Status400BadRequest,
