@@ -172,11 +172,11 @@ namespace SteamStorageAPI.Controllers
                 .Collection(x => x.SkinsDynamics)
                 .Query()
                 .AsNoTracking()
-                .Where(x => x.DateUpdate > DateTime.Now.AddDays(-30))
+                .Where(x => x.DateUpdate > DateTime.Now.AddDays(-30).Date)
                 .OrderBy(x => x.DateUpdate)
                 .ToListAsync(cancellationToken);
 
-            List<SkinsDynamic> dynamic7 = dynamic30.Where(x => x.DateUpdate > DateTime.Now.AddDays(-7)).ToList();
+            List<SkinsDynamic> dynamic7 = dynamic30.Where(x => x.DateUpdate > DateTime.Now.AddDays(-7).Date).ToList();
 
             double change7D = (double)(dynamic7.Count == 0
                 ? 0
@@ -203,17 +203,17 @@ namespace SteamStorageAPI.Controllers
             double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
             return await Task.WhenAll(skins
-                .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30)))
+                .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30).Date))
                 .AsEnumerable()
                 .Select(async x =>
                     new SkinResponse(
                         await _skinService.GetBaseSkinResponseAsync(x, cancellationToken),
                         (decimal)((double)x.CurrentPrice * currencyExchangeRate),
-                        x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                        x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
                             ? (double)((x.CurrentPrice - x.SkinsDynamics
-                                           .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                           .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
                                            .OrderBy(y => y.DateUpdate).First().Price)
-                                       / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
+                                       / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
                                            .OrderBy(y => y.DateUpdate).First().Price)
                             : 0,
                         x.SkinsDynamics.Count != 0
