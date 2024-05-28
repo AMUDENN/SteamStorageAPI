@@ -79,7 +79,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                 throw new HttpResponseException(StatusCodes.Status400BadRequest,
                     "При получении данных с сервера Steam произошла ошибка");
 
-            int totalCount = response.total_count;
+            int totalCount = int.MaxValue;
 
             Random rnd = new();
 
@@ -99,6 +99,8 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                     if (response is null)
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
                             "При получении данных с сервера Steam произошла ошибка");
+
+                    totalCount = response.total_count;
 
                     List<SkinsDynamic> skinsDynamics = [];
 
