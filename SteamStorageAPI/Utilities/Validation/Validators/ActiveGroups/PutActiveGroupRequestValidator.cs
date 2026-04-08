@@ -1,15 +1,15 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
-public sealed class PutActiveGroupRequestValidator : AbstractValidator<ActiveGroupsController.PutActiveGroupRequest>
+public sealed class PutActiveGroupRequestValidator : AbstractValidator<PutActiveGroupRequest>
 {
     public PutActiveGroupRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
             .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
-        
+
         RuleFor(expression => expression.Title)
             .Length(3, 100).WithMessage("Длина названия группы должна быть от 3 до 100 символов");
 

@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Actives;
 
-public sealed class DeleteActiveRequestValidator : AbstractValidator<ActivesController.DeleteActiveRequest>
+public sealed class DeleteActiveRequestValidator : AbstractValidator<DeleteActiveRequest>
 {
     public DeleteActiveRequestValidator()
     {

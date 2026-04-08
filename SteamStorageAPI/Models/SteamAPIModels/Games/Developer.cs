@@ -1,8 +1,8 @@
-﻿namespace SteamStorageAPI.Models.SteamAPIModels.Games
+﻿namespace SteamStorageAPI.Models.SteamAPIModels.Games;
+
+public class Developer
 {
-    public class Developer
-    {
-        public string name { get; set; }
-        public string url { get; set; }
-    }
+    public string name { get; set; }
+
+    public string url { get; set; }
 }

@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Inventory;
 
-public sealed class GetSavedInventoriesCountRequestValidator : AbstractValidator<InventoryController.GetSavedInventoriesCountRequest>
+public sealed class GetSavedInventoriesCountRequestValidator : AbstractValidator<GetSavedInventoriesCountRequest>
 {
     public GetSavedInventoriesCountRequestValidator()
     {

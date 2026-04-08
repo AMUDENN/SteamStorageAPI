@@ -35,9 +35,9 @@ public static class Program
         });
 
         //app.UseHttpsRedirection();
-        app.UseStaticFiles(new StaticFileOptions  
+        app.UseStaticFiles(new StaticFileOptions
         {
-            RequestPath = "/token"  
+            RequestPath = "/token"
         });
 
         app.MapHub<TokenHub>("/token/token-hub");
@@ -45,8 +45,8 @@ public static class Program
         app.UseRouting();
 
         app.MapControllerRoute(
-            name: "default",
-            pattern: "token/{action=Token}/{id?}");
+            "default",
+            "token/{action=Token}/{id?}");
 
         app.Run();
     }

@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Games;
 
-public sealed class DeleteGameRequestValidator : AbstractValidator<GamesController.DeleteGameRequest>
+public sealed class DeleteGameRequestValidator : AbstractValidator<DeleteGameRequest>
 {
     public DeleteGameRequestValidator()
     {

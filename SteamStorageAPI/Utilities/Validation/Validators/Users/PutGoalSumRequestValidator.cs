@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Users;
 
-public sealed class PutGoalSumRequestValidator : AbstractValidator<UsersController.PutGoalSumRequest>
+public sealed class PutGoalSumRequestValidator : AbstractValidator<PutGoalSumRequest>
 {
     public PutGoalSumRequestValidator()
     {

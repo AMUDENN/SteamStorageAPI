@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ArchiveGroups;
 
-public sealed class GetArchiveGroupsRequestValidator : AbstractValidator<ArchiveGroupsController.GetArchiveGroupsRequest>
+public sealed class GetArchiveGroupsRequestValidator : AbstractValidator<GetArchiveGroupsRequest>
 {
     public GetArchiveGroupsRequestValidator()
     {

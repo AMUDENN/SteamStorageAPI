@@ -1,120 +1,126 @@
-﻿using SteamStorageAPI.DBEntities;
+﻿using SteamStorageAPI.Models.DBEntities;
 
-namespace SteamStorageAPI.Utilities.Steam
+namespace SteamStorageAPI.Utilities.Steam;
+
+public static class SteamApi
 {
-    public static class SteamApi
+    #region Constants
+
+    private const string STEAM_COMMUNITY_BASE = "https://steamcommunity.com";
+
+    #endregion Constants
+
+    #region Fields
+
+    private static readonly Dictionary<string, string> _replaceChars = new()
     {
-        #region Constants
+        [" "] = "%20",
+        ["'"] = "%27"
+    };
 
-        private const string STEAM_COMMUNITY_BASE = "https://steamcommunity.com";
+    #endregion Fields
 
-        #endregion Constants
+    #region Properties
 
-        #region Fields
+    private static string SteamApiKey { get; set; } = string.Empty;
 
-        private static readonly Dictionary<string, string> _replaceChars = new()
+    #endregion Properties
+
+    #region Methods
+
+    public static void InitializeConfig(IConfiguration configuration)
+    {
+        IConfigurationSection steamSection = configuration.GetSection("Steam");
+
+        SteamApiKey = steamSection.GetValue<string>("ApiKey")
+                      ?? throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
+    }
+
+    public static void InitializeEnvironmentVariables()
+    {
+        SteamApiKey = Environment.GetEnvironmentVariable("SteamApiKey")
+                      ?? throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
+    }
+
+    public static string GetUserInfoUrl(long steamProfileId) =>
+        $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamApiKey}&steamids={steamProfileId}";
+
+    public static string GetUserUrl(long steamProfileId) =>
+        $"{STEAM_COMMUNITY_BASE}/profiles/{steamProfileId}";
+
+    public static string GetUserIconUrl(string urlHash) =>
+        $"https://avatars.steamstatic.com/{urlHash}";
+
+    public static string GetGameIconUrl(int appId, string urlHash) =>
+        $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appId}/{urlHash}.jpg";
+
+    public static string GetGameInfoUrl(int appId) =>
+        $"https://store.steampowered.com/api/libraryappdetails/?appid={appId}";
+
+    public static string GetSkinIconUrl(string urlHash) =>
+        $"https://community.cloudflare.steamstatic.com/economy/image/{urlHash}";
+
+    public static string GetSkinMarketUrl(int appId, string marketHashName) =>
+        $"{STEAM_COMMUNITY_BASE}/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
+
+    public static string GetSkinsUrl(int appId, int currencyId, int count, int start) =>
+        $"{STEAM_COMMUNITY_BASE}/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
+
+    public static string GetMostPopularSkinUrl(int appId) =>
+        GetSkinsUrl(appId, Currency.BASE_CURRENCY_ID, 1, 0);
+
+    public static string GetSkinInfoUrl(string marketHashName) =>
+        $"{STEAM_COMMUNITY_BASE}/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
+
+    public static string GetInventoryUrl(long steamProfileId, int appId, int count) =>
+        $"{STEAM_COMMUNITY_BASE}/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
+
+    public static string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId) =>
+        $"{STEAM_COMMUNITY_BASE}/market/priceoverview/?appid={appId}&market_hash_name={ReplaceMarketHashName(marketHashName)}&currency={steamCurrencyId}";
+
+    public static string GetAuthUrl(string returnTo, string realm) =>
+        $"{STEAM_COMMUNITY_BASE}/openid/login"
+        + "?openid.ns=http://specs.openid.net/auth/2.0"
+        + "&openid.mode=checkid_setup"
+        + $"&openid.return_to={returnTo}"
+        + $"&openid.realm={realm}"
+        + "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select"
+        + "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
+
+    public static string GetAuthCheckUrl() => $"{STEAM_COMMUNITY_BASE}/openid/login";
+
+    public static HttpContent GetAuthCheckContent(string ns,
+        string opEndpoint,
+        string claimedId,
+        string identity,
+        string returnTo,
+        string responseNonce,
+        string assocHandle,
+        string signed,
+        string sig)
+    {
+        Dictionary<string, string> formData = new()
         {
-            [" "] = "%20",
-            ["'"] = "%27"
+            ["openid.ns"] = ns,
+            ["openid.mode"] = "check_authentication",
+            ["openid.op_endpoint"] = opEndpoint,
+            ["openid.claimed_id"] = claimedId,
+            ["openid.identity"] = identity,
+            ["openid.return_to"] = returnTo,
+            ["openid.response_nonce"] = responseNonce,
+            ["openid.assoc_handle"] = assocHandle,
+            ["openid.signed"] = signed,
+            ["openid.sig"] = sig
         };
 
-        #endregion Fields
-
-        #region Properties
-
-        private static string SteamApiKey { get; set; } = string.Empty;
-
-        #endregion Properties
-
-        #region Methods
-
-        public static void InitializeConfig(IConfiguration configuration)
-        {
-            IConfigurationSection steamSection = configuration.GetSection("Steam");
-
-            SteamApiKey = steamSection.GetValue<string>("ApiKey") ??
-                          throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
-        }
-
-        public static void InitializeEnvironmentVariables()
-        {
-            SteamApiKey = Environment.GetEnvironmentVariable("SteamApiKey") ??
-                          throw new ArgumentNullException($"{nameof(SteamApi)} {nameof(SteamApiKey)}");
-        }
-
-        public static string GetUserInfoUrl(long steamProfileId) =>
-            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={SteamApiKey}&steamids={steamProfileId}";
-
-        public static string GetUserUrl(long steamProfileId) =>
-            $"{STEAM_COMMUNITY_BASE}/profiles/{steamProfileId}";
-
-        public static string GetUserIconUrl(string urlHash) =>
-            $"https://avatars.steamstatic.com/{urlHash}";
-
-        public static string GetGameIconUrl(int appId, string urlHash) =>
-            $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appId}/{urlHash}.jpg";
-
-        public static string GetGameInfoUrl(int appId) =>
-            $"https://store.steampowered.com/api/libraryappdetails/?appid={appId}";
-
-        public static string GetSkinIconUrl(string urlHash) =>
-            $"https://community.cloudflare.steamstatic.com/economy/image/{urlHash}";
-
-        public static string GetSkinMarketUrl(int appId, string marketHashName) =>
-            $"{STEAM_COMMUNITY_BASE}/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
-
-        public static string GetSkinsUrl(int appId, int currencyId, int count, int start) =>
-            $"{STEAM_COMMUNITY_BASE}/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
-
-        public static string GetMostPopularSkinUrl(int appId) =>
-            GetSkinsUrl(appId, Currency.BASE_CURRENCY_ID, 1, 0);
-
-        public static string GetSkinInfoUrl(string marketHashName) =>
-            $"{STEAM_COMMUNITY_BASE}/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
-
-        public static string GetInventoryUrl(long steamProfileId, int appId, int count) =>
-            $"{STEAM_COMMUNITY_BASE}/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
-
-        public static string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId) =>
-            $"{STEAM_COMMUNITY_BASE}/market/priceoverview/?appid={appId}&market_hash_name={ReplaceMarketHashName(marketHashName)}&currency={steamCurrencyId}";
-
-        public static string GetAuthUrl(string returnTo, string realm) =>
-            $"{STEAM_COMMUNITY_BASE}/openid/login" +
-            "?openid.ns=http://specs.openid.net/auth/2.0" +
-            "&openid.mode=checkid_setup" +
-            $"&openid.return_to={returnTo}" +
-            $"&openid.realm={realm}" +
-            "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select" +
-            "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
-
-        public static string GetAuthCheckUrl() => $"{STEAM_COMMUNITY_BASE}/openid/login";
-
-        public static HttpContent GetAuthCheckContent(string ns, string opEndpoint, string claimedId, string identity,
-            string returnTo, string responseNonce, string assocHandle, string signed, string sig)
-        {
-            Dictionary<string, string> formData = new()
-            {
-                ["openid.ns"] = ns,
-                ["openid.mode"] = "check_authentication",
-                ["openid.op_endpoint"] = opEndpoint,
-                ["openid.claimed_id"] = claimedId,
-                ["openid.identity"] = identity,
-                ["openid.return_to"] = returnTo,
-                ["openid.response_nonce"] = responseNonce,
-                ["openid.assoc_handle"] = assocHandle,
-                ["openid.signed"] = signed,
-                ["openid.sig"] = sig
-            };
-
-            return new FormUrlEncodedContent(formData);
-        }
-
-        private static string ReplaceMarketHashName(string marketHashName)
-        {
-            return _replaceChars.Aggregate(marketHashName,
-                (current, replaceChar) => current.Replace(replaceChar.Key, replaceChar.Value));
-        }
-
-        #endregion Methods
+        return new FormUrlEncodedContent(formData);
     }
+
+    private static string ReplaceMarketHashName(string marketHashName)
+    {
+        return _replaceChars.Aggregate(marketHashName,
+            (current, replaceChar) => current.Replace(replaceChar.Key, replaceChar.Value));
+    }
+
+    #endregion Methods
 }

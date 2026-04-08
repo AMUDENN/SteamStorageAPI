@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Archives;
 
-public sealed class GetArchivesPagesCountRequestValidator : AbstractValidator<ArchivesController.GetArchivesPagesCountRequest>
+public sealed class GetArchivesPagesCountRequestValidator : AbstractValidator<GetArchivesPagesCountRequest>
 {
     public GetArchivesPagesCountRequestValidator()
     {

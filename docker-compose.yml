@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: LoginWebApp/Dockerfile
-      
+  
   adminpanel:
     image: adminpanel
     env_file:

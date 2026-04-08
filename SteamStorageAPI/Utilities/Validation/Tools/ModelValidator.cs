@@ -40,8 +40,8 @@ public sealed class ModelValidator : IModelValidator
     {
         Type genericType = typeof(ValidationContext<>).MakeGenericType(model.GetType());
         ConstructorInfo constructor =
-            genericType.GetConstructors().FirstOrDefault(constructor => constructor.GetParameters().Length == 1) ??
-            throw new ArgumentException($"Не удалось найти конструктор с 1 параметров в виде `{genericType}`.",
+            genericType.GetConstructors().FirstOrDefault(constructor => constructor.GetParameters().Length == 1)
+            ?? throw new ArgumentException($"Не удалось найти конструктор с 1 параметров в виде `{genericType}`.",
                 nameof(constructor));
 
         return (IValidationContext)constructor.Invoke([model]);

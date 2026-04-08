@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Skins;
 
-public sealed class GetSavedSkinsCountRequestValidator : AbstractValidator<SkinsController.GetSavedSkinsCountRequest>
+public sealed class GetSavedSkinsCountRequestValidator : AbstractValidator<GetSavedSkinsCountRequest>
 {
     public GetSavedSkinsCountRequestValidator()
     {

@@ -45,10 +45,8 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(AdminPanel));
     }
 
-    public IActionResult AccessDenied()
-    {
-        return View();
-    }
+    public IActionResult AccessDenied() =>
+        View();
 
     public async Task<IActionResult> AdminPanel(
         AdminPanelRequest request,
@@ -56,7 +54,7 @@ public class AdminPanelController : Controller
     {
         HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
         _apiClient.Token = token ?? string.Empty;
-        
+
         Users.HasAccessToAdminPanelResponse? hasAccess = await _apiClient.GetAsync<Users.HasAccessToAdminPanelResponse>(
             ApiConstants.ApiMethods.GetHasAccessToAdminPanel,
             cancellationToken);

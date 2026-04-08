@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
-public sealed class PostActiveGroupRequestValidator : AbstractValidator<ActiveGroupsController.PostActiveGroupRequest>
+public sealed class PostActiveGroupRequestValidator : AbstractValidator<PostActiveGroupRequest>
 {
     public PostActiveGroupRequestValidator()
     {

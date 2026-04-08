@@ -10,20 +10,21 @@ public abstract class BaseHealthChecker : IHealthCheck
     protected readonly IHttpClientFactory HttpClientFactory;
 
     #endregion Fields
-    
+
     #region Properties
 
     protected string HostUrl
     {
-        get => $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}";
+        get =>
+            $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}";
     }
-    
+
     #endregion Properties
 
     #region Constructor
 
     protected BaseHealthChecker(
-        IHttpContextAccessor httpContextAccessor, 
+        IHttpContextAccessor httpContextAccessor,
         IHttpClientFactory httpClientFactory)
     {
         _httpContextAccessor = httpContextAccessor;

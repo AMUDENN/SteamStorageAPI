@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Pages;
 
-public sealed class SetPageRequestValidator : AbstractValidator<PagesController.SetPageRequest>
+public sealed class SetPageRequestValidator : AbstractValidator<SetPageRequest>
 {
     public SetPageRequestValidator()
     {

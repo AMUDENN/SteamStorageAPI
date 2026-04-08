@@ -15,9 +15,9 @@ public class AdminPanelViewModel
     public string Role { get; init; } = string.Empty;
 
     public List<Currencies.CurrencyResponse> Currencies { get; init; } = [];
-    
+
     public List<Games.GameResponse> Games { get; init; } = [];
-    
+
     public List<Roles.RoleResponse> Roles { get; init; } = [];
 
     public int UsersPageNumber { get; init; } = 1;

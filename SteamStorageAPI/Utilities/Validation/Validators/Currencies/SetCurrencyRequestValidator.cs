@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
-public sealed class SetCurrencyRequestValidator : AbstractValidator<CurrenciesController.SetCurrencyRequest>
+public sealed class SetCurrencyRequestValidator : AbstractValidator<SetCurrencyRequest>
 {
     public SetCurrencyRequestValidator()
     {

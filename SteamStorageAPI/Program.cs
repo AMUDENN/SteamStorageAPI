@@ -4,23 +4,29 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
-using SteamStorageAPI.DBEntities;
 using SteamStorageAPI.Middlewares;
-using SteamStorageAPI.Services.SkinService;
-using SteamStorageAPI.Services.UserService;
 using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Quartz;
-using SteamStorageAPI.Services.BackgroundServices;
-using SteamStorageAPI.Services.CryptographyService;
-using SteamStorageAPI.Services.CurrencyService;
-using SteamStorageAPI.Services.JwtProvider;
-using SteamStorageAPI.Services.QuartzJobs;
-using SteamStorageAPI.Services.RefreshActiveDynamicsService;
-using SteamStorageAPI.Services.RefreshCurrenciesService;
-using SteamStorageAPI.Services.RefreshSkinDynamicsService;
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Services.Background.BackgroundServices;
+using SteamStorageAPI.Services.Background.QuartzJobs;
+using SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;
+using SteamStorageAPI.Services.Background.RefreshCurrenciesService;
+using SteamStorageAPI.Services.Background.RefreshSkinDynamicsService;
+using SteamStorageAPI.Services.Domain.ActiveGroupService;
+using SteamStorageAPI.Services.Domain.ActiveService;
+using SteamStorageAPI.Services.Domain.ArchiveGroupService;
+using SteamStorageAPI.Services.Domain.ArchiveService;
+using SteamStorageAPI.Services.Domain.GameService;
+using SteamStorageAPI.Services.Domain.InventoryService;
+using SteamStorageAPI.Services.Domain.StatisticsService;
+using SteamStorageAPI.Services.Infrastructure.CurrencyService;
+using SteamStorageAPI.Services.Infrastructure.JwtProvider;
+using SteamStorageAPI.Services.Infrastructure.SkinService;
+using SteamStorageAPI.Services.Infrastructure.UserService;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.HealthCheck;
@@ -39,8 +45,7 @@ public static class Program
         //Controllers
         builder.Services
             .AddControllers(options => { options.AddAutoValidation(); })
-            .AddJsonOptions(options =>
-            {
+            .AddJsonOptions(options => {
                 options.JsonSerializerOptions.WriteIndented = true;
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -68,14 +73,21 @@ public static class Program
         builder.Services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
 
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
-        builder.Services.AddScoped<ICryptographyService, CryptographyService>();
         builder.Services.AddTransient<ISkinService, SkinService>();
         builder.Services.AddTransient<IUserService, UserService>();
         builder.Services.AddTransient<ICurrencyService, CurrencyService>();
 
+        // Domain services
+        builder.Services.AddScoped<IArchiveService, ArchiveService>();
+        builder.Services.AddScoped<IActiveService, ActiveService>();
+        builder.Services.AddScoped<IActiveGroupService, ActiveGroupService>();
+        builder.Services.AddScoped<IArchiveGroupService, ArchiveGroupService>();
+        builder.Services.AddScoped<IInventoryService, InventoryService>();
+        builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+        builder.Services.AddScoped<IGameService, GameService>();
+
         //Quartz
-        builder.Services.AddQuartz(q =>
-        {
+        builder.Services.AddQuartz(q => {
             q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
 
             q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
@@ -97,8 +109,7 @@ public static class Program
 
         //Swagger
         builder.Services
-            .AddSwaggerGen(options =>
-            {
+            .AddSwaggerGen(options => {
                 options.SwaggerDoc("v1", new()
                 {
                     Title = "SteamStorage API",
@@ -131,7 +142,7 @@ public static class Program
 
                 string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-                
+
                 options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             });
 
@@ -161,8 +172,8 @@ public static class Program
                                            ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
         }
 
-        builder.Services.AddDbContext<SteamStorageContext>(
-            options => options.UseSqlServer(connectionStringSteamStorage));
+        builder.Services.AddDbContext<SteamStorageContext>(options =>
+            options.UseSqlServer(connectionStringSteamStorage));
 
         //ExceptionHandlers
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -172,26 +183,49 @@ public static class Program
         builder.Services.AddHealthChecks()
             .AddSqlServer(name: "SteamStorageDB",
                 connectionString: connectionStringSteamStorage,
-                tags: new[] { "db", "database" })
+                tags: new[]
+                {
+                    "db", "database"
+                })
             .AddSqlServer(name: "SteamStorageHealthChecksDB",
                 connectionString: connectionStringHealthChecks,
-                tags: new[] { "db", "database" })
-            .AddDbContextCheck<SteamStorageContext>(name: nameof(SteamStorageContext),
-                tags: new[] { "db", "db-context" })
-            .AddCheck<ApiHealthChecker>(name: nameof(ApiHealthChecker),
-                tags: new[] { "api" })
-            .AddCheck<AdminPanelHealthChecker>(name: nameof(AdminPanelHealthChecker),
-                tags: new[] { "api", "ap", "admin", "admin panel" })
-            .AddCheck<LoginWebAppHealthChecker>(name: nameof(LoginWebAppHealthChecker),
-                tags: new[] { "api", "lwa", "loginwebapp", "login web app" })
-            .AddCheck<SteamMarketHealthChecker>(name: nameof(SteamMarketHealthChecker),
-                tags: new[] { "steam" })
-            .AddCheck<SteamProfileHealthChecker>(name: nameof(SteamProfileHealthChecker),
-                tags: new[] { "steam" });
+                tags: new[]
+                {
+                    "db", "database"
+                })
+            .AddDbContextCheck<SteamStorageContext>(nameof(SteamStorageContext),
+                tags: new[]
+                {
+                    "db", "db-context"
+                })
+            .AddCheck<ApiHealthChecker>(nameof(ApiHealthChecker),
+                tags: new[]
+                {
+                    "api"
+                })
+            .AddCheck<AdminPanelHealthChecker>(nameof(AdminPanelHealthChecker),
+                tags: new[]
+                {
+                    "api", "ap", "admin", "admin panel"
+                })
+            .AddCheck<LoginWebAppHealthChecker>(nameof(LoginWebAppHealthChecker),
+                tags: new[]
+                {
+                    "api", "lwa", "loginwebapp", "login web app"
+                })
+            .AddCheck<SteamMarketHealthChecker>(nameof(SteamMarketHealthChecker),
+                tags: new[]
+                {
+                    "steam"
+                })
+            .AddCheck<SteamProfileHealthChecker>(nameof(SteamProfileHealthChecker),
+                tags: new[]
+                {
+                    "steam"
+                });
 
         builder.Services
-            .AddHealthChecksUI(setup =>
-            {
+            .AddHealthChecksUI(setup => {
                 setup.AddHealthCheckEndpoint("Health details", "https://steamstorage.ru/api/health-all");
                 setup.AddHealthCheckEndpoint("SteamStorageAPI", "https://steamstorage.ru/api/health-api");
                 setup.AddHealthCheckEndpoint("DataBase", "https://steamstorage.ru/api/health-db");
@@ -205,8 +239,7 @@ public static class Program
         builder.Services.AddMemoryCache();
 
         //RateLimit
-        builder.Services.Configure<IpRateLimitOptions>(options =>
-        {
+        builder.Services.Configure<IpRateLimitOptions>(options => {
             options.EnableEndpointRateLimiting = true;
             options.StackBlockedRequests = false;
             options.HttpStatusCode = 429;
@@ -218,7 +251,7 @@ public static class Program
                 {
                     Endpoint = "*",
                     Period = "1s",
-                    Limit = 20,
+                    Limit = 20
                 }
             ];
         });
@@ -231,13 +264,11 @@ public static class Program
         //Authorization
         builder.Services.AddAuthorization();
         builder.Services
-            .AddAuthentication(options =>
-            {
+            .AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options =>
-            {
+            .AddJwtBearer(options => {
                 options.TokenValidationParameters = new()
                 {
                     ValidateIssuer = true,
@@ -249,10 +280,10 @@ public static class Program
                     IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey()
                 };
             });
-        
+
         //WebRoot
         builder.WebHost.UseWebRoot("wwwroot");
-        
+
         return builder;
     }
 
@@ -261,26 +292,22 @@ public static class Program
         WebApplicationBuilder builder = ConfigureServices(WebApplication.CreateBuilder(args));
 
         WebApplication app = builder.Build();
-        
-        
-        app.UseSwagger(swaggerOptions =>
-        {
+
+
+        app.UseSwagger(swaggerOptions => {
             swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json";
         });
-        app.UseSwaggerUI(swaggerUiOptions =>
-        {
-            swaggerUiOptions.RoutePrefix = "api/swagger";
-        });
+        app.UseSwaggerUI(swaggerUiOptions => { swaggerUiOptions.RoutePrefix = "api/swagger"; });
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new()
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-        
-        app.UseStaticFiles(new StaticFileOptions  
+
+        app.UseStaticFiles(new StaticFileOptions
         {
-            RequestPath = "/api"  
+            RequestPath = "/api"
         });
 
         // HealthChecks
@@ -296,8 +323,7 @@ public static class Program
         app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
             .RequireAuthorization();
 
-        app.MapHealthChecksUI(options =>
-        {
+        app.MapHealthChecksUI(options => {
             options.UIPath = "/api/health-ui";
             options.ApiPath = "/api";
             options.ResourcesPath = "/api";
@@ -309,14 +335,14 @@ public static class Program
 
         // RateLimit
         app.UseIpRateLimiting();
-        
+
         //ExceptionHandler
         app.UseExceptionHandler();
-        
+
         //Authorization
         app.UseAuthentication();
         app.UseAuthorization();
-                
+
         //Middlewares
         app.UseMiddleware<RequestLoggingMiddleware>();
 
@@ -325,14 +351,12 @@ public static class Program
         app.Run();
     }
 
-    private static HealthCheckOptions CreateHealthCheckOptions(Func<HealthCheckRegistration, bool> predicate)
-    {
-        return new()
+    private static HealthCheckOptions CreateHealthCheckOptions(Func<HealthCheckRegistration, bool> predicate) =>
+        new()
         {
             Predicate = predicate,
             ResponseWriter = HealthCheckResponseWriter.WriteResponse
         };
-    }
 
     #endregion Methods
 }

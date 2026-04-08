@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Users;
 
-public sealed class GetUserRequestValidator : AbstractValidator<UsersController.GetUserRequest>
+public sealed class GetUserRequestValidator : AbstractValidator<GetUserRequest>
 {
     public GetUserRequestValidator()
     {

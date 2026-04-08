@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Inventory;
 
-public sealed class GetInventoryRequestValidator : AbstractValidator<InventoryController.GetInventoryRequest>
+public sealed class GetInventoryRequestValidator : AbstractValidator<GetInventoryRequest>
 {
     public GetInventoryRequestValidator()
     {

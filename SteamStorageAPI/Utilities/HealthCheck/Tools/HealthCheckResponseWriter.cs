@@ -9,7 +9,10 @@ public static class HealthCheckResponseWriter
     public static async Task WriteResponse(HttpContext context, HealthReport healthReport)
     {
         context.Response.ContentType = "application/json; charset=utf-8";
-        JsonWriterOptions options = new() { Indented = true };
+        JsonWriterOptions options = new()
+        {
+            Indented = true
+        };
         using MemoryStream memoryStream = new();
         await using Utf8JsonWriter jsonWriter = new(memoryStream, options);
         jsonWriter.WriteStartObject();
@@ -27,6 +30,7 @@ public static class HealthCheckResponseWriter
                 jsonWriter.WritePropertyName(item.Key);
                 JsonSerializer.Serialize(jsonWriter, item.Value, item.Value.GetType());
             }
+
             jsonWriter.WriteEndObject();
 
             jsonWriter.WriteString("duration", healthReportEntry.Value.Duration.ToString());

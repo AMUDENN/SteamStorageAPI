@@ -28,10 +28,8 @@ public class AuthorizeController : Controller
 
     #region Methods
 
-    public IActionResult Index()
-    {
-        return View();
-    }
+    public IActionResult Index() =>
+        View();
 
     public async Task<IActionResult> LogIn(
         CancellationToken cancellationToken = default)

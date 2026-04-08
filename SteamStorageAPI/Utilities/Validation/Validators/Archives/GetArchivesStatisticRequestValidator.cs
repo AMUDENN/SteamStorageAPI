@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Archives;
 
-public sealed class GetArchivesStatisticRequestValidator : AbstractValidator<ArchivesController.GetArchivesStatisticRequest>
+public sealed class GetArchivesStatisticRequestValidator : AbstractValidator<GetArchivesStatisticRequest>
 {
     public GetArchivesStatisticRequestValidator()
     {

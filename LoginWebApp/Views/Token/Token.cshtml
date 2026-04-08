@@ -8,10 +8,10 @@
 <html lang="ru">
 
 <head runat="server">
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <title>@ViewData["Title"] - Steam Storage</title>
-    <link rel="stylesheet" type="text/css" href="~/token/css/main-style.css" runat="server" />
-    <link rel="stylesheet" type="text/css" href="~/token/css/token-style.css" runat="server" />
+    <link rel="stylesheet" type="text/css" href="~/token/css/main-style.css" runat="server"/>
+    <link rel="stylesheet" type="text/css" href="~/token/css/token-style.css" runat="server"/>
 </head>
 
 <body>
@@ -30,12 +30,14 @@
             @if (Model.IsTokenEmpty)
             {
                 <p class="dark-text large-text center-text">Неудача!</p>
-                <p class="dark-text big-text center-text">Во время авторизации что-то пошло не так. Пожалуйста, попробуйте ещё раз.</p>
+                <p class="dark-text big-text center-text">Во время авторизации что-то пошло не так. Пожалуйста,
+                    попробуйте ещё раз.</p>
             }
             else
             {
                 <p class="dark-text large-text center-text">Успешно!</p>
-                <p class="dark-text big-text center-text">Ваша авторизация выполнена успешно. Теперь вы можете вернуться в Steam Storage.</p>
+                <p class="dark-text big-text center-text">Ваша авторизация выполнена успешно. Теперь вы можете вернуться
+                    в Steam Storage.</p>
             }
         </div>
     </div>

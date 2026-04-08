@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Inventory;
 
-public sealed class RefreshInventoryRequestValidator : AbstractValidator<InventoryController.RefreshInventoryRequest>
+public sealed class RefreshInventoryRequestValidator : AbstractValidator<RefreshInventoryRequest>
 {
     public RefreshInventoryRequestValidator()
     {

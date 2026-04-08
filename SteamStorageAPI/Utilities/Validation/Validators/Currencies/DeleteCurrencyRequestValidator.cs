@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
-public sealed class DeleteCurrencyRequestValidator : AbstractValidator<CurrenciesController.DeleteCurrencyRequest>
+public sealed class DeleteCurrencyRequestValidator : AbstractValidator<DeleteCurrencyRequest>
 {
     public DeleteCurrencyRequestValidator()
     {

@@ -10,10 +10,8 @@ public class InvariantCaseStringComparer : IEqualityComparer<string>
         return string.Equals(x, y, StringComparison.CurrentCultureIgnoreCase);
     }
 
-    public int GetHashCode(string obj)
-    {
-        return obj.ToLower().GetHashCode();
-    }
+    public int GetHashCode(string obj) =>
+        obj.ToLower().GetHashCode();
 
     #endregion Methods
 }

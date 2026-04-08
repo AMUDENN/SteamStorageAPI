@@ -1,8 +1,8 @@
-﻿namespace SteamStorageAPI.Models.SteamAPIModels.Inventory
+﻿namespace SteamStorageAPI.Models.SteamAPIModels.Inventory;
+
+public class SkinAction
 {
-    public class SkinAction
-    {
-        public string link { get; set; }
-        public string name { get; set; }
-    }
+    public string link { get; set; }
+
+    public string name { get; set; }
 }

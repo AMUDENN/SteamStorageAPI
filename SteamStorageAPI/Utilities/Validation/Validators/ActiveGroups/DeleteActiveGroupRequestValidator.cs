@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
-public sealed class DeleteActiveGroupRequestValidator : AbstractValidator<ActiveGroupsController.DeleteActiveGroupRequest>
+public sealed class DeleteActiveGroupRequestValidator : AbstractValidator<DeleteActiveGroupRequest>
 {
     public DeleteActiveGroupRequestValidator()
     {

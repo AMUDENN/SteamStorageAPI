@@ -2,7 +2,7 @@ using AdminPanel.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
 using SteamStorageAPI.SDK.Services.Logger.LoggerService;
 using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection;
-using LoggerService = AdminPanel.Services.LoggerService.LoggerService;
+using LoggerService=AdminPanel.Services.LoggerService.LoggerService;
 
 namespace AdminPanel;
 
@@ -15,14 +15,13 @@ public static class Program
         builder.Services.AddControllersWithViews();
 
         //SteamStorageApi
-        builder.Services.AddSteamStorageApiWeb(options =>
-        {
+        builder.Services.AddSteamStorageApiWeb(options => {
             options.ClientTimeout = ProgramConstants.API_CLIENT_TIMEOUT;
         });
 
         //Custom SteamStorageApi Services
         builder.Services.AddSingleton<ILoggerService, LoggerService>();
-        
+
         builder.Services.AddHttpContextAccessor();
 
         return builder;
@@ -46,11 +45,11 @@ public static class Program
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-        
+
         //app.UseHttpsRedirection();
-        app.UseStaticFiles(new StaticFileOptions  
+        app.UseStaticFiles(new StaticFileOptions
         {
-            RequestPath = "/admin"  
+            RequestPath = "/admin"
         });
 
         app.UseRouting();
@@ -58,8 +57,8 @@ public static class Program
         app.UseAuthorization();
 
         app.MapControllerRoute(
-            name: "default",
-            pattern: "admin/{controller=Authorize}/{action=Index}/{id?}");
+            "default",
+            "admin/{controller=Authorize}/{action=Index}/{id?}");
 
         app.Run();
     }

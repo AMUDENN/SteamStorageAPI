@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Actives;
 
-public sealed class PostActiveRequestValidator : AbstractValidator<ActivesController.PostActiveRequest>
+public sealed class PostActiveRequestValidator : AbstractValidator<PostActiveRequest>
 {
     public PostActiveRequestValidator()
     {

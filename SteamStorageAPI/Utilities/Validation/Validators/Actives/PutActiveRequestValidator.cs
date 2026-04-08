@@ -1,15 +1,15 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Actives;
 
-public sealed class PutActiveRequestValidator : AbstractValidator<ActivesController.PutActiveRequest>
+public sealed class PutActiveRequestValidator : AbstractValidator<PutActiveRequest>
 {
     public PutActiveRequestValidator()
     {
         RuleFor(expression => expression.Id)
             .GreaterThan(0).WithMessage("Id актива не может быть меньше 1");
-        
+
         RuleFor(expression => expression.GroupId)
             .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
 

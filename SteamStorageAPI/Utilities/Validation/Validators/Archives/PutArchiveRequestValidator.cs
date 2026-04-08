@@ -1,15 +1,15 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Archives;
 
-public sealed class PutArchiveRequestValidator : AbstractValidator<ArchivesController.PutArchiveRequest>
+public sealed class PutArchiveRequestValidator : AbstractValidator<PutArchiveRequest>
 {
     public PutArchiveRequestValidator()
     {
         RuleFor(expression => expression.Id)
             .GreaterThan(0).WithMessage("Id элемента архива не может быть меньше 1");
-        
+
         RuleFor(expression => expression.GroupId)
             .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
 
