@@ -309,18 +309,18 @@ public static class Program
 
         // RateLimit
         app.UseIpRateLimiting();
-
+        
+        //ExceptionHandler
+        app.UseExceptionHandler();
+        
+        //Authorization
+        app.UseAuthentication();
+        app.UseAuthorization();
+                
         //Middlewares
         app.UseMiddleware<RequestLoggingMiddleware>();
 
         app.MapControllers();
-
-        //Authorization
-        app.UseAuthentication();
-        app.UseAuthorization();
-
-        //ExceptionHandler
-        app.UseExceptionHandler();
 
         app.Run();
     }
