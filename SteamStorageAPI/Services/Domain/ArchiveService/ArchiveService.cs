@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Models.DTOs.Enums;
-using SteamStorageAPI.Services.Infrastructure.SkinService;
+using SteamStorageAPI.Services.Domain.SkinService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Extensions;
 

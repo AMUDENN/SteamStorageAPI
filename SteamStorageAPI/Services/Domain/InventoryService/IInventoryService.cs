@@ -19,6 +19,11 @@ public interface IInventoryService
         string? filter,
         CancellationToken cancellationToken = default);
 
+    Task<InventoryPagesCountResponse> GetInventoryPagesCountAsync(
+        User user,
+        GetInventoryPagesCountRequest request,
+        CancellationToken cancellationToken = default);
+
     IQueryable<Inventory> GetInventoryQuery(
         User user,
         int? gameId,

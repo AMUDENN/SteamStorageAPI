@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Models.SteamAPIModels.Games;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Services.Domain.GameService;
 
@@ -12,6 +12,7 @@ public class GameService : IGameService
 {
     #region Fields
 
+    private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SteamStorageContext _context;
 
@@ -20,9 +21,11 @@ public class GameService : IGameService
     #region Constructor
 
     public GameService(
+        ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
         SteamStorageContext context)
     {
+        _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
         _context = context;
     }
@@ -31,6 +34,16 @@ public class GameService : IGameService
 
     #region Methods
 
+    public async Task<GamesResponse> GetGamesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        List<Game> games = await _context.Games.AsNoTracking().ToListAsync(cancellationToken);
+
+        return new(games.Count, games.Select(x =>
+            new GameResponse(x.Id, x.SteamGameId, x.Title,
+                _steamApiUrlBuilder.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
+    }
+
     public async Task<bool> IsGameIconExistsAsync(
         int steamGameId,
         string iconUrlHash,
@@ -38,7 +51,7 @@ public class GameService : IGameService
     {
         HttpClient client = _httpClientFactory.CreateClient();
         HttpResponseMessage response =
-            await client.GetAsync(SteamApi.GetGameIconUrl(steamGameId, iconUrlHash), cancellationToken);
+            await client.GetAsync(_steamApiUrlBuilder.GetGameIconUrl(steamGameId, iconUrlHash), cancellationToken);
         return response.StatusCode == HttpStatusCode.OK;
     }
 
@@ -48,7 +61,7 @@ public class GameService : IGameService
     {
         HttpClient client = _httpClientFactory.CreateClient();
         SteamGameResponse? steamResponse =
-            await client.GetFromJsonAsync<SteamGameResponse>(SteamApi.GetGameInfoUrl(request.SteamGameId),
+            await client.GetFromJsonAsync<SteamGameResponse>(_steamApiUrlBuilder.GetGameInfoUrl(request.SteamGameId),
                 cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status400BadRequest, "Указан неверный id игры");
 

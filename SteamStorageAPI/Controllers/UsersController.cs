@@ -1,13 +1,11 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
-using SteamStorageAPI.Models.SteamAPIModels.User;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Domain.UserService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Steam;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
@@ -19,76 +17,20 @@ public class UsersController : ControllerBase
 {
     #region Fields
 
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IUserService _userService;
-    private readonly SteamStorageContext _context;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
     #region Constructor
 
-    public UsersController(
-        IHttpClientFactory httpClientFactory,
-        IUserService userService,
-        SteamStorageContext context)
+    public UsersController(IUserService userService, IContextUserService contextUserService)
     {
-        _httpClientFactory = httpClientFactory;
         _userService = userService;
-        _context = context;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
-
-    #region Methods
-
-    private static UserResponse GetUserResponse(User user) =>
-        new(user.Id,
-            user.SteamId.ToString(),
-            SteamApi.GetUserUrl(user.SteamId),
-            user.IconUrl is null ? null : SteamApi.GetUserIconUrl(user.IconUrl),
-            user.IconUrlMedium is null ? null : SteamApi.GetUserIconUrl(user.IconUrlMedium),
-            user.IconUrlFull is null ? null : SteamApi.GetUserIconUrl(user.IconUrlFull),
-            user.Username?.Trim([' ']),
-            user.RoleId,
-            user.Role.Title,
-            user.StartPageId,
-            user.StartPage.Title,
-            user.CurrencyId,
-            user.DateRegistration,
-            user.GoalSum);
-
-    private async Task<UserResponse> GetCurrentUserResponseAsync(
-        User user,
-        CancellationToken cancellationToken = default)
-    {
-        if (user.Username is null
-            || user.IconUrl is null
-            || user.IconUrlMedium is null
-            || user.IconUrlFull is null
-            || user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.Now.AddDays(-1))
-        {
-            HttpClient client = _httpClientFactory.CreateClient();
-            SteamUserResult? steamUserResult =
-                await client.GetFromJsonAsync<SteamUserResult>(
-                    SteamApi.GetUserInfoUrl(user.SteamId), cancellationToken);
-
-            if (steamUserResult is not null)
-            {
-                SteamUser? steamUser = steamUserResult.response.players.FirstOrDefault();
-                user.Username = steamUser?.personaname;
-                user.IconUrl = steamUser?.avatar.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.IconUrlMedium = steamUser?.avatarmedium.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.IconUrlFull = steamUser?.avatarfull.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.DateUpdate = DateTime.Now;
-            }
-        }
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return GetUserResponse(user);
-    }
-
-    #endregion Methods
 
     #region GET
 
@@ -103,21 +45,8 @@ public class UsersController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<UsersResponse>> GetUsers(
         [FromQuery] GetUsersRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        IQueryable<User> users = _context.Users.AsNoTracking();
-        int usersCount = await users.CountAsync(cancellationToken);
-        int pagesCount = (int)Math.Ceiling((double)usersCount / request.PageSize);
-
-        users = users
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Include(x => x.Role)
-            .Include(x => x.StartPage);
-
-        return Ok(new UsersResponse(usersCount, pagesCount == 0 ? 1 : pagesCount,
-            users.Select(x => GetUserResponse(x))));
-    }
+        CancellationToken cancellationToken = default) =>
+        Ok(await _userService.GetUsersAsync(request, cancellationToken));
 
     /// <summary>
     /// Получение количества пользователей
@@ -130,7 +59,7 @@ public class UsersController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<UsersCountResponse>> GetUsersCount(
         CancellationToken cancellationToken = default) =>
-        Ok(new UsersCountResponse(await _context.Users.CountAsync(cancellationToken)));
+        Ok(new UsersCountResponse(await _userService.GetUsersCountAsync(cancellationToken)));
 
     /// <summary>
     /// Получение информации о пользователе
@@ -144,17 +73,8 @@ public class UsersController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<UserResponse>> GetUserInfo(
         [FromQuery] GetUserRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        User user = await _context.Users.AsNoTracking()
-                        .Include(x => x.Role)
-                        .Include(x => x.StartPage)
-                        .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
-                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
-
-        return Ok(await GetCurrentUserResponseAsync(user, cancellationToken));
-    }
+        CancellationToken cancellationToken = default) =>
+        Ok(await _userService.GetUserInfoAsync(request, cancellationToken));
 
     /// <summary>
     /// Получение информации о текущем пользователе
@@ -169,15 +89,13 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserResponse>> GetCurrentUserInfo(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        await _context.Entry(user).Reference(x => x.Role).LoadAsync(cancellationToken);
-        await _context.Entry(user).Reference(x => x.StartPage).LoadAsync(cancellationToken);
-
-        return Ok(await GetCurrentUserResponseAsync(user, cancellationToken));
+        return Ok(await _userService.GetCurrentUserInfoAsync(user, cancellationToken));
     }
+
 
     /// <summary>
     /// Получение финансовой цели текущего пользователя
@@ -192,12 +110,13 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<GoalSumResponse>> GetCurrentUserGoalSum(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        return Ok(new GoalSumResponse(user.GoalSum));
+        return Ok(_userService.GetCurrentUserGoalSum(user));
     }
+
 
     /// <summary>
     /// Получение информации о доступе к админ панели
@@ -212,13 +131,11 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<HasAccessToAdminPanelResponse>> GetHasAccessToAdminPanel(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        await _context.Entry(user).Reference(x => x.Role).LoadAsync(cancellationToken);
-
-        return Ok(new HasAccessToAdminPanelResponse(user.Role.Title == nameof(Role.Roles.Admin)));
+        return Ok(await _userService.GetHasAccessToAdminPanelAsync(user, cancellationToken));
     }
 
     #endregion GET
@@ -238,13 +155,11 @@ public class UsersController : ControllerBase
         PutGoalSumRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        user.GoalSum = request.GoalSum;
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _userService.PutGoalSumAsync(user, request, cancellationToken);
         return Ok();
     }
 
@@ -263,13 +178,11 @@ public class UsersController : ControllerBase
     [HttpDelete(Name = "DeleteUser")]
     public async Task<ActionResult> DeleteUser(CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _userService.DeleteUserAsync(user, cancellationToken);
         return Ok();
     }
 

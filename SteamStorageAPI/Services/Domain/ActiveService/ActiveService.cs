@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Models.DTOs.Enums;
-using SteamStorageAPI.Services.Infrastructure.CurrencyService;
-using SteamStorageAPI.Services.Infrastructure.SkinService;
+using SteamStorageAPI.Services.Domain.CurrencyService;
+using SteamStorageAPI.Services.Domain.SkinService;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Extensions;
 
@@ -59,6 +59,25 @@ public class ActiveService : IActiveService
             active.Description);
     }
 
+    public async Task<ActiveResponse> GetActiveInfoAsync(
+        User user,
+        int activeId,
+        CancellationToken cancellationToken = default)
+    {
+        Active active = await _context.Entry(user)
+                            .Collection(x => x.ActiveGroups)
+                            .Query()
+                            .AsNoTracking()
+                            .SelectMany(x => x.Actives)
+                            .Include(x => x.Skin)
+                            .ThenInclude(x => x.Game)
+                            .FirstOrDefaultAsync(x => x.Id == activeId, cancellationToken)
+                        ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                            "Актива с таким Id не существует");
+
+        return await GetActiveResponseAsync(active, user, cancellationToken);
+    }
+
     public async Task<ActivesResponse> GetActivesResponseAsync(
         IQueryable<Active> actives,
         int pageNumber,
@@ -71,28 +90,93 @@ public class ActiveService : IActiveService
         int activesCount = await actives.CountAsync(cancellationToken);
         int pagesCount = (int)Math.Ceiling((double)activesCount / pageSize);
 
-        actives = actives.AsNoTracking()
+        List<Active> page = await actives
+            .AsNoTracking()
             .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize);
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
 
-        return new(activesCount,
-            pagesCount,
-            await Task.WhenAll(actives.AsEnumerable()
-                .Select(async x => new ActiveResponse(
-                    x.Id,
-                    x.GroupId,
-                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                    x.BuyDate,
-                    x.Count,
-                    x.BuyPrice,
-                    (decimal)((double)x.Skin.CurrentPrice * rate),
-                    (decimal)((double)x.Skin.CurrentPrice * rate * x.Count),
-                    x.GoalPrice,
-                    x.GoalPrice == null
-                        ? null
-                        : (double)x.Skin.CurrentPrice * rate / (double)x.GoalPrice,
-                    ((double)x.Skin.CurrentPrice * rate - (double)x.BuyPrice) / (double)x.BuyPrice,
-                    x.Description))).WaitAsync(cancellationToken));
+        IEnumerable<ActiveResponse> responses = await Task.WhenAll(
+            page.Select(async x => new ActiveResponse(
+                x.Id,
+                x.GroupId,
+                await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                x.BuyDate,
+                x.Count,
+                x.BuyPrice,
+                (decimal)((double)x.Skin.CurrentPrice * rate),
+                (decimal)((double)x.Skin.CurrentPrice * rate * x.Count),
+                x.GoalPrice,
+                x.GoalPrice == null
+                    ? null
+                    : (double)x.Skin.CurrentPrice * rate / (double)x.GoalPrice,
+                ((double)x.Skin.CurrentPrice * rate - (double)x.BuyPrice) / (double)x.BuyPrice,
+                x.Description)));
+
+        return new(activesCount, pagesCount, responses);
+    }
+
+    public async Task<ActivesStatisticResponse> GetActivesStatisticAsync(
+        User user,
+        GetActivesStatisticRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Active> actives = _context.Entry(user)
+            .Collection(x => x.ActiveGroups)
+            .Query()
+            .AsNoTracking()
+            .Include(x => x.Actives).ThenInclude(x => x.Skin)
+            .SelectMany(x => x.Actives)
+            .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                        && (request.GroupId == null || x.GroupId == request.GroupId))
+            .WhereMatchFilter(x => x.Skin.Title, request.Filter);
+
+        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+        return new(
+            await actives.SumAsync(x => x.Count, cancellationToken),
+            await actives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken),
+            (decimal)((double)await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate));
+    }
+
+    public async Task<ActivesPagesCountResponse> GetActivesPagesCountAsync(
+        User user,
+        GetActivesPagesCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        int count = await _context.Entry(user)
+            .Collection(x => x.ActiveGroups)
+            .Query()
+            .AsNoTracking()
+            .Include(x => x.Actives).ThenInclude(x => x.Skin)
+            .SelectMany(x => x.Actives)
+            .WhereMatchFilter(x => x.Skin.Title, request.Filter)
+            .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                             && (request.GroupId == null || x.GroupId == request.GroupId),
+                cancellationToken);
+
+        int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+
+        return new(pagesCount == 0 ? 1 : pagesCount);
+    }
+
+    public async Task<ActivesCountResponse> GetActivesCountAsync(
+        User user,
+        GetActivesCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        int count = await _context.Entry(user)
+            .Collection(x => x.ActiveGroups)
+            .Query()
+            .AsNoTracking()
+            .Include(x => x.Actives).ThenInclude(x => x.Skin)
+            .SelectMany(x => x.Actives)
+            .WhereMatchFilter(x => x.Skin.Title, request.Filter)
+            .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
+                             && (request.GroupId == null || x.GroupId == request.GroupId),
+                cancellationToken);
+
+        return new(count);
     }
 
     public IQueryable<Active> GetActivesQuery(
@@ -225,11 +309,15 @@ public class ActiveService : IActiveService
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
 
+        if (request.Count > active.Count)
+            throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                $"Количество продаваемых предметов ({request.Count}) превышает количество в активе ({active.Count})");
+
         await _context.Archives.AddAsync(new()
         {
             GroupId = request.GroupId,
             SkinId = active.SkinId,
-            Count = request.Count > active.Count ? active.Count : request.Count,
+            Count = request.Count,
             BuyDate = active.BuyDate,
             BuyPrice = active.BuyPrice,
             SoldDate = request.SoldDate,

@@ -1,10 +1,10 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Domain.PageService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -17,19 +17,17 @@ public class PagesController : ControllerBase
 {
     #region Fields
 
-    private readonly IUserService _userService;
-    private readonly SteamStorageContext _context;
+    private readonly IPageService _pageService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
     #region Constructor
 
-    public PagesController(
-        IUserService userService,
-        SteamStorageContext context)
+    public PagesController(IPageService pageService, IContextUserService contextUserService)
     {
-        _userService = userService;
-        _context = context;
+        _pageService = pageService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
@@ -43,12 +41,9 @@ public class PagesController : ControllerBase
     /// <response code="499">Операция отменена</response>
     [HttpGet(Name = "GetPages")]
     [Produces(MediaTypeNames.Application.Json)]
-    public async Task<ActionResult<PagesResponse>> GetPages(CancellationToken cancellationToken = default)
-    {
-        List<Page> pages = await _context.Pages.AsNoTracking().ToListAsync(cancellationToken);
-
-        return Ok(new PagesResponse(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title))));
-    }
+    public async Task<ActionResult<PagesResponse>> GetPages(
+        CancellationToken cancellationToken = default) =>
+        Ok(await _pageService.GetPagesAsync(cancellationToken));
 
     /// <summary>
     /// Получение текущей стартовой страницы пользователя
@@ -63,16 +58,11 @@ public class PagesController : ControllerBase
     public async Task<ActionResult<PageResponse>> GetCurrentStartPage(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        Page page = await _context.Pages.AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken)
-                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Страницы с таким Id не существует");
-
-        return Ok(new PageResponse(page.Id, page.Title));
+        return Ok(await _pageService.GetCurrentStartPageAsync(user, cancellationToken));
     }
 
     #endregion GET
@@ -92,17 +82,11 @@ public class PagesController : ControllerBase
         SetPageRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
-            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Страницы с таким Id не существует");
-
-        user.StartPageId = request.PageId;
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _pageService.SetStartPageAsync(user, request, cancellationToken);
         return Ok();
     }
 

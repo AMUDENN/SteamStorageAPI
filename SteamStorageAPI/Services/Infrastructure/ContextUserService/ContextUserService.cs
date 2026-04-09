@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 
-namespace SteamStorageAPI.Services.Infrastructure.UserService;
+namespace SteamStorageAPI.Services.Infrastructure.ContextUserService;
 
-public class UserService : IUserService
+public class ContextUserService : IContextUserService
 {
     #region Fields
 
@@ -15,7 +15,7 @@ public class UserService : IUserService
 
     #region Constructor
 
-    public UserService(IHttpContextAccessor httpContextAccessor, SteamStorageContext context)
+    public ContextUserService(IHttpContextAccessor httpContextAccessor, SteamStorageContext context)
     {
         _httpContextAccessor = httpContextAccessor;
         _context = context;
@@ -25,7 +25,7 @@ public class UserService : IUserService
 
     #region Methods
 
-    public async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
+    public async Task<User?> GetContextUserAsync(CancellationToken cancellationToken = default)
     {
         string? nameIdentifier = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
         return nameIdentifier is null

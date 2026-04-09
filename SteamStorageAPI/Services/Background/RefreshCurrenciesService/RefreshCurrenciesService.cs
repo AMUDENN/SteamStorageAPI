@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Price;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
-using SteamStorageAPI.Services.Infrastructure.SkinService;
+using SteamStorageAPI.Services.Domain.SkinService;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Services.Background.RefreshCurrenciesService;
 
@@ -19,6 +19,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
 
     #region Fields
 
+    private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ISkinService _skinService;
     private readonly SteamStorageContext _context;
@@ -28,10 +29,12 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
     #region Constructor
 
     public RefreshCurrenciesService(
+        ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
         ISkinService skinService,
         SteamStorageContext context)
     {
+        _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
         _skinService = skinService;
         _context = context;
@@ -63,7 +66,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         HttpClient client = _httpClientFactory.CreateClient();
 
         SteamSkinResponse? skinResponse =
-            await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetMostPopularSkinUrl(game.SteamGameId),
+            await client.GetFromJsonAsync<SteamSkinResponse>(_steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId),
                 cancellationToken);
 
         AssetDescription? skinResult = skinResponse?.results.FirstOrDefault()?.asset_description;
@@ -82,7 +85,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 cancellationToken);
 
         SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
-            SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId,
+            _steamApiUrlBuilder.GetPriceOverviewUrl(skin.Game.SteamGameId,
                 skin.MarketHashName,
                 baseCurrency.SteamCurrencyId),
             cancellationToken);
@@ -100,7 +103,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 continue;
 
             response = await client.GetFromJsonAsync<SteamPriceResponse>(
-                SteamApi.GetPriceOverviewUrl(skin.Game.SteamGameId,
+                _steamApiUrlBuilder.GetPriceOverviewUrl(skin.Game.SteamGameId,
                     skin.MarketHashName,
                     currency.SteamCurrencyId),
                 cancellationToken);

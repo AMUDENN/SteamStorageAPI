@@ -8,6 +8,23 @@ namespace SteamStorageAPI.Services.Infrastructure.JwtProvider;
 
 public class JwtProvider : IJwtProvider
 {
+    #region Fields
+
+    private readonly JwtOptions _jwtOptions;
+
+    #endregion Fields
+
+    #region Constructor
+
+    public JwtProvider(JwtOptions jwtOptions)
+    {
+        _jwtOptions = jwtOptions;
+    }
+
+    #endregion Constructor
+
+    #region Methods
+
     public string Generate(User tokenOwner)
     {
         List<Claim> claims =
@@ -18,14 +35,16 @@ public class JwtProvider : IJwtProvider
         ];
 
         JwtSecurityToken jwt = new(
-            JwtOptions.Issuer,
-            JwtOptions.Audience,
+            _jwtOptions.Issuer,
+            _jwtOptions.Audience,
             claims,
-            expires: DateTime.UtcNow.Add(TimeSpan.FromDays(JwtOptions.EXPIRES_DAYS)),
-            signingCredentials: new(JwtOptions.GetSymmetricSecurityKey(),
+            expires: DateTime.UtcNow.Add(TimeSpan.FromDays(_jwtOptions.ExpiresDays)),
+            signingCredentials: new(_jwtOptions.GetSymmetricSecurityKey(),
                 SecurityAlgorithms.HmacSha256)
         );
 
         return new JwtSecurityTokenHandler().WriteToken(jwt);
     }
+
+    #endregion Methods
 }

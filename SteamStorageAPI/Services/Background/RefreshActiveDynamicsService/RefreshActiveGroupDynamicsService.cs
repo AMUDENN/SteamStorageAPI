@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
-using SteamStorageAPI.Services.Infrastructure.CurrencyService;
+using SteamStorageAPI.Services.Domain.CurrencyService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;

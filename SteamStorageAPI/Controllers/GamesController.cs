@@ -1,11 +1,9 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Services.Domain.GameService;
-using SteamStorageAPI.Utilities.Steam;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
@@ -18,18 +16,14 @@ public class GamesController : ControllerBase
     #region Fields
 
     private readonly IGameService _gameService;
-    private readonly SteamStorageContext _context;
 
     #endregion Fields
 
     #region Constructor
 
-    public GamesController(
-        IGameService gameService,
-        SteamStorageContext context)
+    public GamesController(IGameService gameService)
     {
         _gameService = gameService;
-        _context = context;
     }
 
     #endregion Constructor
@@ -47,14 +41,8 @@ public class GamesController : ControllerBase
     [HttpGet(Name = "GetGames")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<GamesResponse>> GetGames(
-        CancellationToken cancellationToken = default)
-    {
-        List<Game> games = await _context.Games.AsNoTracking().ToListAsync(cancellationToken);
-
-        return Ok(new GamesResponse(games.Count, games.Select(x =>
-            new GameResponse(x.Id, x.SteamGameId, x.Title,
-                SteamApi.GetGameIconUrl(x.SteamGameId, x.GameIconUrl)))));
-    }
+        CancellationToken cancellationToken = default) =>
+        Ok(await _gameService.GetGamesAsync(cancellationToken));
 
     #endregion GET
 
@@ -74,7 +62,6 @@ public class GamesController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         await _gameService.PostGameAsync(request, cancellationToken);
-
         return Ok();
     }
 
@@ -97,7 +84,6 @@ public class GamesController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         await _gameService.PutGameAsync(request, cancellationToken);
-
         return Ok();
     }
 
@@ -120,7 +106,6 @@ public class GamesController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         await _gameService.DeleteGameAsync(request, cancellationToken);
-
         return Ok();
     }
 

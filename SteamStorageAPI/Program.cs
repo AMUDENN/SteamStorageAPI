@@ -16,23 +16,13 @@ using SteamStorageAPI.Services.Background.QuartzJobs;
 using SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;
 using SteamStorageAPI.Services.Background.RefreshCurrenciesService;
 using SteamStorageAPI.Services.Background.RefreshSkinDynamicsService;
-using SteamStorageAPI.Services.Domain.ActiveGroupService;
-using SteamStorageAPI.Services.Domain.ActiveService;
-using SteamStorageAPI.Services.Domain.ArchiveGroupService;
-using SteamStorageAPI.Services.Domain.ArchiveService;
-using SteamStorageAPI.Services.Domain.GameService;
-using SteamStorageAPI.Services.Domain.InventoryService;
-using SteamStorageAPI.Services.Domain.StatisticsService;
-using SteamStorageAPI.Services.Infrastructure.CurrencyService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Services.Infrastructure.JwtProvider;
-using SteamStorageAPI.Services.Infrastructure.SkinService;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
+using SteamStorageAPI.Utilities.Config;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
-using SteamStorageAPI.Utilities.HealthCheck;
-using SteamStorageAPI.Utilities.HealthCheck.Steam;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
-using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI;
 
@@ -52,20 +42,25 @@ public static class Program
             });
         builder.Services.AddEndpointsApiExplorer();
 
-        if (builder.Environment.IsDevelopment())
+
+        // Initialize config
+        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
+        if (configPath is null)
         {
-            //JwtOptions Initialize
-            JwtOptions.InitializeConfig(builder.Configuration);
-            //SteamApi Initialize
-            SteamApi.InitializeConfig(builder.Configuration);
+            throw new("Path to configuration file not set");
         }
-        else
-        {
-            //JwtOptions Initialize
-            JwtOptions.InitializeEnvironmentVariables();
-            //SteamApi Initialize
-            SteamApi.InitializeEnvironmentVariables();
-        }
+
+        AppConfig config = ConfigurationReader.Read(configPath);
+
+        builder.Services.AddSingleton(config);
+
+
+        JwtOptions jwtOptions = new(config);
+        builder.Services.AddSingleton<JwtOptions>();
+
+        //SteamAPI Service
+        builder.Services.AddSingleton<ISteamApiUrlBuilder>();
+
 
         //Services
         builder.Services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
@@ -73,34 +68,25 @@ public static class Program
         builder.Services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
 
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
-        builder.Services.AddTransient<ISkinService, SkinService>();
-        builder.Services.AddTransient<IUserService, UserService>();
-        builder.Services.AddTransient<ICurrencyService, CurrencyService>();
+        builder.Services.AddTransient<IContextUserService, ContextUserService>();
 
         // Domain services
-        builder.Services.AddScoped<IArchiveService, ArchiveService>();
-        builder.Services.AddScoped<IActiveService, ActiveService>();
-        builder.Services.AddScoped<IActiveGroupService, ActiveGroupService>();
-        builder.Services.AddScoped<IArchiveGroupService, ArchiveGroupService>();
-        builder.Services.AddScoped<IInventoryService, InventoryService>();
-        builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-        builder.Services.AddScoped<IGameService, GameService>();
+        builder.Services.AddDomainServices();
 
         //Quartz
         builder.Services.AddQuartz(q => {
             q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
-
             q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
 
             q.AddTrigger(t => t
                 .ForJob(nameof(RefreshCurrenciesJob))
                 .WithIdentity(nameof(RefreshCurrenciesJob) + "Trigger")
-                .WithCronSchedule("0 0 1 * * ?")); // 01:00 Every Day
+                .WithCronSchedule(config.BackgroundServices.RefreshCurrencies.CronSchedule));
 
             q.AddTrigger(t => t
                 .ForJob(nameof(RefreshActiveGroupsDynamicsJob))
                 .WithIdentity(nameof(RefreshActiveGroupsDynamicsJob) + "Trigger")
-                .WithCronSchedule("0 0 3 * * ?")); // 01:00 Every Day
+                .WithCronSchedule(config.BackgroundServices.RefreshActiveGroupsDynamicsJob.CronSchedule));
         });
 
         //Background Services
@@ -151,109 +137,38 @@ public static class Program
 
 
         //DataBase
-        string connectionStringSteamStorage;
-        string connectionStringHealthChecks;
-        if (builder.Environment.IsDevelopment())
-        {
-            //UserSecrets
-            connectionStringSteamStorage = builder.Configuration.GetConnectionString("SteamStorage")
-                                           ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
-
-            connectionStringHealthChecks = builder.Configuration.GetConnectionString("SteamStorageHealthChecks")
-                                           ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
-        }
-        else
-        {
-            //Environment
-            connectionStringSteamStorage = Environment.GetEnvironmentVariable("SteamStorageDB")
-                                           ?? throw new ArgumentNullException(nameof(connectionStringSteamStorage));
-
-            connectionStringHealthChecks = Environment.GetEnvironmentVariable("SteamStorageHealthChecksDB")
-                                           ?? throw new ArgumentNullException(nameof(connectionStringHealthChecks));
-        }
-
         builder.Services.AddDbContext<SteamStorageContext>(options =>
-            options.UseSqlServer(connectionStringSteamStorage));
+            options.UseSqlServer(config.Database.SteamStorage));
 
         //ExceptionHandlers
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
 
         //HealthCheck
-        builder.Services.AddHealthChecks()
-            .AddSqlServer(name: "SteamStorageDB",
-                connectionString: connectionStringSteamStorage,
-                tags: new[]
-                {
-                    "db", "database"
-                })
-            .AddSqlServer(name: "SteamStorageHealthChecksDB",
-                connectionString: connectionStringHealthChecks,
-                tags: new[]
-                {
-                    "db", "database"
-                })
-            .AddDbContextCheck<SteamStorageContext>(nameof(SteamStorageContext),
-                tags: new[]
-                {
-                    "db", "db-context"
-                })
-            .AddCheck<ApiHealthChecker>(nameof(ApiHealthChecker),
-                tags: new[]
-                {
-                    "api"
-                })
-            .AddCheck<AdminPanelHealthChecker>(nameof(AdminPanelHealthChecker),
-                tags: new[]
-                {
-                    "api", "ap", "admin", "admin panel"
-                })
-            .AddCheck<LoginWebAppHealthChecker>(nameof(LoginWebAppHealthChecker),
-                tags: new[]
-                {
-                    "api", "lwa", "loginwebapp", "login web app"
-                })
-            .AddCheck<SteamMarketHealthChecker>(nameof(SteamMarketHealthChecker),
-                tags: new[]
-                {
-                    "steam"
-                })
-            .AddCheck<SteamProfileHealthChecker>(nameof(SteamProfileHealthChecker),
-                tags: new[]
-                {
-                    "steam"
-                });
-
         builder.Services
             .AddHealthChecksUI(setup => {
-                setup.AddHealthCheckEndpoint("Health details", "https://steamstorage.ru/api/health-all");
-                setup.AddHealthCheckEndpoint("SteamStorageAPI", "https://steamstorage.ru/api/health-api");
-                setup.AddHealthCheckEndpoint("DataBase", "https://steamstorage.ru/api/health-db");
-                setup.AddHealthCheckEndpoint("Steam", "https://steamstorage.ru/api/health-steam");
-                setup.MaximumHistoryEntriesPerEndpoint(50);
-                setup.SetEvaluationTimeInSeconds(600);
-                setup.SetMinimumSecondsBetweenFailureNotifications(300);
+                setup.AddHealthCheckEndpoint("Health details", $"{config.HealthChecks.BaseUrl}/api/health-all");
+                setup.AddHealthCheckEndpoint("SteamStorageAPI", $"{config.HealthChecks.BaseUrl}/api/health-api");
+                setup.AddHealthCheckEndpoint("DataBase", $"{config.HealthChecks.BaseUrl}/api/health-db");
+                setup.AddHealthCheckEndpoint("Steam", $"{config.HealthChecks.BaseUrl}/api/health-steam");
+                setup.MaximumHistoryEntriesPerEndpoint(config.HealthChecks.MaximumHistoryEntriesPerEndpoint);
+                setup.SetEvaluationTimeInSeconds(config.HealthChecks.EvaluationTimeInSeconds);
+                setup.SetMinimumSecondsBetweenFailureNotifications(config.HealthChecks.MinimumSecondsBetweenFailureNotifications);
             })
-            .AddSqlServerStorage(connectionStringHealthChecks);
+            .AddSqlServerStorage(config.Database.HealthChecks);
 
         builder.Services.AddMemoryCache();
 
         //RateLimit
         builder.Services.Configure<IpRateLimitOptions>(options => {
-            options.EnableEndpointRateLimiting = true;
-            options.StackBlockedRequests = false;
-            options.HttpStatusCode = 429;
-            options.RealIpHeader = "X-Forwarded-For";
-            options.ClientIdHeader = "X-ClientId";
-            options.GeneralRules =
-            [
-                new()
-                {
-                    Endpoint = "*",
-                    Period = "1s",
-                    Limit = 20
-                }
-            ];
+            options.EnableEndpointRateLimiting = config.RateLimit.EnableEndpointRateLimiting;
+            options.StackBlockedRequests = config.RateLimit.StackBlockedRequests;
+            options.HttpStatusCode = config.RateLimit.HttpStatusCode;
+            options.RealIpHeader = config.RateLimit.RealIpHeader;
+            options.ClientIdHeader = config.RateLimit.ClientIdHeader;
+            options.GeneralRules = config.RateLimit.Rules
+                .Select(r => new AspNetCoreRateLimit.RateLimitRule { Endpoint = r.Endpoint, Period = r.Period, Limit = r.Limit })
+                .ToList();
         });
         builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
@@ -272,12 +187,12 @@ public static class Program
                 options.TokenValidationParameters = new()
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = JwtOptions.Issuer,
+                    ValidIssuer = jwtOptions.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = JwtOptions.Audience,
+                    ValidAudience = jwtOptions.Audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey()
+                    IssuerSigningKey = jwtOptions.GetSymmetricSecurityKey()
                 };
             });
 

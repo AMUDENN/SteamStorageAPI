@@ -1,10 +1,10 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Domain.RoleService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -17,19 +17,17 @@ public class RolesController : ControllerBase
 {
     #region Fields
 
-    private readonly IUserService _userService;
-    private readonly SteamStorageContext _context;
+    private readonly IRoleService _roleService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
     #region Constructor
 
-    public RolesController(
-        IUserService userService,
-        SteamStorageContext context)
+    public RolesController(IRoleService roleService, IContextUserService contextUserService)
     {
-        _userService = userService;
-        _context = context;
+        _roleService = roleService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
@@ -45,12 +43,9 @@ public class RolesController : ControllerBase
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpGet(Name = "GetRoles")]
     [Produces(MediaTypeNames.Application.Json)]
-    public async Task<ActionResult<RolesResponse>> GetRoles(CancellationToken cancellationToken = default)
-    {
-        List<Role> roles = await _context.Roles.AsNoTracking().ToListAsync(cancellationToken);
-
-        return Ok(new RolesResponse(roles.Count, roles.Select(x => new RoleResponse(x.Id, x.Title))));
-    }
+    public async Task<ActionResult<RolesResponse>> GetRoles(
+        CancellationToken cancellationToken = default) =>
+        Ok(await _roleService.GetRolesAsync(cancellationToken));
 
     #endregion GET
 
@@ -69,25 +64,11 @@ public class RolesController : ControllerBase
         SetRoleRequest request,
         CancellationToken cancellationToken = default)
     {
-        User currentUser = await _userService.GetCurrentUserAsync(cancellationToken)
-                           ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                               "Текущий пользователь не найден");
-
-        if (request.UserId == currentUser.Id)
-            throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "Нельзя изменить свою роль");
-
-        User user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
-            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Роли с таким Id не существует");
-
-        user.RoleId = request.RoleId;
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _roleService.SetRoleAsync(user, request, cancellationToken);
         return Ok();
     }
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SteamStorageAPI.Models.DBEntities;
-using SteamStorageAPI.Utilities.Steam;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 
 namespace SteamStorageAPI.Utilities.HealthCheck.Steam;
 
@@ -8,6 +8,7 @@ public class SteamProfileHealthChecker : IHealthCheck
 {
     #region Fields
 
+    private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SteamStorageContext _context;
 
@@ -16,9 +17,11 @@ public class SteamProfileHealthChecker : IHealthCheck
     #region Constructor
 
     public SteamProfileHealthChecker(
+        ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
         SteamStorageContext context)
     {
+        _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
         _context = context;
     }
@@ -36,7 +39,7 @@ public class SteamProfileHealthChecker : IHealthCheck
             HttpClient client = _httpClientFactory.CreateClient();
             User? user = _context.Users.FirstOrDefault();
             if (user is null) return HealthCheckResult.Healthy("Cannot check HealthStatus");
-            string profileUrl = SteamApi.GetUserInfoUrl(user.SteamId);
+            string profileUrl = _steamApiUrlBuilder.GetUserInfoUrl(user.SteamId);
             HttpResponseMessage response = await client.GetAsync(profileUrl, cancellationToken);
 
             return response.IsSuccessStatusCode

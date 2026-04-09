@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Services.Domain.ActiveGroupService;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -19,7 +19,7 @@ public class ActiveGroupsController : ControllerBase
     #region Fields
 
     private readonly IActiveGroupService _activeGroupService;
-    private readonly IUserService _userService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
@@ -27,10 +27,10 @@ public class ActiveGroupsController : ControllerBase
 
     public ActiveGroupsController(
         IActiveGroupService activeGroupService,
-        IUserService userService)
+        IContextUserService contextUserService)
     {
         _activeGroupService = activeGroupService;
-        _userService = userService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
@@ -52,7 +52,7 @@ public class ActiveGroupsController : ControllerBase
         [FromQuery] GetActiveGroupInfoRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -79,7 +79,7 @@ public class ActiveGroupsController : ControllerBase
         [FromQuery] GetActiveGroupsRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -107,7 +107,7 @@ public class ActiveGroupsController : ControllerBase
     public async Task<ActionResult<ActiveGroupsStatisticResponse>> GetActiveGroupsStatistic(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -129,7 +129,7 @@ public class ActiveGroupsController : ControllerBase
         [FromQuery] GetActiveGroupDynamicRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -150,7 +150,7 @@ public class ActiveGroupsController : ControllerBase
     public async Task<ActionResult<ActiveGroupsCountResponse>> GetActiveGroupsCount(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -176,7 +176,7 @@ public class ActiveGroupsController : ControllerBase
         PostActiveGroupRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -203,7 +203,7 @@ public class ActiveGroupsController : ControllerBase
         PutActiveGroupRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -230,7 +230,7 @@ public class ActiveGroupsController : ControllerBase
         DeleteActiveGroupRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 

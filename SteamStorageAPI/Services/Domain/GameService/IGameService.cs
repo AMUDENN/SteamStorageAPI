@@ -4,6 +4,9 @@ namespace SteamStorageAPI.Services.Domain.GameService;
 
 public interface IGameService
 {
+    Task<GamesResponse> GetGamesAsync(
+        CancellationToken cancellationToken = default);
+
     Task<bool> IsGameIconExistsAsync(
         int steamGameId,
         string iconUrlHash,

@@ -1,13 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Models.DTOs.Enums;
 using SteamStorageAPI.Models.SteamAPIModels.Inventory;
-using SteamStorageAPI.Services.Infrastructure.CurrencyService;
-using SteamStorageAPI.Services.Infrastructure.SkinService;
+using SteamStorageAPI.Services.Domain.CurrencyService;
+using SteamStorageAPI.Services.Domain.SkinService;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 using SteamStorageAPI.Utilities.Exceptions;
 using SteamStorageAPI.Utilities.Extensions;
-using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Services.Domain.InventoryService;
 
@@ -15,6 +16,7 @@ public class InventoryService : IInventoryService
 {
     #region Fields
 
+    private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ISkinService _skinService;
     private readonly ICurrencyService _currencyService;
@@ -25,11 +27,13 @@ public class InventoryService : IInventoryService
     #region Constructor
 
     public InventoryService(
+        ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
         ISkinService skinService,
         ICurrencyService currencyService,
         SteamStorageContext context)
     {
+        _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
         _skinService = skinService;
         _currencyService = currencyService;
@@ -114,6 +118,25 @@ public class InventoryService : IInventoryService
         return new(itemsCount, currentSum, gamesCountResponse, gamesSumResponse);
     }
 
+    public async Task<InventoryPagesCountResponse> GetInventoryPagesCountAsync(
+        User user,
+        GetInventoryPagesCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        int count = await _context.Entry(user)
+            .Collection(x => x.Inventories)
+            .Query()
+            .AsNoTracking()
+            .Include(x => x.Skin).ThenInclude(x => x.Game)
+            .Where(x => request.GameId == null || x.Skin.GameId == request.GameId)
+            .WhereMatchFilter(x => x.Skin.Title, request.Filter)
+            .CountAsync(cancellationToken);
+
+        int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
+
+        return new(pagesCount == 0 ? 1 : pagesCount);
+    }
+
     public IQueryable<Inventory> GetInventoryQuery(
         User user,
         int? gameId,
@@ -166,48 +189,58 @@ public class InventoryService : IInventoryService
         HttpClient client = _httpClientFactory.CreateClient();
         SteamInventoryResponse? response =
             await client.GetFromJsonAsync<SteamInventoryResponse>(
-                SteamApi.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000), cancellationToken);
+                _steamApiUrlBuilder.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000), cancellationToken);
 
         if (response is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "При получении данных с сервера Steam произошла ошибка");
 
-        _context.Inventories.RemoveRange(_context.Entry(user)
-            .Collection(x => x.Inventories)
-            .Query()
-            .Include(x => x.Skin)
-            .Where(x => x.Skin.GameId == game.Id));
+        await using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
-        foreach (InventoryDescription item in response.descriptions)
+        try
         {
-            if (item is { marketable: 0, tradable: 0 })
-                continue;
-
-            Skin skin =
-                await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name,
-                    cancellationToken)
-                ?? await _skinService.AddSkinAsync(game.Id, item.market_hash_name, item.name, item.icon_url,
-                    cancellationToken);
-
-            Inventory? inventory =
-                await _context.Inventories.FirstOrDefaultAsync(x => x.SkinId == skin.Id, cancellationToken);
-
-            if (inventory is null)
-                await _context.Inventories.AddAsync(new()
-                {
-                    User = user,
-                    Skin = skin,
-                    Count = 1
-                }, cancellationToken);
-            else
-                inventory.Count++;
+            _context.Inventories.RemoveRange(_context.Entry(user)
+                .Collection(x => x.Inventories)
+                .Query()
+                .Include(x => x.Skin)
+                .Where(x => x.Skin.GameId == game.Id));
 
             await _context.SaveChangesAsync(cancellationToken);
-        }
 
-        await _context.SaveChangesAsync(cancellationToken);
+            foreach (InventoryDescription item in response.descriptions)
+            {
+                if (item is { marketable: 0, tradable: 0 })
+                    continue;
+
+                Skin skin =
+                    await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name,
+                        cancellationToken)
+                    ?? await _skinService.AddSkinAsync(game.Id, item.market_hash_name, item.name, item.icon_url,
+                        cancellationToken);
+
+                Inventory? inventory =
+                    await _context.Inventories.FirstOrDefaultAsync(x => x.SkinId == skin.Id, cancellationToken);
+
+                if (inventory is null)
+                    await _context.Inventories.AddAsync(new()
+                    {
+                        User = user,
+                        Skin = skin,
+                        Count = 1
+                    }, cancellationToken);
+                else
+                    inventory.Count++;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     #endregion Methods

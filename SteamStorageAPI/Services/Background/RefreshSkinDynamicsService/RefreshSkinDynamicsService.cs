@@ -3,9 +3,9 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 using SteamStorageAPI.Utilities.Comparers;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Steam;
 
 namespace SteamStorageAPI.Services.Background.RefreshSkinDynamicsService;
 
@@ -28,6 +28,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     #region Fields
 
     private readonly ILogger<RefreshSkinDynamicsService> _logger;
+    private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SteamStorageContext _context;
 
@@ -37,10 +38,12 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
     public RefreshSkinDynamicsService(
         ILogger<RefreshSkinDynamicsService> logger,
+        ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
         SteamStorageContext context)
     {
         _logger = logger;
+        _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
         _context = context;
     }
@@ -72,7 +75,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
             SteamSkinResponse? response =
                 await client.GetFromJsonAsync<SteamSkinResponse>(
-                    SteamApi.GetSkinsUrl(game.SteamGameId, baseCurrency.SteamCurrencyId, 1, 0),
+                    _steamApiUrlBuilder.GetSkinsUrl(game.SteamGameId, baseCurrency.SteamCurrencyId, 1, 0),
                     cancellationToken);
 
             if (response is null)
@@ -93,7 +96,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                     stopwatch.Start();
 
                     response = await client.GetFromJsonAsync<SteamSkinResponse>(
-                        SteamApi.GetSkinsUrl(game.SteamGameId, baseCurrency.SteamCurrencyId, count, start),
+                        _steamApiUrlBuilder.GetSkinsUrl(game.SteamGameId, baseCurrency.SteamCurrencyId, count, start),
                         cancellationToken);
 
                     if (response is null)

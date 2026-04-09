@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SteamStorageAPI.Models.DBEntities;
-using SteamStorageAPI.Utilities.Steam;
+using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 
 namespace SteamStorageAPI.Utilities.HealthCheck.Steam;
 
@@ -8,6 +8,7 @@ public class SteamMarketHealthChecker : IHealthCheck
 {
     #region Fields
 
+    private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SteamStorageContext _context;
 
@@ -16,9 +17,11 @@ public class SteamMarketHealthChecker : IHealthCheck
     #region Constructor
 
     public SteamMarketHealthChecker(
+        ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
         SteamStorageContext context)
     {
+        _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
         _context = context;
     }
@@ -36,7 +39,7 @@ public class SteamMarketHealthChecker : IHealthCheck
             HttpClient client = _httpClientFactory.CreateClient();
             Skin? skin = _context.Skins.FirstOrDefault();
             if (skin is null) return HealthCheckResult.Healthy("Cannot check HealthStatus");
-            string marketUrl = SteamApi.GetSkinInfoUrl(skin.MarketHashName);
+            string marketUrl = _steamApiUrlBuilder.GetSkinInfoUrl(skin.MarketHashName);
             HttpResponseMessage response = await client.GetAsync(marketUrl, cancellationToken);
 
             return response.IsSuccessStatusCode

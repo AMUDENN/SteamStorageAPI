@@ -11,11 +11,31 @@ public interface IActiveService
         User user,
         CancellationToken cancellationToken = default);
 
+    Task<ActiveResponse> GetActiveInfoAsync(
+        User user,
+        int activeId,
+        CancellationToken cancellationToken = default);
+
     Task<ActivesResponse> GetActivesResponseAsync(
         IQueryable<Active> actives,
         int pageNumber,
         int pageSize,
         User user,
+        CancellationToken cancellationToken = default);
+
+    Task<ActivesStatisticResponse> GetActivesStatisticAsync(
+        User user,
+        GetActivesStatisticRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ActivesPagesCountResponse> GetActivesPagesCountAsync(
+        User user,
+        GetActivesPagesCountRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ActivesCountResponse> GetActivesCountAsync(
+        User user,
+        GetActivesCountRequest request,
         CancellationToken cancellationToken = default);
 
     IQueryable<Active> GetActivesQuery(

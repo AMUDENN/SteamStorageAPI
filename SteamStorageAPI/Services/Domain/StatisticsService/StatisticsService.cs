@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
-using SteamStorageAPI.Services.Infrastructure.CurrencyService;
+using SteamStorageAPI.Services.Domain.CurrencyService;
 
 namespace SteamStorageAPI.Services.Domain.StatisticsService;
 

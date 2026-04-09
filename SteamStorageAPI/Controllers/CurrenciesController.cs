@@ -1,10 +1,10 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Domain.CurrencyService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -17,46 +17,20 @@ public class CurrenciesController : ControllerBase
 {
     #region Fields
 
-    private readonly IUserService _userService;
-    private readonly SteamStorageContext _context;
+    private readonly ICurrencyService _currencyService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
     #region Constructor
 
-    public CurrenciesController(
-        IUserService userService,
-        SteamStorageContext context)
+    public CurrenciesController(ICurrencyService currencyService, IContextUserService contextUserService)
     {
-        _userService = userService;
-        _context = context;
+        _currencyService = currencyService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
-
-    #region Methods
-
-    private async Task<CurrencyResponse> GetCurrencyResponseAsync(
-        Currency currency,
-        CancellationToken cancellationToken = default)
-    {
-        CurrencyDynamic? lastDynamic = await _context.Entry(currency)
-            .Collection(s => s.CurrencyDynamics)
-            .Query()
-            .AsNoTracking()
-            .OrderBy(x => x.DateUpdate)
-            .LastOrDefaultAsync(cancellationToken);
-
-        return new(currency.Id,
-            currency.SteamCurrencyId,
-            currency.Title,
-            currency.Mark,
-            currency.CultureInfo,
-            lastDynamic?.Price ?? 0,
-            lastDynamic?.DateUpdate ?? DateTime.Now);
-    }
-
-    #endregion Methods
 
     #region GET
 
@@ -70,26 +44,8 @@ public class CurrenciesController : ControllerBase
     [HttpGet(Name = "GetCurrencies")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<CurrenciesResponse>> GetCurrencies(
-        CancellationToken cancellationToken = default)
-    {
-        IQueryable<CurrencyResponse> currencies = _context.Currencies
-            .AsNoTracking()
-            .Include(x => x.CurrencyDynamics)
-            .Select(x => new CurrencyResponse(
-                x.Id,
-                x.SteamCurrencyId,
-                x.Title,
-                x.Mark,
-                x.CultureInfo,
-                x.CurrencyDynamics.Count != 0
-                    ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().Price
-                    : 0,
-                x.CurrencyDynamics.Count != 0
-                    ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().DateUpdate
-                    : DateTime.Now));
-
-        return Ok(new CurrenciesResponse(await currencies.CountAsync(cancellationToken), currencies));
-    }
+        CancellationToken cancellationToken = default) =>
+        Ok(await _currencyService.GetCurrenciesAsync(cancellationToken));
 
     /// <summary>
     /// Получение информации о валюте
@@ -103,15 +59,8 @@ public class CurrenciesController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<CurrencyResponse>> GetCurrency(
         [FromQuery] GetCurrencyRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        Currency currency = await _context.Currencies.AsNoTracking()
-                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
-                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
-
-        return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));
-    }
+        CancellationToken cancellationToken = default) =>
+        Ok(await _currencyService.GetCurrencyAsync(request, cancellationToken));
 
     /// <summary>
     /// Получение текущей валюты пользователя
@@ -126,16 +75,11 @@ public class CurrenciesController : ControllerBase
     public async Task<ActionResult<CurrencyResponse>> GetCurrentCurrency(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        Currency currency = await _context.Currencies.AsNoTracking()
-                                .FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
-                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
-
-        return Ok(await GetCurrencyResponseAsync(currency, cancellationToken));
+        return Ok(await _currencyService.GetCurrentCurrencyAsync(user, cancellationToken));
     }
 
     #endregion GET
@@ -154,16 +98,7 @@ public class CurrenciesController : ControllerBase
         PostCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        await _context.Currencies.AddAsync(new()
-        {
-            SteamCurrencyId = request.SteamCurrencyId,
-            Title = request.Title,
-            Mark = request.Mark,
-            CultureInfo = request.CultureInfo
-        }, cancellationToken);
-
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _currencyService.PostCurrencyAsync(request, cancellationToken);
         return Ok();
     }
 
@@ -184,17 +119,7 @@ public class CurrenciesController : ControllerBase
         PutCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        Currency currency = await _context.Currencies
-                                .FirstOrDefaultAsync(x => x.Id == request.CurrencyId, cancellationToken)
-                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
-
-        currency.Title = request.Title;
-        currency.Mark = request.Mark;
-        currency.CultureInfo = request.CultureInfo;
-
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _currencyService.PutCurrencyInfoAsync(request, cancellationToken);
         return Ok();
     }
 
@@ -211,17 +136,11 @@ public class CurrenciesController : ControllerBase
         SetCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        if (!await _context.Currencies.AnyAsync(x => x.Id == request.CurrencyId, cancellationToken))
-            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Валюты с таким Id не существует");
-
-        user.CurrencyId = request.CurrencyId;
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _currencyService.SetCurrencyAsync(user, request, cancellationToken);
         return Ok();
     }
 
@@ -242,14 +161,7 @@ public class CurrenciesController : ControllerBase
         DeleteCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        Currency currency = await _context.Currencies
-                                .FirstOrDefaultAsync(x => x.Id == request.CurrencyId, cancellationToken)
-                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
-
-        _context.Currencies.Remove(currency);
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _currencyService.DeleteCurrencyAsync(request, cancellationToken);
         return Ok();
     }
 

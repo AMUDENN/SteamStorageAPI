@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Services.Domain.ArchiveService;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -19,7 +19,7 @@ public class ArchivesController : ControllerBase
     #region Fields
 
     private readonly IArchiveService _archiveService;
-    private readonly IUserService _userService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
@@ -27,10 +27,10 @@ public class ArchivesController : ControllerBase
 
     public ArchivesController(
         IArchiveService archiveService,
-        IUserService userService)
+        IContextUserService contextUserService)
     {
         _archiveService = archiveService;
-        _userService = userService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
@@ -52,7 +52,7 @@ public class ArchivesController : ControllerBase
         [FromQuery] GetArchiveInfoRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -80,7 +80,7 @@ public class ArchivesController : ControllerBase
         [FromQuery] GetArchivesRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -108,7 +108,7 @@ public class ArchivesController : ControllerBase
         [FromQuery] GetArchivesStatisticRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -136,7 +136,7 @@ public class ArchivesController : ControllerBase
         [FromQuery] GetArchivesPagesCountRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -164,7 +164,7 @@ public class ArchivesController : ControllerBase
         [FromQuery] GetArchivesCountRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -191,7 +191,7 @@ public class ArchivesController : ControllerBase
         PostArchiveRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -218,7 +218,7 @@ public class ArchivesController : ControllerBase
         PutArchiveRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -245,7 +245,7 @@ public class ArchivesController : ControllerBase
         DeleteArchiveRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 

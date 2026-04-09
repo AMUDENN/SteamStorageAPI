@@ -1,0 +1,45 @@
+app:
+  tokenAddress: "https://steamstorage.ru/token/"
+  dateFormat: "dd.MM.yyyy"
+
+jwt:
+  key: "your-secret-key-here"
+  issuer: "SteamStorageAPI"
+  audience: "SteamStorageClient"
+  expiresDays: 1
+
+steam:
+  apiKey: "your-steam-api-key-here"
+
+database:
+  steamStorage: "Server=...;Database=SteamStorage;..."
+  healthChecks: "Server=...;Database=SteamStorageHealthChecks;..."
+
+healthChecks:
+  baseUrl: "https://steamstorage.ru"
+  maximumHistoryEntriesPerEndpoint: 50
+  evaluationTimeInSeconds: 600
+  minimumSecondsBetweenFailureNotifications: 300
+
+rateLimit:
+  enableEndpointRateLimiting: true
+  stackBlockedRequests: false
+  httpStatusCode: 429
+  realIpHeader: "X-Forwarded-For"
+  clientIdHeader: "X-ClientId"
+  rules:
+    - endpoint: "*"
+      period: "1s"
+      limit: 20
+
+backgroundServices:
+  refreshSkinDynamics:
+    delayMs: 3600000       # 1 hour
+    errorDelayMs: 300000   # 5 min
+  refreshActiveGroupsDynamics:
+    errorDelayMs: 1800000  # 30 min
+  refreshCurrencies:
+    errorDelayMs: 1800000  # 30 min
+    cronSchedule: "0 0 1 * * ?"   # 01:00 every day
+  refreshActiveGroupsDynamicsJob:
+    cronSchedule: "0 0 3 * * ?"  # 03:00 every day

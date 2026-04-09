@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Services.Domain.StatisticsService;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -18,7 +18,7 @@ public class StatisticsController : ControllerBase
     #region Fields
 
     private readonly IStatisticsService _statisticsService;
-    private readonly IUserService _userService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
@@ -26,10 +26,10 @@ public class StatisticsController : ControllerBase
 
     public StatisticsController(
         IStatisticsService statisticsService,
-        IUserService userService)
+        IContextUserService contextUserService)
     {
         _statisticsService = statisticsService;
-        _userService = userService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
@@ -50,7 +50,7 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<InvestmentSumResponse>> GetInvestmentSum(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -71,7 +71,7 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<FinancialGoalResponse>> GetFinancialGoal(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -92,7 +92,7 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<ActiveStatisticResponse>> GetActiveStatistic(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -113,7 +113,7 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<ArchiveStatisticResponse>> GetArchiveStatistic(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -134,7 +134,7 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<InventoryStatisticResponse>> GetInventoryStatistic(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -155,7 +155,7 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<ItemsCountResponse>> GetItemsCount(
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 

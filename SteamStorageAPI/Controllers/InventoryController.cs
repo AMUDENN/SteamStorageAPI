@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Services.Domain.InventoryService;
-using SteamStorageAPI.Services.Infrastructure.UserService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -19,7 +19,7 @@ public class InventoryController : ControllerBase
     #region Fields
 
     private readonly IInventoryService _inventoryService;
-    private readonly IUserService _userService;
+    private readonly IContextUserService _contextUserService;
 
     #endregion Fields
 
@@ -27,10 +27,10 @@ public class InventoryController : ControllerBase
 
     public InventoryController(
         IInventoryService inventoryService,
-        IUserService userService)
+        IContextUserService contextUserService)
     {
         _inventoryService = inventoryService;
-        _userService = userService;
+        _contextUserService = contextUserService;
     }
 
     #endregion Constructor
@@ -52,7 +52,7 @@ public class InventoryController : ControllerBase
         [FromQuery] GetInventoryRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -80,7 +80,7 @@ public class InventoryController : ControllerBase
         [FromQuery] GetInventoriesStatisticRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -103,17 +103,14 @@ public class InventoryController : ControllerBase
         [FromQuery] GetInventoryPagesCountRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        int count = await _inventoryService
-            .GetInventoryQuery(user, request.GameId, request.Filter)
-            .CountAsync(cancellationToken);
+        InventoryPagesCountResponse response =
+            await _inventoryService.GetInventoryPagesCountAsync(user, request, cancellationToken);
 
-        int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
-
-        return Ok(new InventoryPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
+        return Ok(response);
     }
 
     /// <summary>
@@ -131,7 +128,7 @@ public class InventoryController : ControllerBase
         [FromQuery] GetSavedInventoriesCountRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
@@ -158,7 +155,7 @@ public class InventoryController : ControllerBase
         RefreshInventoryRequest request,
         CancellationToken cancellationToken = default)
     {
-        User user = await _userService.GetCurrentUserAsync(cancellationToken)
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 

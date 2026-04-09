@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Models.DTOs.Enums;
-using SteamStorageAPI.Services.Infrastructure.CurrencyService;
+using SteamStorageAPI.Services.Domain.CurrencyService;
 using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Services.Domain.ActiveGroupService;
