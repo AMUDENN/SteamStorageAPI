@@ -1,21 +1,13 @@
-using System.Reflection;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
 using SteamStorageAPI.Middlewares;
 using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
-using Quartz;
 using SteamStorageAPI.Models.DBEntities;
-using SteamStorageAPI.Services.Background.BackgroundServices;
-using SteamStorageAPI.Services.Background.QuartzJobs;
-using SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;
-using SteamStorageAPI.Services.Background.RefreshCurrenciesService;
-using SteamStorageAPI.Services.Background.RefreshSkinDynamicsService;
 using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Services.Infrastructure.JwtProvider;
 using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
@@ -56,17 +48,13 @@ public static class Program
 
 
         JwtOptions jwtOptions = new(config);
-        builder.Services.AddSingleton<JwtOptions>();
+        builder.Services.AddSingleton<JwtOptions>(jwtOptions);
 
         //SteamAPI Service
-        builder.Services.AddSingleton<ISteamApiUrlBuilder>();
+        builder.Services.AddSingleton<ISteamApiUrlBuilder, SteamApiUrlBuilder>();
 
 
         //Services
-        builder.Services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
-        builder.Services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
-        builder.Services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
-
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
         builder.Services.AddTransient<IContextUserService, ContextUserService>();
 
@@ -74,63 +62,13 @@ public static class Program
         builder.Services.AddDomainServices();
 
         //Quartz
-        builder.Services.AddQuartz(q => {
-            q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
-            q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
-
-            q.AddTrigger(t => t
-                .ForJob(nameof(RefreshCurrenciesJob))
-                .WithIdentity(nameof(RefreshCurrenciesJob) + "Trigger")
-                .WithCronSchedule(config.BackgroundServices.RefreshCurrencies.CronSchedule));
-
-            q.AddTrigger(t => t
-                .ForJob(nameof(RefreshActiveGroupsDynamicsJob))
-                .WithIdentity(nameof(RefreshActiveGroupsDynamicsJob) + "Trigger")
-                .WithCronSchedule(config.BackgroundServices.RefreshActiveGroupsDynamicsJob.CronSchedule));
-        });
+        builder.Services.AddQuartzServices(config);
 
         //Background Services
-        builder.Services.AddHostedService<RefreshSkinDynamicsBackgroundService>();
-        builder.Services.AddHostedService<QuartzHostedService>();
+        builder.Services.AddBackgroundServices();
 
         //Swagger
-        builder.Services
-            .AddSwaggerGen(options => {
-                options.SwaggerDoc("v1", new()
-                {
-                    Title = "SteamStorage API",
-                    Version = "v1",
-                    Description = "API для SteamStorage"
-                });
-                options.AddSecurityDefinition("Bearer", new()
-                {
-                    In = ParameterLocation.Header,
-                    Description = "Авторизация происходит в формате: Bearer {token}",
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = JwtBearerDefaults.AuthenticationScheme,
-                    BearerFormat = "JWT"
-                });
-                options.AddSecurityRequirement(new()
-                {
-                    {
-                        new()
-                        {
-                            Reference = new()
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
-
-                string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-
-                options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
-            });
+        builder.Services.AddSwagger();
 
         builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();

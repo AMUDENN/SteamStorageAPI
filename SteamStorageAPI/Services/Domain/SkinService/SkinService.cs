@@ -57,6 +57,11 @@ public class SkinService : ISkinService
         if (orderName is null || isAscending is null)
             return skins.OrderBy(x => x.Id);
 
+        // Вычисляем даты один раз — EF передаст их как параметры в SQL,
+        // а не будет пересчитывать DateTime.Now на каждой строке
+        DateTime cutoff7 = DateTime.Now.AddDays(-7);
+        DateTime cutoff30 = DateTime.Now.AddDays(-30);
+
         return orderName switch
         {
             SkinOrderName.Title => isAscending.Value
@@ -66,22 +71,22 @@ public class SkinService : ISkinService
                 ? skins.OrderBy(x => x.CurrentPrice)
                 : skins.OrderByDescending(x => x.CurrentPrice),
             SkinOrderName.Change7D => isAscending.Value
-                ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7)).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7)).OrderBy(y => y.DateUpdate).First().Price)
+                ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff7)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
                     : 0)
-                : skins.OrderByDescending(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7)).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7)).OrderBy(y => y.DateUpdate).First().Price)
+                : skins.OrderByDescending(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff7)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
                     : 0),
             SkinOrderName.Change30D => isAscending.Value
-                ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30)).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30)).OrderBy(y => y.DateUpdate).First().Price)
+                ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff30)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
                     : 0)
-                : skins.OrderByDescending(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30)).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30)).OrderBy(y => y.DateUpdate).First().Price)
+                : skins.OrderByDescending(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff30)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
                     : 0),
             _ => skins.OrderBy(x => x.Id)
         };
@@ -104,7 +109,15 @@ public class SkinService : ISkinService
         CancellationToken cancellationToken = default)
     {
         double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        return await GetSkinResponseAsync(skin, rate, markedSkinsIds, cancellationToken);
+    }
 
+    private async Task<SkinResponse> GetSkinResponseAsync(
+        Skin skin,
+        double rate,
+        IEnumerable<int> markedSkinsIds,
+        CancellationToken cancellationToken = default)
+    {
         List<SkinsDynamic> dynamic30 = await _context.Entry(skin)
             .Collection(x => x.SkinsDynamics)
             .Query()
@@ -141,25 +154,38 @@ public class SkinService : ISkinService
     {
         double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-        return await Task.WhenAll(skins
-            .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30).Date))
-            .AsEnumerable()
-            .Select(async x => new SkinResponse(
+        DateTime cutoff30 = DateTime.Now.AddDays(-30).Date;
+        DateTime cutoff7 = DateTime.Now.AddDays(-7).Date;
+
+        List<Skin> skinList = await skins
+            .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30))
+            .ToListAsync(cancellationToken);
+
+        return await Task.WhenAll(skinList.Select(async x => {
+            List<SkinsDynamic> dynamics7 = x.SkinsDynamics
+                .Where(y => y.DateUpdate > cutoff7)
+                .OrderBy(y => y.DateUpdate)
+                .ToList();
+
+            List<SkinsDynamic> dynamics30 = x.SkinsDynamics
+                .OrderBy(y => y.DateUpdate)
+                .ToList();
+
+            double change7D = dynamics7.Count == 0
+                ? 0
+                : (double)((x.CurrentPrice - dynamics7.First().Price) / dynamics7.First().Price);
+
+            double change30D = dynamics30.Count == 0
+                ? 0
+                : (double)((x.CurrentPrice - dynamics30.First().Price) / dynamics30.First().Price);
+
+            return new SkinResponse(
                 await GetBaseSkinResponseAsync(x, cancellationToken),
                 (decimal)((double)x.CurrentPrice * rate),
-                x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
-                    ? (double)((x.CurrentPrice
-                                - x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
-                                    .OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
-                                   .OrderBy(y => y.DateUpdate).First().Price)
-                    : 0,
-                x.SkinsDynamics.Count != 0
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
-                    : 0,
-                markedSkinsIds.Any(y => y == x.Id)))
-        ).WaitAsync(cancellationToken);
+                change7D,
+                change30D,
+                markedSkinsIds.Any(y => y == x.Id));
+        })).WaitAsync(cancellationToken);
     }
 
     public async Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(

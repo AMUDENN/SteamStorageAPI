@@ -50,16 +50,12 @@ public class CurrencyService : ICurrencyService
         CancellationToken cancellationToken = default)
     {
         Currency currency =
-            await _context.Currencies.FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
+            await _context.Currencies
+                .Include(x => x.CurrencyDynamics.OrderByDescending(d => d.DateUpdate).Take(1))
+                .FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound, "Не найдена валюта пользователя");
 
-        CurrencyDynamic? dynamic = await _context.Entry(currency)
-            .Collection(x => x.CurrencyDynamics)
-            .Query()
-            .OrderByDescending(x => x.DateUpdate)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return dynamic?.Price ?? 1;
+        return currency.CurrencyDynamics.FirstOrDefault()?.Price ?? 1;
     }
 
     public async Task<CurrenciesResponse> GetCurrenciesAsync(

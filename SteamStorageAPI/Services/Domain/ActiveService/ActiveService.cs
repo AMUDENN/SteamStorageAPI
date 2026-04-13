@@ -35,14 +35,11 @@ public class ActiveService : IActiveService
 
     #region Methods
 
-    public async Task<ActiveResponse> GetActiveResponseAsync(
+    private async Task<ActiveResponse> MapToResponseAsync(
         Active active,
-        User user,
-        CancellationToken cancellationToken = default)
-    {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-        return new(
+        double rate,
+        CancellationToken cancellationToken = default) =>
+        new(
             active.Id,
             active.GroupId,
             await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
@@ -57,6 +54,14 @@ public class ActiveService : IActiveService
                 : (double)active.Skin.CurrentPrice * rate / (double)active.GoalPrice,
             ((double)active.Skin.CurrentPrice * rate - (double)active.BuyPrice) / (double)active.BuyPrice,
             active.Description);
+
+    public async Task<ActiveResponse> GetActiveResponseAsync(
+        Active active,
+        User user,
+        CancellationToken cancellationToken = default)
+    {
+        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        return await MapToResponseAsync(active, rate, cancellationToken);
     }
 
     public async Task<ActiveResponse> GetActiveInfoAsync(
@@ -97,21 +102,7 @@ public class ActiveService : IActiveService
             .ToListAsync(cancellationToken);
 
         IEnumerable<ActiveResponse> responses = await Task.WhenAll(
-            page.Select(async x => new ActiveResponse(
-                x.Id,
-                x.GroupId,
-                await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                x.BuyDate,
-                x.Count,
-                x.BuyPrice,
-                (decimal)((double)x.Skin.CurrentPrice * rate),
-                (decimal)((double)x.Skin.CurrentPrice * rate * x.Count),
-                x.GoalPrice,
-                x.GoalPrice == null
-                    ? null
-                    : (double)x.Skin.CurrentPrice * rate / (double)x.GoalPrice,
-                ((double)x.Skin.CurrentPrice * rate - (double)x.BuyPrice) / (double)x.BuyPrice,
-                x.Description)));
+            page.Select(x => MapToResponseAsync(x, rate, cancellationToken)));
 
         return new(activesCount, pagesCount, responses);
     }
