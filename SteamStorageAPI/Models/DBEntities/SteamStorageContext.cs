@@ -53,7 +53,8 @@ public partial class SteamStorageContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Active>(entity => {
+        modelBuilder.Entity<Active>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Actives__3214EC277A93C293");
 
             entity.Property(e => e.Id).HasColumnName("ID");
@@ -73,7 +74,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__Actives__SkinID__5EBF139D");
         });
 
-        modelBuilder.Entity<ActiveGroup>(entity => {
+        modelBuilder.Entity<ActiveGroup>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC27D1172601");
 
             entity.Property(e => e.Id).HasColumnName("ID");
@@ -89,7 +91,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__ActiveGro__UserI__534D60F1");
         });
 
-        modelBuilder.Entity<ActiveGroupsDynamic>(entity => {
+        modelBuilder.Entity<ActiveGroupsDynamic>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__ActiveGr__3214EC2773C5F527");
 
             entity.ToTable("ActiveGroupsDynamic");
@@ -104,7 +107,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__ActiveGro__Group__5441852A");
         });
 
-        modelBuilder.Entity<Archive>(entity => {
+        modelBuilder.Entity<Archive>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Archive__3214EC274C88A91A");
 
             entity.ToTable("Archive");
@@ -127,7 +131,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__Archive__SkinID__60A75C0F");
         });
 
-        modelBuilder.Entity<ArchiveGroup>(entity => {
+        modelBuilder.Entity<ArchiveGroup>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__ArchiveG__3214EC27F80691B1");
 
             entity.Property(e => e.Id).HasColumnName("ID");
@@ -142,7 +147,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__ArchiveGr__UserI__5CD6CB2B");
         });
 
-        modelBuilder.Entity<Currency>(entity => {
+        modelBuilder.Entity<Currency>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Currenci__3214EC273C93DBA6");
 
             entity.HasIndex(e => e.SteamCurrencyId, "UQ__Currenci__E1F42BF7926A89FE").IsUnique();
@@ -154,7 +160,8 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<CurrencyDynamic>(entity => {
+        modelBuilder.Entity<CurrencyDynamic>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Currency__3214EC27555441E3");
 
             entity.Property(e => e.Id).HasColumnName("ID");
@@ -166,7 +173,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__CurrencyD__Curre__72C60C4A");
         });
 
-        modelBuilder.Entity<Game>(entity => {
+        modelBuilder.Entity<Game>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Games__3214EC2789919467");
 
             entity.HasIndex(e => e.SteamGameId, "UQ__Games__20E24016110F4353").IsUnique();
@@ -176,7 +184,8 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(300);
         });
 
-        modelBuilder.Entity<Inventory>(entity => {
+        modelBuilder.Entity<Inventory>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC271CCA213D");
 
             entity.ToTable("Inventory");
@@ -194,7 +203,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__Inventory__UserI__5AEE82B9");
         });
 
-        modelBuilder.Entity<MarkedSkin>(entity => {
+        modelBuilder.Entity<MarkedSkin>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__MarkedSk__3214EC277A56CD21");
 
             entity.Property(e => e.Id).HasColumnName("ID");
@@ -210,7 +220,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__MarkedSki__UserI__5CD6CB2B");
         });
 
-        modelBuilder.Entity<Page>(entity => {
+        modelBuilder.Entity<Page>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Pages__3214EC272406F20E");
 
             entity.HasIndex(e => e.Title, "UQ__Pages__2CB664DC9FB17F05").IsUnique();
@@ -219,7 +230,8 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<Role>(entity => {
+        modelBuilder.Entity<Role>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC27BA176815");
 
             entity.HasIndex(e => e.Title, "UQ__Roles__2CB664DC14EC261F").IsUnique();
@@ -228,7 +240,8 @@ public partial class SteamStorageContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<Skin>(entity => {
+        modelBuilder.Entity<Skin>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Skins__3214EC27352FBBA1");
 
             entity.HasIndex(e => e.MarketHashName, "UQ__Skins__B593E7DA563B2E74").IsUnique();
@@ -244,7 +257,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__Skins__GameID__5535A963");
         });
 
-        modelBuilder.Entity<SkinsDynamic>(entity => {
+        modelBuilder.Entity<SkinsDynamic>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__SkinsDyn__3214EC27EE4B9E1C");
 
             entity.ToTable("SkinsDynamic", tb => tb.HasTrigger("UpdateSkinsCurrentPrice"));
@@ -259,7 +273,8 @@ public partial class SteamStorageContext : DbContext
                 .HasConstraintName("FK__SkinsDyna__SkinI__5629CD9C");
         });
 
-        modelBuilder.Entity<User>(entity => {
+        modelBuilder.Entity<User>(entity =>
+        {
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC2727F435B9");
 
             entity.HasIndex(e => e.SteamId, "UQ__Users__6F4E9AD04FAC4669").IsUnique();
@@ -305,7 +320,6 @@ public partial class SteamStorageContext : DbContext
     private void UndoChanges()
     {
         foreach (EntityEntry entry in ChangeTracker.Entries())
-        {
             switch (entry.State)
             {
                 case EntityState.Modified:
@@ -318,7 +332,6 @@ public partial class SteamStorageContext : DbContext
                     entry.State = EntityState.Detached;
                     break;
             }
-        }
     }
 
     #endregion Methods

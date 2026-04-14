@@ -22,6 +22,8 @@ using SteamStorageAPI.Services.Domain.SkinService;
 using SteamStorageAPI.Services.Domain.StatisticsService;
 using SteamStorageAPI.Services.Domain.UserService;
 using SteamStorageAPI.Utilities.Config;
+using SteamStorageAPI.Utilities.HealthCheck;
+using SteamStorageAPI.Utilities.HealthCheck.Steam;
 
 namespace SteamStorageAPI.Utilities.Extensions;
 
@@ -52,12 +54,14 @@ public static partial class ServiceCollectionExtensions
 
             return services;
         }
+
         public IServiceCollection AddQuartzServices(AppConfig config)
         {
             services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
             services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
 
-            services.AddQuartz(q => {
+            services.AddQuartz(q =>
+            {
                 q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
                 q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
 
@@ -76,6 +80,7 @@ public static partial class ServiceCollectionExtensions
 
             return services;
         }
+
         public IServiceCollection AddBackgroundServices()
         {
             services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
@@ -84,17 +89,19 @@ public static partial class ServiceCollectionExtensions
 
             return services;
         }
+
         public IServiceCollection AddSwagger()
         {
             services
-                .AddSwaggerGen(options => {
-                    options.SwaggerDoc("v1", new()
+                .AddSwaggerGen(options =>
+                {
+                    options.SwaggerDoc("v1", new OpenApiInfo
                     {
                         Title = "SteamStorage API",
                         Version = "v1",
                         Description = "API для SteamStorage"
                     });
-                    options.AddSecurityDefinition("Bearer", new()
+                    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                     {
                         In = ParameterLocation.Header,
                         Description = "Авторизация происходит в формате: Bearer {token}",
@@ -103,12 +110,12 @@ public static partial class ServiceCollectionExtensions
                         Scheme = JwtBearerDefaults.AuthenticationScheme,
                         BearerFormat = "JWT"
                     });
-                    options.AddSecurityRequirement(new()
+                    options.AddSecurityRequirement(new OpenApiSecurityRequirement
                     {
                         {
-                            new()
+                            new OpenApiSecurityScheme
                             {
-                                Reference = new()
+                                Reference = new OpenApiReference
                                 {
                                     Type = ReferenceType.SecurityScheme,
                                     Id = "Bearer"
@@ -123,6 +130,27 @@ public static partial class ServiceCollectionExtensions
 
                     options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
                 });
+
+            return services;
+        }
+
+        public IServiceCollection AddHealthChecksServices(AppConfig config)
+        {
+            services
+                .AddHealthChecks()
+                .AddSqlServer(
+                    config.Database.SteamStorage,
+                    name: "database",
+                    tags: ["db"])
+                .AddCheck<ApiHealthChecker>(
+                    "api",
+                    tags: ["api"])
+                .AddCheck<SteamMarketHealthChecker>(
+                    "steam-market",
+                    tags: ["steam"])
+                .AddCheck<SteamProfileHealthChecker>(
+                    "steam-profile",
+                    tags: ["steam"]);
 
             return services;
         }

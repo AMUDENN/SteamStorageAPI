@@ -33,8 +33,9 @@ public class UserService : IUserService
 
     #region Methods
 
-    private UserResponse GetUserResponse(User user) =>
-        new(user.Id,
+    private UserResponse GetUserResponse(User user)
+    {
+        return new UserResponse(user.Id,
             user.SteamId.ToString(),
             _steamApiUrlBuilder.GetUserUrl(user.SteamId),
             user.IconUrl is null ? null : _steamApiUrlBuilder.GetUserIconUrl(user.IconUrl),
@@ -48,6 +49,7 @@ public class UserService : IUserService
             user.CurrencyId,
             user.DateRegistration,
             user.GoalSum);
+    }
 
     private async Task<UserResponse> RefreshAndGetUserResponseAsync(
         User user,
@@ -57,7 +59,7 @@ public class UserService : IUserService
             || user.IconUrl is null
             || user.IconUrlMedium is null
             || user.IconUrlFull is null
-            || user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.Now.AddDays(-1))
+            || (user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.Now.AddDays(-1)))
         {
             HttpClient client = _httpClientFactory.CreateClient();
             SteamUserResult? steamUserResult =
@@ -94,15 +96,17 @@ public class UserService : IUserService
             .Include(x => x.Role)
             .Include(x => x.StartPage);
 
-        return new(
+        return new UsersResponse(
             usersCount,
             pagesCount == 0 ? 1 : pagesCount,
             users.Select(x => GetUserResponse(x)));
     }
 
     public async Task<int> GetUsersCountAsync(
-        CancellationToken cancellationToken = default) =>
-        await _context.Users.CountAsync(cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Users.CountAsync(cancellationToken);
+    }
 
     public async Task<UserResponse> GetUserInfoAsync(
         GetUserRequest request,
@@ -129,8 +133,10 @@ public class UserService : IUserService
     }
 
     public GoalSumResponse GetCurrentUserGoalSum(
-        User user) =>
-        new(user.GoalSum);
+        User user)
+    {
+        return new GoalSumResponse(user.GoalSum);
+    }
 
     public async Task<HasAccessToAdminPanelResponse> GetHasAccessToAdminPanelAsync(
         User user,
@@ -138,7 +144,7 @@ public class UserService : IUserService
     {
         await _context.Entry(user).Reference(x => x.Role).LoadAsync(cancellationToken);
 
-        return new(user.Role.Title == nameof(Role.Roles.Admin));
+        return new HasAccessToAdminPanelResponse(user.Role.Title == nameof(Role.Roles.Admin));
     }
 
     public async Task PutGoalSumAsync(

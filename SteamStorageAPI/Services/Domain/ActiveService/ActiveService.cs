@@ -38,8 +38,9 @@ public class ActiveService : IActiveService
     private async Task<ActiveResponse> MapToResponseAsync(
         Active active,
         double rate,
-        CancellationToken cancellationToken = default) =>
-        new(
+        CancellationToken cancellationToken = default)
+    {
+        return new ActiveResponse(
             active.Id,
             active.GroupId,
             await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
@@ -54,6 +55,7 @@ public class ActiveService : IActiveService
                 : (double)active.Skin.CurrentPrice * rate / (double)active.GoalPrice,
             ((double)active.Skin.CurrentPrice * rate - (double)active.BuyPrice) / (double)active.BuyPrice,
             active.Description);
+    }
 
     public async Task<ActiveResponse> GetActiveResponseAsync(
         Active active,
@@ -104,7 +106,7 @@ public class ActiveService : IActiveService
         IEnumerable<ActiveResponse> responses = await Task.WhenAll(
             page.Select(x => MapToResponseAsync(x, rate, cancellationToken)));
 
-        return new(activesCount, pagesCount, responses);
+        return new ActivesResponse(activesCount, pagesCount, responses);
     }
 
     public async Task<ActivesStatisticResponse> GetActivesStatisticAsync(
@@ -124,7 +126,7 @@ public class ActiveService : IActiveService
 
         double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-        return new(
+        return new ActivesStatisticResponse(
             await actives.SumAsync(x => x.Count, cancellationToken),
             await actives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken),
             (decimal)((double)await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate));
@@ -148,7 +150,7 @@ public class ActiveService : IActiveService
 
         int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
-        return new(pagesCount == 0 ? 1 : pagesCount);
+        return new ActivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount);
     }
 
     public async Task<ActivesCountResponse> GetActivesCountAsync(
@@ -167,7 +169,7 @@ public class ActiveService : IActiveService
                              && (request.GroupId == null || x.GroupId == request.GroupId),
                 cancellationToken);
 
-        return new(count);
+        return new ActivesCountResponse(count);
     }
 
     public IQueryable<Active> GetActivesQuery(
@@ -233,7 +235,7 @@ public class ActiveService : IActiveService
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "Предмета с таким Id не существует");
 
-        await _context.Actives.AddAsync(new()
+        await _context.Actives.AddAsync(new Active
         {
             GroupId = request.GroupId,
             Count = request.Count,
@@ -304,7 +306,7 @@ public class ActiveService : IActiveService
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 $"Количество продаваемых предметов ({request.Count}) превышает количество в активе ({active.Count})");
 
-        await _context.Archives.AddAsync(new()
+        await _context.Archives.AddAsync(new Archive
         {
             GroupId = request.GroupId,
             SkinId = active.SkinId,

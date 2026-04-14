@@ -30,7 +30,7 @@ public class PagesService : IPageService
     {
         List<Page> pages = await _context.Pages.AsNoTracking().ToListAsync(cancellationToken);
 
-        return new(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title)));
+        return new PagesResponse(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title)));
     }
 
     public async Task<PageResponse> GetCurrentStartPageAsync(
@@ -42,7 +42,7 @@ public class PagesService : IPageService
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Страницы с таким Id не существует");
 
-        return new(page.Id, page.Title);
+        return new PageResponse(page.Id, page.Title);
     }
 
     public async Task SetStartPageAsync(

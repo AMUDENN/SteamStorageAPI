@@ -60,7 +60,7 @@ public class InventoryService : IInventoryService
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize);
 
-        return new(inventoriesCount,
+        return new InventoriesResponse(inventoriesCount,
             pagesCount,
             await Task.WhenAll(inventories.AsEnumerable()
                 .Select(async x => new InventoryResponse(
@@ -115,7 +115,7 @@ public class InventoryService : IInventoryService
                               .Sum(x => x.Skin.CurrentPrice * x.Count)
                           * rate))).ToList();
 
-        return new(itemsCount, currentSum, gamesCountResponse, gamesSumResponse);
+        return new InventoriesStatisticResponse(itemsCount, currentSum, gamesCountResponse, gamesSumResponse);
     }
 
     public async Task<InventoryPagesCountResponse> GetInventoryPagesCountAsync(
@@ -134,7 +134,7 @@ public class InventoryService : IInventoryService
 
         int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
-        return new(pagesCount == 0 ? 1 : pagesCount);
+        return new InventoryPagesCountResponse(pagesCount == 0 ? 1 : pagesCount);
     }
 
     public IQueryable<Inventory> GetInventoryQuery(
@@ -195,7 +195,8 @@ public class InventoryService : IInventoryService
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "При получении данных с сервера Steam произошла ошибка");
 
-        await using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        await using IDbContextTransaction
+            transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
@@ -222,7 +223,7 @@ public class InventoryService : IInventoryService
                     await _context.Inventories.FirstOrDefaultAsync(x => x.SkinId == skin.Id, cancellationToken);
 
                 if (inventory is null)
-                    await _context.Inventories.AddAsync(new()
+                    await _context.Inventories.AddAsync(new Inventory
                     {
                         User = user,
                         Skin = skin,

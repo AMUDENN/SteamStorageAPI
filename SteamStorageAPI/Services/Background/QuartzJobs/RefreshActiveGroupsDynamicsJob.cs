@@ -33,7 +33,6 @@ public class RefreshActiveGroupsDynamicsJob : IJob
         bool isSuccessful = false;
 
         while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
-        {
             try
             {
                 _logger.LogInformation("Начинается обновление записей ActiveGroupsDynamic");
@@ -57,7 +56,6 @@ public class RefreshActiveGroupsDynamicsJob : IJob
                 await Task.Delay(ServicesConstants.REFRESH_ACTIVE_GROUPS_DYNAMICS_JOB_ERROR_DELAY,
                     context.CancellationToken);
             }
-        }
     }
 
     #endregion Methods

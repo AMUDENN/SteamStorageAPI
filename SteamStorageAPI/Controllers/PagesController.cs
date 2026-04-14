@@ -42,8 +42,10 @@ public class PagesController : ControllerBase
     [HttpGet(Name = "GetPages")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<PagesResponse>> GetPages(
-        CancellationToken cancellationToken = default) =>
-        Ok(await _pageService.GetPagesAsync(cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _pageService.GetPagesAsync(cancellationToken));
+    }
 
     /// <summary>
     /// Получение текущей стартовой страницы пользователя

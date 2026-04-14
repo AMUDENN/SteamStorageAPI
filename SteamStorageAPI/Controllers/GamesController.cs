@@ -41,8 +41,10 @@ public class GamesController : ControllerBase
     [HttpGet(Name = "GetGames")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<GamesResponse>> GetGames(
-        CancellationToken cancellationToken = default) =>
-        Ok(await _gameService.GetGamesAsync(cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _gameService.GetGamesAsync(cancellationToken));
+    }
 
     #endregion GET
 

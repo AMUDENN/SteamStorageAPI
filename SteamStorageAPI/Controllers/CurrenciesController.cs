@@ -44,8 +44,10 @@ public class CurrenciesController : ControllerBase
     [HttpGet(Name = "GetCurrencies")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<CurrenciesResponse>> GetCurrencies(
-        CancellationToken cancellationToken = default) =>
-        Ok(await _currencyService.GetCurrenciesAsync(cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _currencyService.GetCurrenciesAsync(cancellationToken));
+    }
 
     /// <summary>
     /// Получение информации о валюте
@@ -59,8 +61,10 @@ public class CurrenciesController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<CurrencyResponse>> GetCurrency(
         [FromQuery] GetCurrencyRequest request,
-        CancellationToken cancellationToken = default) =>
-        Ok(await _currencyService.GetCurrencyAsync(request, cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _currencyService.GetCurrencyAsync(request, cancellationToken));
+    }
 
     /// <summary>
     /// Получение текущей валюты пользователя

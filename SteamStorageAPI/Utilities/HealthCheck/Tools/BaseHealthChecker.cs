@@ -13,11 +13,8 @@ public abstract class BaseHealthChecker : IHealthCheck
 
     #region Properties
 
-    protected string HostUrl
-    {
-        get =>
-            $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}";
-    }
+    protected string HostUrl =>
+        $"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}";
 
     #endregion Properties
 

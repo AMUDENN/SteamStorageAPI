@@ -30,7 +30,7 @@ public class RoleService : IRoleService
     {
         List<Role> roles = await _context.Roles.AsNoTracking().ToListAsync(cancellationToken);
 
-        return new(roles.Count, roles.Select(x => new RoleResponse(x.Id, x.Title)));
+        return new RolesResponse(roles.Count, roles.Select(x => new RoleResponse(x.Id, x.Title)));
     }
 
     public async Task SetRoleAsync(

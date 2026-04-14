@@ -79,7 +79,8 @@ public class ActivesController : ControllerBase
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                         "Пользователя с таким Id не существует");
 
-        IQueryable<Active> actives = _activeService.GetActivesQuery(user, request.GroupId, request.GameId, request.Filter);
+        IQueryable<Active> actives =
+            _activeService.GetActivesQuery(user, request.GroupId, request.GameId, request.Filter);
         actives = _activeService.ApplyOrder(actives, request.OrderName, request.IsAscending);
 
         return Ok(await _activeService.GetActivesResponseAsync(

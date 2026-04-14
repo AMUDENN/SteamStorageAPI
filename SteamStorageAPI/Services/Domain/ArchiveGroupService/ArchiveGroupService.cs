@@ -27,7 +27,7 @@ public class ArchiveGroupService : IArchiveGroupService
 
     public ArchiveGroupResponse GetArchiveGroupResponse(ArchiveGroup group)
     {
-        return new(group.Id,
+        return new ArchiveGroupResponse(group.Id,
             group.Title,
             group.Description,
             $"#{group.Colour ?? ArchiveGroup.BASE_ARCHIVE_GROUP_COLOUR}",
@@ -147,7 +147,7 @@ public class ArchiveGroupService : IArchiveGroupService
                                / soldSum),
                 archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.SoldPrice * x.Count))).ToList();
 
-        return new(archivesCount, buySum, soldSum,
+        return new ArchiveGroupsStatisticResponse(archivesCount, buySum, soldSum,
             gamesCountResponse, gamesBuySumResponse, gamesSoldSumResponse);
     }
 
@@ -156,7 +156,7 @@ public class ArchiveGroupService : IArchiveGroupService
         PostArchiveGroupRequest request,
         CancellationToken cancellationToken = default)
     {
-        await _context.ArchiveGroups.AddAsync(new()
+        await _context.ArchiveGroups.AddAsync(new ArchiveGroup
         {
             UserId = user.Id,
             Title = request.Title,

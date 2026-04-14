@@ -2,7 +2,7 @@ using AdminPanel.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
 using SteamStorageAPI.SDK.Services.Logger.LoggerService;
 using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection;
-using LoggerService=AdminPanel.Services.LoggerService.LoggerService;
+using LoggerService = AdminPanel.Services.LoggerService.LoggerService;
 
 namespace AdminPanel;
 
@@ -15,7 +15,8 @@ public static class Program
         builder.Services.AddControllersWithViews();
 
         //SteamStorageApi
-        builder.Services.AddSteamStorageApiWeb(options => {
+        builder.Services.AddSteamStorageApiWeb(options =>
+        {
             options.ClientTimeout = ProgramConstants.API_CLIENT_TIMEOUT;
         });
 
@@ -41,7 +42,7 @@ public static class Program
         }
 
         //ForwardedHeaders
-        app.UseForwardedHeaders(new()
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });

@@ -36,7 +36,6 @@ public class RefreshSkinDynamicsBackgroundService : BackgroundServiceBase
             return;
 
         while (!stoppingToken.IsCancellationRequested)
-        {
             try
             {
                 _logger.LogInformation("Начинается обновление стоимости предметов");
@@ -45,8 +44,7 @@ public class RefreshSkinDynamicsBackgroundService : BackgroundServiceBase
                 {
                     IRefreshSkinDynamicsService refreshSkinDynamicsService =
                         scope.ServiceProvider.GetRequiredService<IRefreshSkinDynamicsService>();
-
-                    await refreshSkinDynamicsService.RefreshSkinDynamicsAsync(stoppingToken);
+                    // await refreshSkinDynamicsService.RefreshSkinDynamicsAsync(stoppingToken);
                 }
 
                 _logger.LogInformation("Обновление стоимости предметов завершено");
@@ -59,7 +57,6 @@ public class RefreshSkinDynamicsBackgroundService : BackgroundServiceBase
 
                 await Task.Delay(ServicesConstants.REFRESH_SKIN_DYNAMICS_BACKGROUND_ERROR_DELAY, stoppingToken);
             }
-        }
     }
 
     #endregion Methods

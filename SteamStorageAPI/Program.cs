@@ -7,6 +7,7 @@ using SteamStorageAPI.Utilities.JWT;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.IdentityModel.Tokens;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Services.Infrastructure.JwtProvider;
@@ -27,7 +28,8 @@ public static class Program
         //Controllers
         builder.Services
             .AddControllers(options => { options.AddAutoValidation(); })
-            .AddJsonOptions(options => {
+            .AddJsonOptions(options =>
+            {
                 options.JsonSerializerOptions.WriteIndented = true;
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -36,11 +38,8 @@ public static class Program
 
 
         // Initialize config
-        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
-        if (configPath is null)
-        {
-            throw new("Path to configuration file not set");
-        }
+        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH") ?? ".config.yaml";
+        if (configPath is null) throw new Exception("Path to configuration file not set");
 
         AppConfig config = ConfigurationReader.Read(configPath);
 
@@ -83,29 +82,35 @@ public static class Program
         builder.Services.AddProblemDetails();
 
         //HealthCheck
+        builder.Services.AddHealthChecksServices(config);
+
         builder.Services
-            .AddHealthChecksUI(setup => {
+            .AddHealthChecksUI(setup =>
+            {
                 setup.AddHealthCheckEndpoint("Health details", $"{config.HealthChecks.BaseUrl}/api/health-all");
                 setup.AddHealthCheckEndpoint("SteamStorageAPI", $"{config.HealthChecks.BaseUrl}/api/health-api");
                 setup.AddHealthCheckEndpoint("DataBase", $"{config.HealthChecks.BaseUrl}/api/health-db");
                 setup.AddHealthCheckEndpoint("Steam", $"{config.HealthChecks.BaseUrl}/api/health-steam");
                 setup.MaximumHistoryEntriesPerEndpoint(config.HealthChecks.MaximumHistoryEntriesPerEndpoint);
                 setup.SetEvaluationTimeInSeconds(config.HealthChecks.EvaluationTimeInSeconds);
-                setup.SetMinimumSecondsBetweenFailureNotifications(config.HealthChecks.MinimumSecondsBetweenFailureNotifications);
+                setup.SetMinimumSecondsBetweenFailureNotifications(config.HealthChecks
+                    .MinimumSecondsBetweenFailureNotifications);
             })
             .AddSqlServerStorage(config.Database.HealthChecks);
 
         builder.Services.AddMemoryCache();
 
         //RateLimit
-        builder.Services.Configure<IpRateLimitOptions>(options => {
+        builder.Services.Configure<IpRateLimitOptions>(options =>
+        {
             options.EnableEndpointRateLimiting = config.RateLimit.EnableEndpointRateLimiting;
             options.StackBlockedRequests = config.RateLimit.StackBlockedRequests;
             options.HttpStatusCode = config.RateLimit.HttpStatusCode;
             options.RealIpHeader = config.RateLimit.RealIpHeader;
             options.ClientIdHeader = config.RateLimit.ClientIdHeader;
             options.GeneralRules = config.RateLimit.Rules
-                .Select(r => new AspNetCoreRateLimit.RateLimitRule { Endpoint = r.Endpoint, Period = r.Period, Limit = r.Limit })
+                .Select(r => new AspNetCoreRateLimit.RateLimitRule
+                    { Endpoint = r.Endpoint, Period = r.Period, Limit = r.Limit })
                 .ToList();
         });
         builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
@@ -117,12 +122,14 @@ public static class Program
         //Authorization
         builder.Services.AddAuthorization();
         builder.Services
-            .AddAuthentication(options => {
+            .AddAuthentication(options =>
+            {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options => {
-                options.TokenValidationParameters = new()
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidIssuer = jwtOptions.Issuer,
@@ -147,13 +154,11 @@ public static class Program
         WebApplication app = builder.Build();
 
 
-        app.UseSwagger(swaggerOptions => {
-            swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json";
-        });
+        app.UseSwagger(swaggerOptions => { swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json"; });
         app.UseSwaggerUI(swaggerUiOptions => { swaggerUiOptions.RoutePrefix = "api/swagger"; });
 
         //ForwardedHeaders
-        app.UseForwardedHeaders(new()
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
@@ -176,7 +181,8 @@ public static class Program
         app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
             .RequireAuthorization();
 
-        app.MapHealthChecksUI(options => {
+        app.MapHealthChecksUI(options =>
+        {
             options.UIPath = "/api/health-ui";
             options.ApiPath = "/api";
             options.ResourcesPath = "/api";
@@ -204,12 +210,14 @@ public static class Program
         app.Run();
     }
 
-    private static HealthCheckOptions CreateHealthCheckOptions(Func<HealthCheckRegistration, bool> predicate) =>
-        new()
+    private static HealthCheckOptions CreateHealthCheckOptions(Func<HealthCheckRegistration, bool> predicate)
+    {
+        return new HealthCheckOptions
         {
             Predicate = predicate,
             ResponseWriter = HealthCheckResponseWriter.WriteResponse
         };
+    }
 
     #endregion Methods
 }

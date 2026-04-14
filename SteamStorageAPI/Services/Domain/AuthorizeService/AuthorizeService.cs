@@ -42,7 +42,7 @@ public class AuthorizeService : IAuthorizeService
 
         Role role = await _context.Roles.FirstAsync(x => x.Title == nameof(Role.Roles.User), cancellationToken);
 
-        user = new()
+        user = new User
         {
             SteamId = steamId,
             RoleId = role.Id,

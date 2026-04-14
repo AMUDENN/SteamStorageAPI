@@ -39,7 +39,7 @@ public class GameService : IGameService
     {
         List<Game> games = await _context.Games.AsNoTracking().ToListAsync(cancellationToken);
 
-        return new(games.Count, games.Select(x =>
+        return new GamesResponse(games.Count, games.Select(x =>
             new GameResponse(x.Id, x.SteamGameId, x.Title,
                 _steamApiUrlBuilder.GetGameIconUrl(x.SteamGameId, x.GameIconUrl))));
     }
@@ -69,7 +69,7 @@ public class GameService : IGameService
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "Указан неверный хэш-код иконки игры");
 
-        await _context.Games.AddAsync(new()
+        await _context.Games.AddAsync(new Game
         {
             SteamGameId = request.SteamGameId,
             Title = steamResponse.name,

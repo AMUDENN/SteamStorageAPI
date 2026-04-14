@@ -47,15 +47,13 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             .AsQueryable();
 
         foreach (ActiveGroup group in activeGroups)
-        {
-            dynamics.Add(new()
+            dynamics.Add(new ActiveGroupsDynamic
             {
                 GroupId = group.Id,
                 Sum = (decimal)((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count)
                                 * await _currencyService.GetCurrencyExchangeRateAsync(group.User, cancellationToken)),
                 DateUpdate = DateTime.Now
             });
-        }
 
         await _context.ActiveGroupsDynamics.AddRangeAsync(dynamics, cancellationToken);
 

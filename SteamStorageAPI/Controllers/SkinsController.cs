@@ -68,8 +68,10 @@ public class SkinsController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<BaseSkinsResponse>> GetBaseSkins(
         [FromQuery] GetBaseSkinsRequest request,
-        CancellationToken cancellationToken = default) =>
-        Ok(await _skinService.GetBaseSkinsAsync(request, cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _skinService.GetBaseSkinsAsync(request, cancellationToken));
+    }
 
     /// <summary>
     /// Получение списка предметов
@@ -151,8 +153,10 @@ public class SkinsController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount(
         [FromQuery] GetSteamSkinsCountRequest request,
-        CancellationToken cancellationToken = default) =>
-        Ok(await _skinService.GetSteamSkinsCountAsync(request, cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _skinService.GetSteamSkinsCountAsync(request, cancellationToken));
+    }
 
     /// <summary>
     /// Получение количества сохранённых предметов

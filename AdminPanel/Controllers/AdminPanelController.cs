@@ -45,8 +45,10 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(AdminPanel));
     }
 
-    public IActionResult AccessDenied() =>
-        View();
+    public IActionResult AccessDenied()
+    {
+        return View();
+    }
 
     public async Task<IActionResult> AdminPanel(
         AdminPanelRequest request,
@@ -80,7 +82,7 @@ public class AdminPanelController : Controller
 
         Users.UsersResponse? users = await _apiClient.GetAsync<Users.UsersResponse, Users.GetUsersRequest>(
             ApiConstants.ApiMethods.GetUsers,
-            new(request.UsersPageNumber ?? 1, 7),
+            new Users.GetUsersRequest(request.UsersPageNumber ?? 1, 7),
             cancellationToken);
 
         if (user is null)

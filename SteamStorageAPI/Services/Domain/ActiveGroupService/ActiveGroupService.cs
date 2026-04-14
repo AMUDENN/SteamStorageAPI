@@ -37,7 +37,7 @@ public class ActiveGroupService : IActiveGroupService
     {
         double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-        return new(group.Id,
+        return new ActiveGroupResponse(group.Id,
             group.Title,
             group.Description,
             $"#{group.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
@@ -174,7 +174,7 @@ public class ActiveGroupService : IActiveGroupService
                               .Sum(x => x.Skin.CurrentPrice * x.Count)
                           * rate))).ToList();
 
-        return new(activesCount, buyPriceSum, latestPriceSum,
+        return new ActiveGroupsStatisticResponse(activesCount, buyPriceSum, latestPriceSum,
             gamesCountResponse, gamesInvestmentSumResponse, gamesCurrentSumResponse);
     }
 
@@ -206,7 +206,7 @@ public class ActiveGroupService : IActiveGroupService
             ? 0
             : (dynamic.Last().Sum - dynamic.First().Sum) / dynamic.First().Sum);
 
-        return new(changePeriod, dynamic);
+        return new ActiveGroupDynamicStatsResponse(changePeriod, dynamic);
     }
 
     public async Task PostActiveGroupAsync(
@@ -214,7 +214,7 @@ public class ActiveGroupService : IActiveGroupService
         PostActiveGroupRequest request,
         CancellationToken cancellationToken = default)
     {
-        await _context.ActiveGroups.AddAsync(new()
+        await _context.ActiveGroups.AddAsync(new ActiveGroup
         {
             UserId = user.Id,
             Title = request.Title,

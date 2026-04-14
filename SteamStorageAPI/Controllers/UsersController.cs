@@ -45,8 +45,10 @@ public class UsersController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<UsersResponse>> GetUsers(
         [FromQuery] GetUsersRequest request,
-        CancellationToken cancellationToken = default) =>
-        Ok(await _userService.GetUsersAsync(request, cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _userService.GetUsersAsync(request, cancellationToken));
+    }
 
     /// <summary>
     /// Получение количества пользователей
@@ -58,8 +60,10 @@ public class UsersController : ControllerBase
     [HttpGet(Name = "GetUsersCount")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<UsersCountResponse>> GetUsersCount(
-        CancellationToken cancellationToken = default) =>
-        Ok(new UsersCountResponse(await _userService.GetUsersCountAsync(cancellationToken)));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(new UsersCountResponse(await _userService.GetUsersCountAsync(cancellationToken)));
+    }
 
     /// <summary>
     /// Получение информации о пользователе
@@ -73,8 +77,10 @@ public class UsersController : ControllerBase
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<UserResponse>> GetUserInfo(
         [FromQuery] GetUserRequest request,
-        CancellationToken cancellationToken = default) =>
-        Ok(await _userService.GetUserInfoAsync(request, cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _userService.GetUserInfoAsync(request, cancellationToken));
+    }
 
     /// <summary>
     /// Получение информации о текущем пользователе

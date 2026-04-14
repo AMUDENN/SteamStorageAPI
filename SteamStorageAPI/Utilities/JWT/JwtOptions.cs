@@ -29,8 +29,10 @@ public class JwtOptions
 
     #region Methods
 
-    public SymmetricSecurityKey GetSymmetricSecurityKey() =>
-        new(Encoding.UTF8.GetBytes(Key));
+    public SymmetricSecurityKey GetSymmetricSecurityKey()
+    {
+        return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key));
+    }
 
     #endregion Methods
 }

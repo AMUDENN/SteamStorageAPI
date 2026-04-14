@@ -43,18 +43,22 @@ public class TokenController : Controller
         return RedirectToAction(nameof(Token), new { IsTokenEmpty = false });
     }
 
-    public IActionResult Token([FromQuery] TokenRequest request) =>
-        View(new TokenViewModel
+    public IActionResult Token([FromQuery] TokenRequest request)
+    {
+        return View(new TokenViewModel
         {
             IsTokenEmpty = request.IsTokenEmpty
         });
+    }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error() =>
-        View(new ErrorViewModel
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
         });
+    }
 
     #endregion Methods
 }

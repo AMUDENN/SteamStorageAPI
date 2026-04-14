@@ -89,7 +89,6 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
             Stopwatch stopwatch = new();
 
             while (count == answerCount || start < totalCount)
-            {
                 try
                 {
                     stopwatch.Reset();
@@ -138,7 +137,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                         if (skin is null)
                             continue;
 
-                        skinsDynamics.Add(new()
+                        skinsDynamics.Add(new SkinsDynamic
                         {
                             DateUpdate = DateTime.Now,
                             Price = Convert.ToDecimal(item.sell_price_text.Replace(baseCurrency.Mark, string.Empty),
@@ -169,7 +168,6 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                     _logger.LogError($"Произошла ошибка во время обновления стоимости предметов: {ex.Message}");
                     await Task.Delay(rnd.Next(REFRESH_DELAY_ERROR_MIN, REFRESH_DELAY_ERROR_MAX), cancellationToken);
                 }
-            }
         }
     }
 

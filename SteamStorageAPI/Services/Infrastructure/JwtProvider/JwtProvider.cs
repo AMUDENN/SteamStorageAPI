@@ -39,7 +39,7 @@ public class JwtProvider : IJwtProvider
             _jwtOptions.Audience,
             claims,
             expires: DateTime.UtcNow.Add(TimeSpan.FromDays(_jwtOptions.ExpiresDays)),
-            signingCredentials: new(_jwtOptions.GetSymmetricSecurityKey(),
+            signingCredentials: new SigningCredentials(_jwtOptions.GetSymmetricSecurityKey(),
                 SecurityAlgorithms.HmacSha256)
         );
 

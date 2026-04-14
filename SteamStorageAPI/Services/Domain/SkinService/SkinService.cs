@@ -41,13 +41,15 @@ public class SkinService : ISkinService
 
     private async Task<List<int>> GetMarkedSkinsIdsAsync(
         User user,
-        CancellationToken cancellationToken = default) =>
-        await _context.Entry(user)
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Entry(user)
             .Collection(x => x.MarkedSkins)
             .Query()
             .AsNoTracking()
             .Select(x => x.SkinId)
             .ToListAsync(cancellationToken);
+    }
 
     private IQueryable<Skin> ApplySkinOrder(
         IQueryable<Skin> skins,
@@ -72,21 +74,29 @@ public class SkinService : ISkinService
                 : skins.OrderByDescending(x => x.CurrentPrice),
             SkinOrderName.Change7D => isAscending.Value
                 ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff7)
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7)
+                                   .OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First()
+                                   .Price)
                     : 0)
                 : skins.OrderByDescending(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff7)
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First().Price)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7)
+                                   .OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff7).OrderBy(y => y.DateUpdate).First()
+                                   .Price)
                     : 0),
             SkinOrderName.Change30D => isAscending.Value
                 ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff30)
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30)
+                                   .OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First()
+                                   .Price)
                     : 0)
                 : skins.OrderByDescending(x => x.SkinsDynamics.Any(y => y.DateUpdate > cutoff30)
-                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
-                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First().Price)
+                    ? (double)((x.CurrentPrice - x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30)
+                                   .OrderBy(y => y.DateUpdate).First().Price)
+                               / x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30).OrderBy(y => y.DateUpdate).First()
+                                   .Price)
                     : 0),
             _ => skins.OrderBy(x => x.Id)
         };
@@ -94,13 +104,15 @@ public class SkinService : ISkinService
 
     public async Task<BaseSkinResponse> GetBaseSkinResponseAsync(
         Skin skin,
-        CancellationToken cancellationToken = default) =>
-        new(
+        CancellationToken cancellationToken = default)
+    {
+        return new BaseSkinResponse(
             skin.Id,
             _steamApiUrlBuilder.GetSkinIconUrl(skin.SkinIconUrl),
             skin.Title,
             skin.MarketHashName,
             _steamApiUrlBuilder.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
+    }
 
     public async Task<SkinResponse> GetSkinResponseAsync(
         Skin skin,
@@ -138,7 +150,7 @@ public class SkinService : ISkinService
             ? 0
             : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price);
 
-        return new(
+        return new SkinResponse(
             await GetBaseSkinResponseAsync(skin, cancellationToken),
             (decimal)((double)skin.CurrentPrice * rate),
             change7D,
@@ -161,7 +173,8 @@ public class SkinService : ISkinService
             .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30))
             .ToListAsync(cancellationToken);
 
-        return await Task.WhenAll(skinList.Select(async x => {
+        return await Task.WhenAll(skinList.Select(async x =>
+        {
             List<SkinsDynamic> dynamics7 = x.SkinsDynamics
                 .Where(y => y.DateUpdate > cutoff7)
                 .OrderBy(y => y.DateUpdate)
@@ -257,7 +270,7 @@ public class SkinService : ISkinService
             .Take(20)
             .Include(x => x.Game);
 
-        return new(
+        return new BaseSkinsResponse(
             await skins.CountAsync(cancellationToken),
             await Task.WhenAll(skins.AsEnumerable()
                     .Select(async x => await GetBaseSkinResponseAsync(x, cancellationToken)))
@@ -285,7 +298,7 @@ public class SkinService : ISkinService
 
         skins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
 
-        return new(
+        return new SkinsResponse(
             skinsCount,
             pagesCount == 0 ? 1 : pagesCount,
             await GetSkinsResponseAsync(skins, user, markedSkinsIds, cancellationToken));
@@ -308,7 +321,7 @@ public class SkinService : ISkinService
             ? 0
             : (double)((dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price);
 
-        return new(changePeriod, dynamic);
+        return new SkinDynamicStatsResponse(changePeriod, dynamic);
     }
 
     public async Task<SkinPagesCountResponse> GetSkinPagesCountAsync(
@@ -329,7 +342,7 @@ public class SkinService : ISkinService
 
         int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
 
-        return new(pagesCount == 0 ? 1 : pagesCount);
+        return new SkinPagesCountResponse(pagesCount == 0 ? 1 : pagesCount);
     }
 
     public async Task<SteamSkinsCountResponse> GetSteamSkinsCountAsync(
@@ -348,7 +361,7 @@ public class SkinService : ISkinService
             ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "При получении данных с сервера Steam произошла ошибка");
 
-        return new(response.total_count);
+        return new SteamSkinsCountResponse(response.total_count);
     }
 
     public async Task<SavedSkinsCountResponse> GetSavedSkinsCountAsync(
@@ -367,7 +380,7 @@ public class SkinService : ISkinService
                                  || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
                 cancellationToken);
 
-        return new(count);
+        return new SavedSkinsCountResponse(count);
     }
 
     public async Task PostSkinAsync(
@@ -418,7 +431,7 @@ public class SkinService : ISkinService
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "Скин с таким Id уже добавлен в избранное");
 
-        await _context.MarkedSkins.AddAsync(new() { SkinId = skin.Id, UserId = user.Id }, cancellationToken);
+        await _context.MarkedSkins.AddAsync(new MarkedSkin { SkinId = skin.Id, UserId = user.Id }, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 

@@ -66,7 +66,8 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         HttpClient client = _httpClientFactory.CreateClient();
 
         SteamSkinResponse? skinResponse =
-            await client.GetFromJsonAsync<SteamSkinResponse>(_steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId),
+            await client.GetFromJsonAsync<SteamSkinResponse>(
+                _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId),
                 cancellationToken);
 
         AssetDescription? skinResult = skinResponse?.results.FirstOrDefault()?.asset_description;
@@ -115,7 +116,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                     .Replace(currency.Mark, string.Empty),
                 new CultureInfo(currency.CultureInfo));
 
-            _context.CurrencyDynamics.Add(new()
+            _context.CurrencyDynamics.Add(new CurrencyDynamic
             {
                 CurrencyId = currency.Id,
                 DateUpdate = DateTime.Now,

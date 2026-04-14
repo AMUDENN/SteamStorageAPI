@@ -46,7 +46,7 @@ public class StatisticsService : IStatisticsService
 
         double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
-        return new(currentSum, percentage);
+        return new InvestmentSumResponse(currentSum, percentage);
     }
 
     public async Task<FinancialGoalResponse> GetFinancialGoalAsync(
@@ -66,7 +66,7 @@ public class StatisticsService : IStatisticsService
 
         double percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
-        return new(financialGoal, percentage);
+        return new FinancialGoalResponse(financialGoal, percentage);
     }
 
     public async Task<ActiveStatisticResponse> GetActiveStatisticAsync(
@@ -82,7 +82,7 @@ public class StatisticsService : IStatisticsService
         double currentSum = (double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
         double percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
-        return new(count, currentSum, percentage);
+        return new ActiveStatisticResponse(count, currentSum, percentage);
     }
 
     public async Task<ArchiveStatisticResponse> GetArchiveStatisticAsync(
@@ -96,7 +96,7 @@ public class StatisticsService : IStatisticsService
         double soldSum = (double)archives.Sum(y => y.SoldPrice * y.Count);
         double percentage = investedSum == 0 ? 1 : (soldSum - investedSum) / investedSum;
 
-        return new(count, soldSum, percentage);
+        return new ArchiveStatisticResponse(count, soldSum, percentage);
     }
 
     public async Task<InventoryStatisticResponse> GetInventoryStatisticAsync(
@@ -125,7 +125,7 @@ public class StatisticsService : IStatisticsService
                 (double)inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / count,
                 inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
 
-        return new(count, sum, gamesResponse);
+        return new InventoryStatisticResponse(count, sum, gamesResponse);
     }
 
     public async Task<ItemsCountResponse> GetItemsCountAsync(
@@ -137,7 +137,7 @@ public class StatisticsService : IStatisticsService
         int inventoriesCount = _context.Entry(user).Collection(u => u.Inventories).Query()
             .AsNoTracking().Sum(x => x.Count);
 
-        return new(activesCount + archivesCount + inventoriesCount);
+        return new ItemsCountResponse(activesCount + archivesCount + inventoriesCount);
     }
 
     #endregion Methods

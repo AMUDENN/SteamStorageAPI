@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.Utilities.Exceptions;
 
@@ -61,7 +62,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         httpContext.Response.StatusCode = problemDetails.Status.Value;
         await httpContext.Response.WriteAsJsonAsync(
             new ErrorResponse(problemDetails.Detail),
-            new()
+            new JsonSerializerOptions
             {
                 WriteIndented = true,
                 PropertyNamingPolicy = null

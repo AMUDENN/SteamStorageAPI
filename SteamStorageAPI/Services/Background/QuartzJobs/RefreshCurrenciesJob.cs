@@ -33,7 +33,6 @@ public class RefreshCurrenciesJob : IJob
         bool isSuccessful = false;
 
         while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
-        {
             try
             {
                 _logger.LogInformation("Начинается обновление курса валют");
@@ -56,7 +55,6 @@ public class RefreshCurrenciesJob : IJob
 
                 await Task.Delay(ServicesConstants.REFRESH_CURRENCIES_JOB_ERROR_DELAY, context.CancellationToken);
             }
-        }
     }
 
     #endregion Methods

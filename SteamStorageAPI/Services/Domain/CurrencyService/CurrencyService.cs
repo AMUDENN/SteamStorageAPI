@@ -36,7 +36,7 @@ public class CurrencyService : ICurrencyService
             .OrderBy(x => x.DateUpdate)
             .LastOrDefaultAsync(cancellationToken);
 
-        return new(currency.Id,
+        return new CurrencyResponse(currency.Id,
             currency.SteamCurrencyId,
             currency.Title,
             currency.Mark,
@@ -77,7 +77,7 @@ public class CurrencyService : ICurrencyService
                     ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().DateUpdate
                     : DateTime.Now));
 
-        return new(await currencies.CountAsync(cancellationToken), currencies);
+        return new CurrenciesResponse(await currencies.CountAsync(cancellationToken), currencies);
     }
 
     public async Task<CurrencyResponse> GetCurrencyAsync(
@@ -108,7 +108,7 @@ public class CurrencyService : ICurrencyService
         PostCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        await _context.Currencies.AddAsync(new()
+        await _context.Currencies.AddAsync(new Currency
         {
             SteamCurrencyId = request.SteamCurrencyId,
             Title = request.Title,

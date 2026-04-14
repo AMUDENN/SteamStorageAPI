@@ -44,8 +44,10 @@ public class RolesController : ControllerBase
     [HttpGet(Name = "GetRoles")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<ActionResult<RolesResponse>> GetRoles(
-        CancellationToken cancellationToken = default) =>
-        Ok(await _roleService.GetRolesAsync(cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _roleService.GetRolesAsync(cancellationToken));
+    }
 
     #endregion GET
 

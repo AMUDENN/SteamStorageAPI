@@ -33,8 +33,9 @@ public class ArchiveService : IArchiveService
 
     public async Task<ArchiveResponse> GetArchiveResponseAsync(
         Archive archive,
-        CancellationToken cancellationToken = default) =>
-        new(archive.Id,
+        CancellationToken cancellationToken = default)
+    {
+        return new ArchiveResponse(archive.Id,
             archive.GroupId,
             await _skinService.GetBaseSkinResponseAsync(archive.Skin, cancellationToken),
             archive.BuyDate,
@@ -45,6 +46,7 @@ public class ArchiveService : IArchiveService
             archive.SoldPrice * archive.Count,
             (double)((archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice),
             archive.Description);
+    }
 
     public async Task<ArchivesResponse> GetArchivesResponseAsync(
         IQueryable<Archive> archives,
@@ -60,7 +62,7 @@ public class ArchiveService : IArchiveService
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize);
 
-        return new(archivesCount,
+        return new ArchivesResponse(archivesCount,
             pagesCount,
             await Task.WhenAll(archives.AsEnumerable()
                 .Select(async x => new ArchiveResponse(
@@ -141,7 +143,7 @@ public class ArchiveService : IArchiveService
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "Предмета с таким Id не существует");
 
-        await _context.Archives.AddAsync(new()
+        await _context.Archives.AddAsync(new Archive
         {
             GroupId = request.GroupId,
             Count = request.Count,

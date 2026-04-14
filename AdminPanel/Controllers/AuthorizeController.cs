@@ -28,8 +28,10 @@ public class AuthorizeController : Controller
 
     #region Methods
 
-    public IActionResult Index() =>
-        View();
+    public IActionResult Index()
+    {
+        return View();
+    }
 
     public async Task<IActionResult> LogIn(
         CancellationToken cancellationToken = default)
@@ -40,7 +42,7 @@ public class AuthorizeController : Controller
         Authorize.AuthUrlResponse? authUrlResponse =
             await _apiClient.GetAsync<Authorize.AuthUrlResponse, Authorize.GetAuthUrlRequest>(
                 ApiConstants.ApiMethods.GetAuthUrl,
-                new($"{baseUrl}/AdminPanel/CheckAdmin"),
+                new Authorize.GetAuthUrlRequest($"{baseUrl}/AdminPanel/CheckAdmin"),
                 cancellationToken);
 
         if (authUrlResponse is null)

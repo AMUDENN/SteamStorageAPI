@@ -16,6 +16,7 @@ public interface ISteamApiUrlBuilder
     string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId);
     string GetAuthUrl(string returnTo, string realm);
     string GetAuthCheckUrl();
+
     HttpContent GetAuthCheckContent(
         string ns,
         string opEndpoint,
