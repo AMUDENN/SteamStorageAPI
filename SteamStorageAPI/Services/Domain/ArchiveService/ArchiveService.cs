@@ -138,11 +138,11 @@ public class ArchiveService : IArchiveService
         if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
                 .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                "You do not have access to edit this group or the group with this Id does not exist");
 
         if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Предмета с таким Id не существует");
+                "A skin with this Id does not exist");
 
         await _context.Archives.AddAsync(new Archive
         {
@@ -171,16 +171,16 @@ public class ArchiveService : IArchiveService
                               .SelectMany(x => x.Archives)
                               .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
                           ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                              "У вас нет доступа к изменению этого элемента архива или элемента архива с таким Id не существует");
+                              "You do not have access to edit this archive item or the archive item with this Id does not exist");
 
         if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
                 .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                "You do not have access to edit this group or the group with this Id does not exist");
 
         if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Предмета с таким Id не существует");
+                "A skin with this Id does not exist");
 
         archive.GroupId = request.GroupId;
         archive.Count = request.Count;
@@ -206,7 +206,7 @@ public class ArchiveService : IArchiveService
                               .SelectMany(x => x.Archives)
                               .FirstOrDefaultAsync(x => x.Id == archiveId, cancellationToken)
                           ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                              "У вас нет доступа к изменению этого элемента архива или элемента архива с таким Id не существует");
+                              "You do not have access to edit this archive item or the archive item with this Id does not exist");
 
         _context.Archives.Remove(archive);
 

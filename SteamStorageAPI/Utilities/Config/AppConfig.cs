@@ -77,29 +77,21 @@ public class RateLimitRule
 
 public class BackgroundServicesConfig
 {
-    public RefreshSkinDynamicsConfig RefreshSkinDynamics { get; set; } = new();
-    public JobConfig RefreshActiveGroupsDynamics { get; set; } = new();
+    public QuartzJobConfig RefreshSkinDynamicsJob { get; set; } = new();
     public RefreshCurrenciesConfig RefreshCurrencies { get; set; } = new();
     public QuartzJobConfig RefreshActiveGroupsDynamicsJob { get; set; } = new();
 }
 
-public class RefreshSkinDynamicsConfig
-{
-    public int DelayMs { get; set; } = 3_600_000;
-    public int ErrorDelayMs { get; set; } = 300_000;
-}
-
-public class JobConfig
-{
-    public int ErrorDelayMs { get; set; } = 1_800_000;
-}
-
-public class RefreshCurrenciesConfig : JobConfig
-{
-    public string CronSchedule { get; set; } = "0 0 1 * * ?";
-}
-
 public class QuartzJobConfig
 {
-    public string CronSchedule { get; set; } = "0 0 3 * * ?";
+    public string CronSchedule { get; set; } = "0 0 0 * * ?";
+    public int ErrorDelayMs { get; set; } = 30 * 60 * 1000;
+}
+
+public class RefreshCurrenciesConfig : QuartzJobConfig
+{
+    public RefreshCurrenciesConfig()
+    {
+        CronSchedule = "0 0 1 * * ?";
+    }
 }

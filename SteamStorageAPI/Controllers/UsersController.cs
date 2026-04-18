@@ -35,11 +35,11 @@ public class UsersController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение списка пользователей
+    /// Get the list of users
     /// </summary>
-    /// <response code="200">Возвращает список пользователей</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of users</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpGet(Name = "GetUsers")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -51,11 +51,11 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества пользователей
+    /// Get the number of users
     /// </summary>
-    /// <response code="200">Возвращает количество пользователей</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of users</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpGet(Name = "GetUsersCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -66,12 +66,12 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Получение информации о пользователе
+    /// Get information about a user
     /// </summary>
-    /// <response code="200">Возвращает информацию о пользователе</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about the user</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpGet(Name = "GetUserInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -83,12 +83,12 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Получение информации о текущем пользователе
+    /// Get information about the current user
     /// </summary>
-    /// <response code="200">Возвращает информацию о текущем пользователе</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about the current user</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetCurrentUserInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -97,19 +97,19 @@ public class UsersController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _userService.GetCurrentUserInfoAsync(user, cancellationToken));
     }
 
 
     /// <summary>
-    /// Получение финансовой цели текущего пользователя
+    /// Get the financial goal of the current user
     /// </summary>
-    /// <response code="200">Возвращает финансовую цель текущего пользователя</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the financial goal of the current user</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetCurrentUserGoalSum")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -118,19 +118,19 @@ public class UsersController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(_userService.GetCurrentUserGoalSum(user));
     }
 
 
     /// <summary>
-    /// Получение информации о доступе к админ панели
+    /// Get information about access to the admin panel
     /// </summary>
-    /// <response code="200">Возвращает информацию о доступе к админ панели</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about access to the admin panel</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetHasAccessToAdminPanel")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -139,7 +139,7 @@ public class UsersController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _userService.GetHasAccessToAdminPanelAsync(user, cancellationToken));
     }
@@ -149,12 +149,12 @@ public class UsersController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Установка финансовой цели
+    /// Set the financial goal
     /// </summary>
-    /// <response code="200">Финансовая цель успешно установлена</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The financial goal was successfully set</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "PutGoalSum")]
     public async Task<ActionResult> PutGoalSum(
@@ -163,7 +163,7 @@ public class UsersController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _userService.PutGoalSumAsync(user, request, cancellationToken);
         return Ok();
@@ -174,19 +174,19 @@ public class UsersController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление текущего пользователя
+    /// Delete the current user
     /// </summary>
-    /// <response code="200">Пользователь успешно удалён</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The user was successfully deleted</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpDelete(Name = "DeleteUser")]
     public async Task<ActionResult> DeleteUser(CancellationToken cancellationToken = default)
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _userService.DeleteUserAsync(user, cancellationToken);
         return Ok();

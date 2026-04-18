@@ -38,13 +38,13 @@ public class ActiveGroupsController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение информации об одной группе активов
+    /// Get information about a single active group
     /// </summary>
-    /// <response code="200">Возвращает подробную информацию о группе активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы активов с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns detailed information about the active group</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveGroupInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -54,24 +54,24 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         ActiveGroup group = await _activeGroupService.GetActiveGroupsQuery(user)
                                 .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Группы активов с таким Id не существует");
+                                "No active group with the given Id exists");
 
         return Ok(await _activeGroupService.GetActiveGroupResponseAsync(group, user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение списка групп активов
+    /// Get the list of active groups
     /// </summary>
-    /// <response code="200">Возвращает список групп активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of active groups</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveGroups")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -81,7 +81,7 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         IQueryable<ActiveGroup> groups = _activeGroupService.GetActiveGroupsQuery(user);
 
@@ -94,13 +94,13 @@ public class ActiveGroupsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение статистики групп активов
+    /// Get statistics for active groups
     /// </summary>
-    /// <response code="200">Возвращает статистику групп активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns statistics for active groups</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveGroupsStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -109,19 +109,19 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _activeGroupService.GetActiveGroupsStatisticAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение динамики стоимости группы активов
+    /// Get the value dynamics of an active group
     /// </summary>
-    /// <response code="200">Возвращает динамику группы активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the dynamics of the active group</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveGroupDynamics")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -131,19 +131,19 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _activeGroupService.GetActiveGroupDynamicsAsync(user, request, cancellationToken));
     }
 
     /// <summary>
-    /// Получение количества групп активов
+    /// Get the number of active groups
     /// </summary>
-    /// <response code="200">Возвращает количество групп активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of active groups</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveGroupsCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -152,7 +152,7 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(new ActiveGroupsCountResponse(
             await _activeGroupService.GetActiveGroupsQuery(user).CountAsync(cancellationToken)));
@@ -163,13 +163,13 @@ public class ActiveGroupsController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Добавление новой группы активов
+    /// Add a new active group
     /// </summary>
-    /// <response code="200">Группа успешно добавлена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The group was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPost(Name = "PostActiveGroup")]
     public async Task<ActionResult> PostActiveGroup(
@@ -178,7 +178,7 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeGroupService.PostActiveGroupAsync(user, request, cancellationToken);
 
@@ -190,13 +190,13 @@ public class ActiveGroupsController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Изменение группы активов
+    /// Update an active group
     /// </summary>
-    /// <response code="200">Группа успешно изменена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The group was successfully updated</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "PutActiveGroup")]
     public async Task<ActionResult> PutActiveGroup(
@@ -205,7 +205,7 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeGroupService.PutActiveGroupAsync(user, request, cancellationToken);
 
@@ -217,13 +217,13 @@ public class ActiveGroupsController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление группы активов
+    /// Delete an active group
     /// </summary>
-    /// <response code="200">Группа успешно удалена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The group was successfully deleted</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpDelete(Name = "DeleteActiveGroup")]
     public async Task<ActionResult> DeleteActiveGroup(
@@ -232,7 +232,7 @@ public class ActiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeGroupService.DeleteActiveGroupAsync(user, request.GroupId, cancellationToken);
 

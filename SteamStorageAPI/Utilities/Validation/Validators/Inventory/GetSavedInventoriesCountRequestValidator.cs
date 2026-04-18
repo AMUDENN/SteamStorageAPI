@@ -8,6 +8,6 @@ public sealed class GetSavedInventoriesCountRequestValidator : AbstractValidator
     public GetSavedInventoriesCountRequestValidator()
     {
         RuleFor(expression => expression.GameId)
-            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Game Id cannot be less than 1");
     }
 }

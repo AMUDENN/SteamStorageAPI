@@ -8,6 +8,6 @@ public sealed class PostGameRequestValidator : AbstractValidator<PostGameRequest
     public PostGameRequestValidator()
     {
         RuleFor(expression => expression.SteamGameId)
-            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Game Id cannot be less than 1");
     }
 }

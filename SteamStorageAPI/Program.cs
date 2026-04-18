@@ -62,9 +62,6 @@ public static class Program
         //Quartz
         builder.Services.AddQuartzServices(config);
 
-        //Background Services
-        builder.Services.AddBackgroundServices();
-
         //Swagger
         builder.Services.AddSwagger();
 

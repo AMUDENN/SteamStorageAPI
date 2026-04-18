@@ -188,7 +188,7 @@ public class ActiveGroupService : IActiveGroupService
                                 .AsNoTracking()
                                 .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "У вас нет доступа к информации о группе с таким Id или группы с таким Id не существует");
+                                "You do not have access to the group with this Id or the group with this Id does not exist");
 
         DateTime startDate = request.StartDate.Date;
         DateTime endDate = request.EndDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
@@ -236,7 +236,7 @@ public class ActiveGroupService : IActiveGroupService
                                 .Query()
                                 .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                                "You do not have access to edit this group or the group with this Id does not exist");
 
         group.Title = request.Title;
         group.Description = request.Description;
@@ -256,7 +256,7 @@ public class ActiveGroupService : IActiveGroupService
                                 .Query()
                                 .FirstOrDefaultAsync(x => x.Id == groupId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                                "You do not have access to edit this group or the group with this Id does not exist");
 
         _context.ActiveGroups.Remove(group);
 

@@ -43,11 +43,11 @@ public class AuthorizeController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение ссылки на авторизацию и названия группы SignalR
+    /// Get the authorization URL and the SignalR group name
     /// </summary>
-    /// <response code="200">Возвращает ссылку на авторизацию и название группы SignalR</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the authorization URL and the SignalR group name</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="499">The operation was cancelled</response>
     [HttpGet(Name = "GetAuthUrl")]
     [Produces(MediaTypeNames.Application.Json)]
     public ActionResult<AuthUrlResponse> GetAuthUrl(
@@ -63,10 +63,10 @@ public class AuthorizeController : ControllerBase
     }
 
     /// <summary>
-    /// Callback авторизации в Steam
+    /// Steam authorization callback
     /// </summary>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="499">The operation was cancelled</response>
     [HttpGet(Name = "SteamAuthCallback")]
     public async Task<ActionResult> SteamAuthCallback(
         [FromQuery] SteamAuthRequest steamAuthRequest,

@@ -35,13 +35,13 @@ public class SkinsController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение информации об одном предмете
+    /// Get information about a single skin
     /// </summary>
-    /// <response code="200">Возвращает подробную информацию о предмете</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns detailed information about the skin</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSkinInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -51,18 +51,18 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _skinService.GetSkinInfoAsync(user, request, cancellationToken));
     }
 
     /// <summary>
-    /// Получение упрощённого списка предметов
+    /// Get a simplified list of skins
     /// </summary>
-    /// <response code="200">Возвращает упрощённый список предметов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns a simplified list of skins</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetBaseSkins")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -74,13 +74,13 @@ public class SkinsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение списка предметов
+    /// Get the list of skins
     /// </summary>
-    /// <response code="200">Возвращает список предметов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of skins</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSkins")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -90,19 +90,19 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _skinService.GetSkinsAsync(user, request, cancellationToken));
     }
 
     /// <summary>
-    /// Получение динамики стоимости предмета
+    /// Get the price dynamics of a skin
     /// </summary>
-    /// <response code="200">Возвращает динамику стоимости предмета</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the price dynamics of the skin</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSkinDynamics")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -112,19 +112,19 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _skinService.GetSkinDynamicsAsync(user, request, cancellationToken));
     }
 
     /// <summary>
-    /// Получение количества страниц предметов
+    /// Get the number of skin pages
     /// </summary>
-    /// <response code="200">Возвращает количество страниц определённого размера</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of pages of the specified size</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSkinPagesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -134,20 +134,20 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _skinService.GetSkinPagesCountAsync(user, request, cancellationToken));
     }
 
 
     /// <summary>
-    /// Получение общего количества предметов в Steam
+    /// Get the total number of skins in Steam
     /// </summary>
-    /// <response code="200">Возвращает количество предметов в Steam</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Игры с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of skins in Steam</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSteamSkinsCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -159,13 +159,13 @@ public class SkinsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества сохранённых предметов
+    /// Get the number of saved skins
     /// </summary>
-    /// <response code="200">Возвращает количество сохранённых предметов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of saved skins</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSavedSkinsCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -175,7 +175,7 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _skinService.GetSavedSkinsCountAsync(user, request, cancellationToken));
     }
@@ -185,13 +185,13 @@ public class SkinsController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Занесение одного предмета из Steam
+    /// Import a single skin from Steam
     /// </summary>
-    /// <response code="200">Предмет успешно добавлен</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Игры с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The skin was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpPost(Name = "PostSkin")]
     public async Task<ActionResult> PostSkin(
@@ -203,13 +203,13 @@ public class SkinsController : ControllerBase
     }
 
     /// <summary>
-    /// Добавление предмета в отмеченные
+    /// Add a skin to marked items
     /// </summary>
-    /// <response code="200">Предмет отмечен</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The skin was marked</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPost(Name = "SetMarkedSkin")]
     public async Task<ActionResult> SetMarkedSkin(
@@ -218,7 +218,7 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _skinService.SetMarkedSkinAsync(user, request, cancellationToken);
         return Ok();
@@ -229,13 +229,13 @@ public class SkinsController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление отмеченного предмета
+    /// Remove a skin from marked items
     /// </summary>
-    /// <response code="200">Отметка предмета снята</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Предмета с таким Id в таблице отмеченных предметов нет или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The skin mark was removed</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists in the marked skins table, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpDelete(Name = "DeleteMarkedSkin")]
     public async Task<ActionResult> DeleteMarkedSkin(
@@ -244,7 +244,7 @@ public class SkinsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _skinService.DeleteMarkedSkinAsync(user, request, cancellationToken);
         return Ok();

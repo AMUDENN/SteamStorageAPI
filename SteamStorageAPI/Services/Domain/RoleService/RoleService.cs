@@ -40,16 +40,16 @@ public class RoleService : IRoleService
     {
         if (request.UserId == user.Id)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "Нельзя изменить свою роль");
+                "You cannot change your own role");
 
         User requestedUser = await _context.Users
                                  .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
                              ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                 "Пользователя с таким Id не существует");
+                                 "A user with this Id does not exist");
 
         if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Роли с таким Id не существует");
+                "A role with this Id does not exist");
 
         requestedUser.RoleId = request.RoleId;
         await _context.SaveChangesAsync(cancellationToken);

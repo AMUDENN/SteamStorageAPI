@@ -53,7 +53,7 @@ public class CurrencyService : ICurrencyService
             await _context.Currencies
                 .Include(x => x.CurrencyDynamics.OrderByDescending(d => d.DateUpdate).Take(1))
                 .FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
-            ?? throw new HttpResponseException(StatusCodes.Status404NotFound, "Не найдена валюта пользователя");
+            ?? throw new HttpResponseException(StatusCodes.Status404NotFound, "User currency not found");
 
         return currency.CurrencyDynamics.FirstOrDefault()?.Price ?? 1;
     }
@@ -83,7 +83,7 @@ public class CurrencyService : ICurrencyService
         Currency currency = await _context.Currencies.AsNoTracking()
                                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
+                                "A currency with this Id does not exist");
 
         return await GetCurrencyResponseAsync(currency, cancellationToken);
     }
@@ -95,7 +95,7 @@ public class CurrencyService : ICurrencyService
         Currency currency = await _context.Currencies.AsNoTracking()
                                 .FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
+                                "A currency with this Id does not exist");
 
         return await GetCurrencyResponseAsync(currency, cancellationToken);
     }
@@ -122,7 +122,7 @@ public class CurrencyService : ICurrencyService
         Currency currency = await _context.Currencies
                                 .FirstOrDefaultAsync(x => x.Id == request.CurrencyId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
+                                "A currency with this Id does not exist");
 
         currency.Title = request.Title;
         currency.Mark = request.Mark;
@@ -138,7 +138,7 @@ public class CurrencyService : ICurrencyService
     {
         if (!await _context.Currencies.AnyAsync(x => x.Id == request.CurrencyId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Валюты с таким Id не существует");
+                "A currency with this Id does not exist");
 
         user.CurrencyId = request.CurrencyId;
         await _context.SaveChangesAsync(cancellationToken);
@@ -151,7 +151,7 @@ public class CurrencyService : ICurrencyService
         Currency currency = await _context.Currencies
                                 .FirstOrDefaultAsync(x => x.Id == request.CurrencyId, cancellationToken)
                             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Валюты с таким Id не существует");
+                                "A currency with this Id does not exist");
 
         _context.Currencies.Remove(currency);
         await _context.SaveChangesAsync(cancellationToken);

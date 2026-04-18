@@ -38,13 +38,13 @@ public class ArchiveGroupsController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение информации об одной группе архива
+    /// Get information about a single archive group
     /// </summary>
-    /// <response code="200">Возвращает подробную информацию о группе архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы архива с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns detailed information about the archive group</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No archive group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchiveGroupInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -54,24 +54,24 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         ArchiveGroup group = await _archiveGroupService.GetArchiveGroupsQuery(user)
                                  .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
                              ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                 "Группы архива с таким Id не существует");
+                                 "No archive group with the given Id exists");
 
         return Ok(_archiveGroupService.GetArchiveGroupResponse(group));
     }
 
     /// <summary>
-    /// Получение списка групп архива
+    /// Get the list of archive groups
     /// </summary>
-    /// <response code="200">Возвращает список групп архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of archive groups</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchiveGroups")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -81,7 +81,7 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         IQueryable<ArchiveGroup> groups = _archiveGroupService.GetArchiveGroupsQuery(user);
 
@@ -94,13 +94,13 @@ public class ArchiveGroupsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение статистики групп архива
+    /// Get statistics for archive groups
     /// </summary>
-    /// <response code="200">Возвращает статистику групп архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns statistics for archive groups</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchiveGroupsStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -109,19 +109,19 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _archiveGroupService.GetArchiveGroupsStatisticAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение количества групп архива
+    /// Get the number of archive groups
     /// </summary>
-    /// <response code="200">Возвращает количество групп архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of archive groups</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchiveGroupsCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -130,7 +130,7 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(new ArchiveGroupsCountResponse(
             await _archiveGroupService.GetArchiveGroupsQuery(user).CountAsync(cancellationToken)));
@@ -141,13 +141,13 @@ public class ArchiveGroupsController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Добавление новой группы архива
+    /// Add a new archive group
     /// </summary>
-    /// <response code="200">Группа успешно добавлена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The group was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPost(Name = "PostArchiveGroup")]
     public async Task<ActionResult> PostArchiveGroup(
@@ -156,7 +156,7 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _archiveGroupService.PostArchiveGroupAsync(user, request, cancellationToken);
 
@@ -168,13 +168,13 @@ public class ArchiveGroupsController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Изменение группы архива
+    /// Update an archive group
     /// </summary>
-    /// <response code="200">Группа успешно изменена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The group was successfully updated</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "PutArchiveGroup")]
     public async Task<ActionResult> PutArchiveGroup(
@@ -183,7 +183,7 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _archiveGroupService.PutArchiveGroupAsync(user, request, cancellationToken);
 
@@ -195,13 +195,13 @@ public class ArchiveGroupsController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление группы архива
+    /// Delete an archive group
     /// </summary>
-    /// <response code="200">Группа успешно удалена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The group was successfully deleted</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpDelete(Name = "DeleteArchiveGroup")]
     public async Task<ActionResult> DeleteArchiveGroup(
@@ -210,7 +210,7 @@ public class ArchiveGroupsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _archiveGroupService.DeleteArchiveGroupAsync(user, request.GroupId, cancellationToken);
 

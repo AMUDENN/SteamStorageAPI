@@ -8,6 +8,6 @@ public sealed class DeleteCurrencyRequestValidator : AbstractValidator<DeleteCur
     public DeleteCurrencyRequestValidator()
     {
         RuleFor(expression => expression.CurrencyId)
-            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Currency Id cannot be less than 1");
     }
 }

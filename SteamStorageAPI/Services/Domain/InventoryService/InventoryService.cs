@@ -184,7 +184,7 @@ public class InventoryService : IInventoryService
     {
         Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                        "Игры с таким Id не существует");
+                        "A game with this Id does not exist");
 
         HttpClient client = _httpClientFactory.CreateClient();
         SteamInventoryResponse? response =
@@ -193,7 +193,7 @@ public class InventoryService : IInventoryService
 
         if (response is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "При получении данных с сервера Steam произошла ошибка");
+                "An error occurred while retrieving data from the Steam server");
 
         await using IDbContextTransaction
             transaction = await _context.Database.BeginTransactionAsync(cancellationToken);

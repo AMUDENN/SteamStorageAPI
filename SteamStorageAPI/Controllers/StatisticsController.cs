@@ -37,13 +37,13 @@ public class StatisticsController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение суммы инвестиций
+    /// Get the total investment amount
     /// </summary>
-    /// <response code="200">Возвращает сумму инвестиций</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the total investment amount</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetInvestmentSum")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -52,19 +52,19 @@ public class StatisticsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _statisticsService.GetInvestmentSumAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение информации о финансовой цели
+    /// Get information about the financial goal
     /// </summary>
-    /// <response code="200">Возвращает информацию о финансовой цели</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about the financial goal</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetFinancialGoal")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -73,19 +73,19 @@ public class StatisticsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _statisticsService.GetFinancialGoalAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение информации об активах
+    /// Get information about active items
     /// </summary>
-    /// <response code="200">Возвращает информацию об активах</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -94,19 +94,19 @@ public class StatisticsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _statisticsService.GetActiveStatisticAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение информации об архиве
+    /// Get information about the archive
     /// </summary>
-    /// <response code="200">Возвращает информацию об архиве</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about the archive</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchiveStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -115,19 +115,19 @@ public class StatisticsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _statisticsService.GetArchiveStatisticAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение информации об инвентаре
+    /// Get information about the inventory
     /// </summary>
-    /// <response code="200">Возвращает информацию об инвентаре</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about the inventory</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetInventoryStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -136,19 +136,19 @@ public class StatisticsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _statisticsService.GetInventoryStatisticAsync(user, cancellationToken));
     }
 
     /// <summary>
-    /// Получение общего количества предметов
+    /// Get the total number of items
     /// </summary>
-    /// <response code="200">Возвращает общее количество предметов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the total number of items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetItemsCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -157,7 +157,7 @@ public class StatisticsController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _statisticsService.GetItemsCountAsync(user, cancellationToken));
     }

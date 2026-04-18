@@ -59,8 +59,8 @@ public class SkinService : ISkinService
         if (orderName is null || isAscending is null)
             return skins.OrderBy(x => x.Id);
 
-        // Вычисляем даты один раз — EF передаст их как параметры в SQL,
-        // а не будет пересчитывать DateTime.Now на каждой строке
+        // Compute dates once — EF will pass them as parameters in SQL,
+        // rather than recalculating DateTime.Now on every row
         DateTime cutoff7 = DateTime.Now.AddDays(-7);
         DateTime cutoff30 = DateTime.Now.AddDays(-30);
 
@@ -252,7 +252,7 @@ public class SkinService : ISkinService
                         .Include(x => x.Game)
                         .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Предмета с таким Id не существует");
+                        "A skin with this Id does not exist");
 
         List<int> markedSkinsIds = await GetMarkedSkinsIdsAsync(user, cancellationToken);
 
@@ -312,7 +312,7 @@ public class SkinService : ISkinService
         Skin skin = await _context.Skins.AsNoTracking()
                         .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Предмета с таким Id не существует");
+                        "A skin with this Id does not exist");
 
         List<SkinDynamicResponse> dynamic =
             await GetSkinDynamicsResponseAsync(skin, user, request.StartDate, request.EndDate, cancellationToken);
@@ -352,14 +352,14 @@ public class SkinService : ISkinService
         Game game = await _context.Games.AsNoTracking()
                         .FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                        "Игры с таким Id не существует");
+                        "A game with this Id does not exist");
 
         HttpClient client = _httpClientFactory.CreateClient();
         SteamSkinResponse response =
             await client.GetFromJsonAsync<SteamSkinResponse>(
                 _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId), cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "При получении данных с сервера Steam произошла ошибка");
+                "An error occurred while retrieving data from the Steam server");
 
         return new SteamSkinsCountResponse(response.total_count);
     }
@@ -389,7 +389,7 @@ public class SkinService : ISkinService
     {
         Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                        "Игры с таким Id не существует");
+                        "A game with this Id does not exist");
 
         HttpClient client = _httpClientFactory.CreateClient();
         SteamSkinResponse? response = await client.GetFromJsonAsync<SteamSkinResponse>(
@@ -397,14 +397,14 @@ public class SkinService : ISkinService
 
         if (response?.results is null or { Length: 0 })
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "При получении данных с сервера Steam произошла ошибка");
+                "An error occurred while retrieving data from the Steam server");
 
         SkinResult result = response.results.First();
 
         if (await _context.Skins.AnyAsync(x => x.MarketHashName == result.asset_description!.market_hash_name,
                 cancellationToken))
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
-                "Скин с таким MarketHashName уже присутствует в базе");
+                "A skin with this MarketHashName already exists in the database");
 
         await AddSkinAsync(
             game.Id,
@@ -421,7 +421,7 @@ public class SkinService : ISkinService
     {
         Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Предмета с таким Id не существует");
+                        "A skin with this Id does not exist");
 
         MarkedSkin? markedSkin = await _context.MarkedSkins
             .Where(x => x.UserId == user.Id)
@@ -429,7 +429,7 @@ public class SkinService : ISkinService
 
         if (markedSkin is not null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "Скин с таким Id уже добавлен в избранное");
+                "A skin with this Id has already been added to favourites");
 
         await _context.MarkedSkins.AddAsync(new MarkedSkin { SkinId = skin.Id, UserId = user.Id }, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
@@ -446,7 +446,7 @@ public class SkinService : ISkinService
 
         if (markedSkin is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "Скина с таким Id в таблице отмеченных скинов нет");
+                "A skin with this Id is not present in the marked skins table");
 
         _context.MarkedSkins.Remove(markedSkin);
         await _context.SaveChangesAsync(cancellationToken);

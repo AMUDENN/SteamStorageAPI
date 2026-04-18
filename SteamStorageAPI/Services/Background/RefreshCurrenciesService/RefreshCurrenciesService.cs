@@ -50,18 +50,18 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         if (await _context.CurrencyDynamics.CountAsync(x => x.DateUpdate.Date == DateTime.Today, cancellationToken)
             == await _context.Currencies.CountAsync(cancellationToken))
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
-                "Сегодня уже было выполнено обновление курса валют!");
+                "Currency exchange rate update has already been performed today!");
 
         IQueryable<Currency> currencies = _context.Currencies.AsQueryable();
 
         Currency baseCurrency =
             await currencies.FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "В базе данных отсутствует базовая валюта");
+                "The base currency is missing from the database");
 
         Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == Game.BASE_GAME_ID, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                        "В базе данных нет ни одной игры");
+                        "There are no games in the database");
 
         HttpClient client = _httpClientFactory.CreateClient();
 
@@ -74,7 +74,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
 
         if (skinResult is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "При получении данных с сервера Steam произошла ошибка");
+                "An error occurred while retrieving data from the Steam server");
 
         Skin skin =
             await _context.Skins.Include(skin => skin.Game)
@@ -92,7 +92,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             cancellationToken);
         if (response?.lowest_price is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "При получении данных с сервера Steam произошла ошибка");
+                "An error occurred while retrieving data from the Steam server");
 
         double baseCurrencyPrice = Convert.ToDouble(response.lowest_price.Replace(baseCurrency.Mark, string.Empty),
             new CultureInfo(baseCurrency.CultureInfo));

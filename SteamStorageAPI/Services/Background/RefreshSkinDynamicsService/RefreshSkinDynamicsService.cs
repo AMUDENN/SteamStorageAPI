@@ -58,7 +58,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
             await _context.Currencies
                 .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "В базе данных отсутствует базовая валюта");
+                "The base currency is missing from the database");
 
         List<Game> games = await _context.Games.ToListAsync(cancellationToken);
 
@@ -78,11 +78,11 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
             if (response is null)
                 throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "При получении данных с сервера Steam произошла ошибка");
+                    "An error occurred while retrieving data from the Steam server");
 
             int totalCount = int.MaxValue;
 
-            // Загружаем один раз за игру, обновляем инкрементально при добавлении новых скинов
+            // Load once per game, update incrementally when new skins are added
             HashSet<string> existingHashNames =
                 [.. await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken)];
 
@@ -102,7 +102,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
                     if (response is null)
                         throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                            "При получении данных с сервера Steam произошла ошибка");
+                            "An error occurred while retrieving data from the Steam server");
 
                     totalCount = response.total_count;
 
@@ -122,7 +122,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                     if (skins.Count > 0)
                     {
                         _logger.LogInformation(
-                            $"Добавлены скины:\n {string.Join("\n", skins.Select(x => x.MarketHashName))}");
+                            $"Skins added:\n {string.Join("\n", skins.Select(x => x.MarketHashName))}");
 
                         await _context.Skins.AddRangeAsync(skins, cancellationToken);
                         await _context.SaveChangesAsync(cancellationToken);
@@ -131,7 +131,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                             existingHashNames.Add(s.MarketHashName);
                     }
 
-                    // Батчевая загрузка скинов по hash_name вместо N запросов
+                    // Batch load skins by hash_name instead of N separate queries
                     List<string> resultHashNames = results
                         .Where(x => x.hash_name is not null)
                         .Select(x => x.hash_name!)
@@ -163,7 +163,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
                     stopwatch.Stop();
                     _logger.LogInformation(
-                        $"\n\tПроцесс выполнения загрузки скинов:\n\t\tЗагружено: {start} / {totalCount};\n\t\tВремя выполнения текущей итерации: {stopwatch.ElapsedMilliseconds} мс;\n");
+                        $"\n\tSkin loading progress:\n\t\tLoaded: {start} / {totalCount};\n\t\tCurrent iteration execution time: {stopwatch.ElapsedMilliseconds} ms;\n");
 
                     await Task.Delay(rnd.Next(REFRESH_DELAY_MIN, REFRESH_DELAY_MAX), cancellationToken);
                 }
@@ -171,7 +171,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
                 {
                     count = rnd.Next(MIN_RESPONSE_COUNT, BASE_RESPONSE_COUNT);
                     start -= 1;
-                    _logger.LogError($"Произошла ошибка во время обновления стоимости предметов: {ex.Message}");
+                    _logger.LogError($"An error occurred while updating item prices: {ex.Message}");
                     await Task.Delay(rnd.Next(REFRESH_DELAY_ERROR_MIN, REFRESH_DELAY_ERROR_MAX), cancellationToken);
                 }
         }

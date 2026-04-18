@@ -8,6 +8,6 @@ public sealed class GetActiveGroupsRequestValidator : AbstractValidator<GetActiv
     public GetActiveGroupsRequestValidator()
     {
         RuleFor(expression => expression.OrderName)
-            .IsInEnum().WithMessage("Порядок сортировки должен находиться в пределах от 0 до 4");
+            .IsInEnum().WithMessage("Sort order must be in the range from 0 to 4");
     }
 }

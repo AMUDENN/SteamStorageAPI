@@ -38,13 +38,13 @@ public class ArchivesController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение информации об элементе архива
+    /// Get information about an archive item
     /// </summary>
-    /// <response code="200">Возвращает подробную информацию об элементе архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Элемента архива с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns detailed information about the archive item</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No archive item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchiveInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -54,25 +54,25 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         Archive archive = await _archiveService.GetArchivesQuery(user, null, null, null)
                               .Include(x => x.Skin).ThenInclude(x => x.Game)
                               .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
                           ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                              "Элемента архива с таким Id не существует");
+                              "No archive item with the given Id exists");
 
         return Ok(await _archiveService.GetArchiveResponseAsync(archive, cancellationToken));
     }
 
     /// <summary>
-    /// Получение списка элементов архива
+    /// Get the list of archive items
     /// </summary>
-    /// <response code="200">Возвращает список элементов архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of archive items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchives")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -82,7 +82,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         IQueryable<Archive> archives = _archiveService.GetArchivesQuery(
             user, request.GroupId, request.GameId, request.Filter);
@@ -94,13 +94,13 @@ public class ArchivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение статистики по выборке элементов архива
+    /// Get statistics for the archive items selection
     /// </summary>
-    /// <response code="200">Возвращает статистику по выборке элементов архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns statistics for the archive items selection</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchivesStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -110,7 +110,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         IQueryable<Archive> archives = _archiveService.GetArchivesQuery(
             user, request.GroupId, request.GameId, request.Filter);
@@ -122,13 +122,13 @@ public class ArchivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества страниц архива
+    /// Get the number of archive pages
     /// </summary>
-    /// <response code="200">Возвращает количество страниц архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of archive pages</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchivesPagesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -138,7 +138,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         int count = await _archiveService
             .GetArchivesQuery(user, request.GroupId, request.GameId, request.Filter)
@@ -150,13 +150,13 @@ public class ArchivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества элементов архива
+    /// Get the number of archive items
     /// </summary>
-    /// <response code="200">Возвращает количество элементов архива</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of archive items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetArchivesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -166,7 +166,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(new ArchivesCountResponse(await _archiveService
             .GetArchivesQuery(user, request.GroupId, request.GameId, request.Filter)
@@ -178,13 +178,13 @@ public class ArchivesController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Добавление элемента архива
+    /// Add an archive item
     /// </summary>
-    /// <response code="200">Элемент архива успешно добавлен</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The archive item was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, no item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPost(Name = "PostArchive")]
     public async Task<ActionResult> PostArchive(
@@ -193,7 +193,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _archiveService.PostArchiveAsync(user, request, cancellationToken);
 
@@ -205,13 +205,13 @@ public class ArchivesController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Изменение элемента архива
+    /// Update an archive item
     /// </summary>
-    /// <response code="200">Элемент архива успешно изменён</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Элемента архива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The archive item was successfully updated</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No archive item with the given Id exists, no group with the given Id exists, no item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "PutArchive")]
     public async Task<ActionResult> PutArchive(
@@ -220,7 +220,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _archiveService.PutArchiveAsync(user, request, cancellationToken);
 
@@ -232,13 +232,13 @@ public class ArchivesController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление элемента архива
+    /// Delete an archive item
     /// </summary>
-    /// <response code="200">Элемент архива успешно удалён</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Элемента архива с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The archive item was successfully deleted</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No archive item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpDelete(Name = "DeleteArchive")]
     public async Task<ActionResult> DeleteArchive(
@@ -247,7 +247,7 @@ public class ArchivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _archiveService.DeleteArchiveAsync(user, request.Id, cancellationToken);
 

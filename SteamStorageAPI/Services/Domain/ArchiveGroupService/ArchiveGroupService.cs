@@ -178,7 +178,7 @@ public class ArchiveGroupService : IArchiveGroupService
                                  .Query()
                                  .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
                              ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                 "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                                 "You do not have access to edit this group or the group with this Id does not exist");
 
         group.Title = request.Title;
         group.Description = request.Description;
@@ -197,7 +197,7 @@ public class ArchiveGroupService : IArchiveGroupService
                                  .Query()
                                  .FirstOrDefaultAsync(x => x.Id == groupId, cancellationToken)
                              ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                 "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                                 "You do not have access to edit this group or the group with this Id does not exist");
 
         _context.ArchiveGroups.Remove(group);
 

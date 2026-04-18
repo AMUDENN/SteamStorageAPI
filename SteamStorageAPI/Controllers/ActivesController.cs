@@ -37,13 +37,13 @@ public class ActivesController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение информации об активе
+    /// Get information about an active item
     /// </summary>
-    /// <response code="200">Возвращает подробную информацию об активе</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns detailed information about the active item</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActiveInfo")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -53,7 +53,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         ActiveResponse response = await _activeService.GetActiveInfoAsync(user, request.Id, cancellationToken);
 
@@ -61,13 +61,13 @@ public class ActivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение списка активов
+    /// Get the list of active items
     /// </summary>
-    /// <response code="200">Возвращает список активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActives")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -77,7 +77,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         IQueryable<Active> actives =
             _activeService.GetActivesQuery(user, request.GroupId, request.GameId, request.Filter);
@@ -88,13 +88,13 @@ public class ActivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение статистики по выборке активов
+    /// Get statistics for the active items selection
     /// </summary>
-    /// <response code="200">Возвращает статистику по выборке активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns statistics for the active items selection</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActivesStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -104,7 +104,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         ActivesStatisticResponse response =
             await _activeService.GetActivesStatisticAsync(user, request, cancellationToken);
@@ -113,13 +113,13 @@ public class ActivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества страниц активов
+    /// Get the number of pages of active items
     /// </summary>
-    /// <response code="200">Возвращает количество страниц активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of pages of active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActivesPagesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -129,7 +129,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         ActivesPagesCountResponse response =
             await _activeService.GetActivesPagesCountAsync(user, request, cancellationToken);
@@ -138,13 +138,13 @@ public class ActivesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества активов
+    /// Get the number of active items
     /// </summary>
-    /// <response code="200">Возвращает количество активов</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetActivesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -154,7 +154,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         ActivesCountResponse response =
             await _activeService.GetActivesCountAsync(user, request, cancellationToken);
@@ -167,13 +167,13 @@ public class ActivesController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Добавление актива
+    /// Add an active item
     /// </summary>
-    /// <response code="200">Актив успешно добавлен</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The active item was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, no item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPost(Name = "PostActive")]
     public async Task<ActionResult> PostActive(
@@ -182,7 +182,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeService.PostActiveAsync(user, request, cancellationToken);
 
@@ -194,13 +194,13 @@ public class ActivesController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Изменение актива
+    /// Update an active item
     /// </summary>
-    /// <response code="200">Актив успешно изменён</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Актива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The active item was successfully updated</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, no group with the given Id exists, no item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "PutActive")]
     public async Task<ActionResult> PutActive(
@@ -209,7 +209,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeService.PutActiveAsync(user, request, cancellationToken);
 
@@ -217,13 +217,13 @@ public class ActivesController : ControllerBase
     }
 
     /// <summary>
-    /// Продажа актива
+    /// Sell an active item
     /// </summary>
-    /// <response code="200">Актив успешно продан</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Актива с таким Id не существует, группы архива с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The active item was successfully sold</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, no archive group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "SoldActive")]
     public async Task<ActionResult> SoldActive(
@@ -232,7 +232,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeService.SoldActiveAsync(user, request, cancellationToken);
 
@@ -244,13 +244,13 @@ public class ActivesController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление актива
+    /// Delete an active item
     /// </summary>
-    /// <response code="200">Актив успешно удалён</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The active item was successfully deleted</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpDelete(Name = "DeleteActive")]
     public async Task<ActionResult> DeleteActive(
@@ -259,7 +259,7 @@ public class ActivesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _activeService.DeleteActiveAsync(user, request.Id, cancellationToken);
 

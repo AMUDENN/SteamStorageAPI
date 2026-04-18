@@ -61,17 +61,17 @@ public class FileService : IFileService
 
         using ExcelPackage package = new();
 
-        ExcelWorksheet? activesWorksheet = package.Workbook.Worksheets.Add("Активы");
+        ExcelWorksheet? activesWorksheet = package.Workbook.Worksheets.Add("Actives");
 
-        activesWorksheet.Cells["A1"].Value = "Название";
-        activesWorksheet.Cells["B1"].Value = "Количество";
-        activesWorksheet.Cells["C1"].Value = "Цена покупки";
-        activesWorksheet.Cells["D1"].Value = "Сумма покупки";
-        activesWorksheet.Cells["E1"].Value = "Дата покупки";
-        activesWorksheet.Cells["F1"].Value = "Текущая цена";
-        activesWorksheet.Cells["G1"].Value = "Текущая сумма";
-        activesWorksheet.Cells["H1"].Value = "Изменение (%)";
-        activesWorksheet.Cells["I1"].Value = "Ссылка";
+        activesWorksheet.Cells["A1"].Value = "Name";
+        activesWorksheet.Cells["B1"].Value = "Quantity";
+        activesWorksheet.Cells["C1"].Value = "Buy Price";
+        activesWorksheet.Cells["D1"].Value = "Buy Sum";
+        activesWorksheet.Cells["E1"].Value = "Buy Date";
+        activesWorksheet.Cells["F1"].Value = "Current Price";
+        activesWorksheet.Cells["G1"].Value = "Current Sum";
+        activesWorksheet.Cells["H1"].Value = "Change (%)";
+        activesWorksheet.Cells["I1"].Value = "Link";
         activesWorksheet.Cells["A1:I1"].Style.Font.Bold = true;
         activesWorksheet.Cells["A1:I1"].Style.Border.BorderAround(ExcelBorderStyle.Thin);
         activesWorksheet.Cells["A1:I1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -96,13 +96,13 @@ public class FileService : IFileService
 
         activesWorksheet.Cells[i, 1, i + 1, 1].Merge = true;
         activesWorksheet.Cells[i, 1].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-        activesWorksheet.Cells[i, 1].Value = "Итого";
-        activesWorksheet.Cells[i, 2].Value = "Общее количество";
-        activesWorksheet.Cells[i, 3].Value = "Средняя цена покупки";
-        activesWorksheet.Cells[i, 4].Value = "Общая сумма покупки";
-        activesWorksheet.Cells[i, 6].Value = "Средняя текущая цена";
-        activesWorksheet.Cells[i, 7].Value = "Общая текущая стоимость";
-        activesWorksheet.Cells[i, 8].Value = "Общее изменение";
+        activesWorksheet.Cells[i, 1].Value = "Total";
+        activesWorksheet.Cells[i, 2].Value = "Total Quantity";
+        activesWorksheet.Cells[i, 3].Value = "Average Buy Price";
+        activesWorksheet.Cells[i, 4].Value = "Total Buy Sum";
+        activesWorksheet.Cells[i, 6].Value = "Average Current Price";
+        activesWorksheet.Cells[i, 7].Value = "Total Current Value";
+        activesWorksheet.Cells[i, 8].Value = "Overall Change";
         activesWorksheet.Cells[i, 2, i, 8].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
         int activesTotalCount = actives.Sum(x => x.Count);
@@ -127,18 +127,18 @@ public class FileService : IFileService
         activesWorksheet.Cells[i, 1, i + 1, 8].Style.Border.BorderAround(ExcelBorderStyle.Thin);
         activesWorksheet.Cells[1, 1, i + 1, 8].AutoFitColumns();
 
-        ExcelWorksheet? archiveWorksheet = package.Workbook.Worksheets.Add("Архив");
+        ExcelWorksheet? archiveWorksheet = package.Workbook.Worksheets.Add("Archive");
 
-        archiveWorksheet.Cells["A1"].Value = "Название";
-        archiveWorksheet.Cells["B1"].Value = "Количество";
-        archiveWorksheet.Cells["C1"].Value = "Цена покупки";
-        archiveWorksheet.Cells["D1"].Value = "Сумма покупки";
-        archiveWorksheet.Cells["E1"].Value = "Дата покупки";
-        archiveWorksheet.Cells["F1"].Value = "Цена продажи";
-        archiveWorksheet.Cells["G1"].Value = "Сумма продажи";
-        archiveWorksheet.Cells["H1"].Value = "Дата продажи";
-        archiveWorksheet.Cells["I1"].Value = "Изменение (%)";
-        archiveWorksheet.Cells["J1"].Value = "Ссылка";
+        archiveWorksheet.Cells["A1"].Value = "Name";
+        archiveWorksheet.Cells["B1"].Value = "Quantity";
+        archiveWorksheet.Cells["C1"].Value = "Buy Price";
+        archiveWorksheet.Cells["D1"].Value = "Buy Sum";
+        archiveWorksheet.Cells["E1"].Value = "Buy Date";
+        archiveWorksheet.Cells["F1"].Value = "Sell Price";
+        archiveWorksheet.Cells["G1"].Value = "Sell Sum";
+        archiveWorksheet.Cells["H1"].Value = "Sell Date";
+        archiveWorksheet.Cells["I1"].Value = "Change (%)";
+        archiveWorksheet.Cells["J1"].Value = "Link";
         archiveWorksheet.Cells["A1:J1"].Style.Font.Bold = true;
         archiveWorksheet.Cells["A1:J1"].Style.Border.BorderAround(ExcelBorderStyle.Thin);
         archiveWorksheet.Cells["A1:J1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -163,13 +163,13 @@ public class FileService : IFileService
 
         archiveWorksheet.Cells[j, 1, j + 1, 1].Merge = true;
         archiveWorksheet.Cells[j, 1].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-        archiveWorksheet.Cells[j, 1].Value = "Итого";
-        archiveWorksheet.Cells[j, 2].Value = "Общее количество";
-        archiveWorksheet.Cells[j, 3].Value = "Средняя цена покупки";
-        archiveWorksheet.Cells[j, 4].Value = "Общая сумма покупки";
-        archiveWorksheet.Cells[j, 6].Value = "Средняя цена продажи";
-        archiveWorksheet.Cells[j, 7].Value = "Общая сумма продажи";
-        archiveWorksheet.Cells[j, 9].Value = "Общее изменение";
+        archiveWorksheet.Cells[j, 1].Value = "Total";
+        archiveWorksheet.Cells[j, 2].Value = "Total Quantity";
+        archiveWorksheet.Cells[j, 3].Value = "Average Buy Price";
+        archiveWorksheet.Cells[j, 4].Value = "Total Buy Sum";
+        archiveWorksheet.Cells[j, 6].Value = "Average Sell Price";
+        archiveWorksheet.Cells[j, 7].Value = "Total Sell Sum";
+        archiveWorksheet.Cells[j, 9].Value = "Overall Change";
         archiveWorksheet.Cells[j, 2, j, 9].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
         int archivesTotalCount = archives.Sum(x => x.Count);

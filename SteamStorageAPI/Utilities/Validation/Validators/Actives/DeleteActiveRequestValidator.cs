@@ -8,6 +8,6 @@ public sealed class DeleteActiveRequestValidator : AbstractValidator<DeleteActiv
     public DeleteActiveRequestValidator()
     {
         RuleFor(expression => expression.Id)
-            .GreaterThan(0).WithMessage("Id актива не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Active Id cannot be less than 1");
     }
 }

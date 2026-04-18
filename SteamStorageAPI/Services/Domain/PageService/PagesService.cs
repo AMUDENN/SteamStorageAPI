@@ -40,7 +40,7 @@ public class PagesService : IPageService
         Page page = await _context.Pages.AsNoTracking()
                         .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Страницы с таким Id не существует");
+                        "A page with this Id does not exist");
 
         return new PageResponse(page.Id, page.Title);
     }
@@ -52,7 +52,7 @@ public class PagesService : IPageService
     {
         if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Страницы с таким Id не существует");
+                "A page with this Id does not exist");
 
         user.StartPageId = request.PageId;
         await _context.SaveChangesAsync(cancellationToken);

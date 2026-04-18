@@ -35,11 +35,11 @@ public class RolesController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение списка ролей
+    /// Get the list of roles
     /// </summary>
-    /// <response code="200">Возвращает список ролей</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of roles</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpGet(Name = "GetRoles")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -54,12 +54,12 @@ public class RolesController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Установка роли пользователю
+    /// Assign a role to a user
     /// </summary>
-    /// <response code="200">Роль успешно установлена</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Роли с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The role was successfully assigned</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No role with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpPut(Name = "SetRole")]
     public async Task<ActionResult> SetRole(
@@ -68,7 +68,7 @@ public class RolesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _roleService.SetRoleAsync(user, request, cancellationToken);
         return Ok();

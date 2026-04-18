@@ -80,7 +80,7 @@ public class ActiveService : IActiveService
                             .ThenInclude(x => x.Game)
                             .FirstOrDefaultAsync(x => x.Id == activeId, cancellationToken)
                         ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Актива с таким Id не существует");
+                            "An active item with this Id does not exist");
 
         return await GetActiveResponseAsync(active, user, cancellationToken);
     }
@@ -229,11 +229,11 @@ public class ActiveService : IActiveService
         if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
                 .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                "You do not have access to edit this group or the group with this Id does not exist");
 
         if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Предмета с таким Id не существует");
+                "A skin with this Id does not exist");
 
         await _context.Actives.AddAsync(new Active
         {
@@ -261,16 +261,16 @@ public class ActiveService : IActiveService
                             .SelectMany(x => x.Actives)
                             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
                         ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+                            "You do not have access to edit this active item or the active item with this Id does not exist");
 
         if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
                 .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                "You do not have access to edit this group or the group with this Id does not exist");
 
         if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "Предмета с таким Id не существует");
+                "A skin with this Id does not exist");
 
         active.GroupId = request.GroupId;
         active.Count = request.Count;
@@ -295,16 +295,16 @@ public class ActiveService : IActiveService
                             .SelectMany(x => x.Actives)
                             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
                         ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+                            "You do not have access to edit this active item or the active item with this Id does not exist");
 
         if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
                 .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status404NotFound,
-                "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
+                "You do not have access to edit this group or the group with this Id does not exist");
 
         if (request.Count > active.Count)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                $"Количество продаваемых предметов ({request.Count}) превышает количество в активе ({active.Count})");
+                $"The number of items being sold ({request.Count}) exceeds the quantity in the active ({active.Count})");
 
         await _context.Archives.AddAsync(new Archive
         {
@@ -337,7 +337,7 @@ public class ActiveService : IActiveService
                             .SelectMany(x => x.Actives)
                             .FirstOrDefaultAsync(x => x.Id == activeId, cancellationToken)
                         ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
+                            "You do not have access to edit this active item or the active item with this Id does not exist");
 
         _context.Actives.Remove(active);
 

@@ -63,11 +63,11 @@ public class GameService : IGameService
         SteamGameResponse? steamResponse =
             await client.GetFromJsonAsync<SteamGameResponse>(_steamApiUrlBuilder.GetGameInfoUrl(request.SteamGameId),
                 cancellationToken)
-            ?? throw new HttpResponseException(StatusCodes.Status400BadRequest, "Указан неверный id игры");
+            ?? throw new HttpResponseException(StatusCodes.Status400BadRequest, "Invalid game id provided");
 
         if (!await IsGameIconExistsAsync(request.SteamGameId, request.IconUrlHash, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "Указан неверный хэш-код иконки игры");
+                "Invalid game icon hash code provided");
 
         await _context.Games.AddAsync(new Game
         {
@@ -85,11 +85,11 @@ public class GameService : IGameService
     {
         Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                        "Игры с таким Id не существует");
+                        "A game with this Id does not exist");
 
         if (!await IsGameIconExistsAsync(game.SteamGameId, request.IconUrlHash, cancellationToken))
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                "Указан неверный хэш-код иконки игры");
+                "Invalid game icon hash code provided");
 
         game.GameIconUrl = request.IconUrlHash;
         game.Title = request.Title;
@@ -103,7 +103,7 @@ public class GameService : IGameService
     {
         Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                        "Игры с таким Id не существует");
+                        "A game with this Id does not exist");
 
         _context.Games.Remove(game);
 

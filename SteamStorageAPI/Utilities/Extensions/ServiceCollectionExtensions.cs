@@ -1,8 +1,6 @@
 using System.Reflection;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi;
 using Quartz;
-using SteamStorageAPI.Services.Background.BackgroundServices;
 using SteamStorageAPI.Services.Background.QuartzJobs;
 using SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;
 using SteamStorageAPI.Services.Background.RefreshCurrenciesService;
@@ -57,12 +55,19 @@ public static partial class ServiceCollectionExtensions
 
         public IServiceCollection AddQuartzServices(AppConfig config)
         {
+            services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
             services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
             services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
 
             services.AddQuartz(q => {
+                q.AddJob<RefreshSkinDynamicsJob>(j => j.WithIdentity(nameof(RefreshSkinDynamicsJob)));
                 q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
                 q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
+
+                q.AddTrigger(t => t
+                    .ForJob(nameof(RefreshSkinDynamicsJob))
+                    .WithIdentity(nameof(RefreshSkinDynamicsJob) + "Trigger")
+                    .WithCronSchedule(config.BackgroundServices.RefreshSkinDynamicsJob.CronSchedule));
 
                 q.AddTrigger(t => t
                     .ForJob(nameof(RefreshCurrenciesJob))
@@ -80,15 +85,6 @@ public static partial class ServiceCollectionExtensions
             return services;
         }
 
-        public IServiceCollection AddBackgroundServices()
-        {
-            services.AddScoped<IRefreshSkinDynamicsService, RefreshSkinDynamicsService>();
-
-            services.AddHostedService<RefreshSkinDynamicsBackgroundService>();
-
-            return services;
-        }
-
         public IServiceCollection AddSwagger()
         {
             services.AddSwaggerGen(options => {
@@ -96,7 +92,7 @@ public static partial class ServiceCollectionExtensions
                 {
                     Title = "SteamStorage API",
                     Version = "v1",
-                    Description = "API для SteamStorage"
+                    Description = "API for SteamStorage"
                 });
 
                 options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
@@ -105,7 +101,7 @@ public static partial class ServiceCollectionExtensions
                     Scheme = "bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Авторизация: Bearer {token}"
+                    Description = "Authorization: Bearer {token}"
                 });
 
                 options.AddSecurityRequirement(document => new OpenApiSecurityRequirement

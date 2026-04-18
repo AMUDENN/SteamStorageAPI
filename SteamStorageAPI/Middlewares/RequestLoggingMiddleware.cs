@@ -37,7 +37,7 @@ public class RequestLoggingMiddleware
         string actionName = actionDescriptor?.ActionName ?? "Unknown Action";
 
         _logger.LogInformation(
-            $"\n\tМетод: {actionName};\n\tВремя сервера: {DateTime.Now};\n\tВремя выполнения: {stopwatch.ElapsedMilliseconds} мс;\n");
+            $"\n\tMethod: {actionName};\n\tServer time: {DateTime.Now};\n\tExecution time: {stopwatch.ElapsedMilliseconds} ms;\n");
     }
 
     #endregion Methods

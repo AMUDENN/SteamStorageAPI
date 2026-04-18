@@ -8,27 +8,27 @@ public sealed class PostArchiveRequestValidator : AbstractValidator<PostArchiveR
     public PostArchiveRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
-            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Group Id cannot be less than 1");
 
         RuleFor(expression => expression.Count)
-            .GreaterThan(0).WithMessage("Количество предметов не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Item count cannot be less than 1");
 
         RuleFor(expression => expression.BuyPrice)
-            .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Стоимость покупки не может быть меньше 0.01")
-            .LessThan(1000000000000).WithMessage("Стоимость покупки не может быть больше 999999999999");
+            .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Buy price cannot be less than 0.01")
+            .LessThan(1000000000000).WithMessage("Buy price cannot be greater than 999999999999");
 
         RuleFor(expression => expression.SoldPrice)
-            .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Стоимость продажи не может быть меньше 0.01")
-            .LessThan(1000000000000).WithMessage("Стоимость продажи не может быть больше 999999999999");
+            .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Sold price cannot be less than 0.01")
+            .LessThan(1000000000000).WithMessage("Sold price cannot be greater than 999999999999");
 
         RuleFor(expression => expression.SkinId)
-            .GreaterThan(0).WithMessage("Id предмета не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Skin Id cannot be less than 1");
 
         RuleFor(expression => expression.Description)
-            .MaximumLength(300).WithMessage("Длина описания предмета должна быть от 0 до 300 символов");
+            .MaximumLength(300).WithMessage("The item description length must be between 0 and 300 characters");
 
         RuleFor(expression => expression.SoldDate)
             .GreaterThanOrEqualTo(expression => expression.BuyDate)
-            .WithMessage("Дата продажи должна быть больше или равна дате покупки");
+            .WithMessage("The sold date must be greater than or equal to the buy date");
     }
 }

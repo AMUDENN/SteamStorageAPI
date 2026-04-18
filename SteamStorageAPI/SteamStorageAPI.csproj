@@ -55,6 +55,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="example\"/>
         <Folder Include="Services\Background\"/>
     </ItemGroup>
 

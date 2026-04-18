@@ -1,6 +1,6 @@
-﻿using Quartz;
+using Quartz;
 using SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;
-using SteamStorageAPI.Services.Background.Tools;
+using SteamStorageAPI.Utilities.Config;
 
 namespace SteamStorageAPI.Services.Background.QuartzJobs;
 
@@ -10,6 +10,7 @@ public class RefreshActiveGroupsDynamicsJob : IJob
 
     private readonly ILogger<RefreshActiveGroupsDynamicsJob> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly AppConfig _config;
 
     #endregion Fields
 
@@ -17,10 +18,12 @@ public class RefreshActiveGroupsDynamicsJob : IJob
 
     public RefreshActiveGroupsDynamicsJob(
         ILogger<RefreshActiveGroupsDynamicsJob> logger,
-        IServiceScopeFactory serviceScopeFactory)
+        IServiceScopeFactory serviceScopeFactory,
+        AppConfig config)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
+        _config = config;
     }
 
     #endregion Constructor
@@ -35,7 +38,7 @@ public class RefreshActiveGroupsDynamicsJob : IJob
         while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
             try
             {
-                _logger.LogInformation("Начинается обновление записей ActiveGroupsDynamic");
+                _logger.LogInformation("ActiveGroupsDynamic records update is starting");
 
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
@@ -47,13 +50,13 @@ public class RefreshActiveGroupsDynamicsJob : IJob
 
                 isSuccessful = true;
 
-                _logger.LogInformation("Обновление ActiveGroupsDynamic завершено");
+                _logger.LogInformation("ActiveGroupsDynamic update completed");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Ошибка при обновлении ActiveGroupsDynamic: {ex.Message}");
+                _logger.LogError($"Error updating ActiveGroupsDynamic: {ex.Message}");
 
-                await Task.Delay(ServicesConstants.REFRESH_ACTIVE_GROUPS_DYNAMICS_JOB_ERROR_DELAY,
+                await Task.Delay(_config.BackgroundServices.RefreshActiveGroupsDynamicsJob.ErrorDelayMs,
                     context.CancellationToken);
             }
     }

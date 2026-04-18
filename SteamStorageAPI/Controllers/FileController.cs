@@ -36,12 +36,12 @@ public class FileController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение информации об инвестициях в Excel файле
+    /// Get investment information in an Excel file
     /// </summary>
-    /// <response code="200">Возвращает информации об инвестициях в Excel файле</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns investment information in an Excel file</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetExcelFile")]
     [Produces(MediaTypeNames.Application.Octet)]
@@ -50,7 +50,7 @@ public class FileController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         byte[] fileBytes = await _fileService.GetExcelFileAsync(user, cancellationToken);
 

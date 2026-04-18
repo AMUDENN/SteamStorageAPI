@@ -35,11 +35,11 @@ public class CurrenciesController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение списка валют
+    /// Get the list of currencies
     /// </summary>
-    /// <response code="200">Возвращает список валют</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of currencies</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetCurrencies")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -50,12 +50,12 @@ public class CurrenciesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение информации о валюте
+    /// Get information about a currency
     /// </summary>
-    /// <response code="200">Возвращает информацию о валюте</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Валюты с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns information about the currency</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No currency with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetCurrency")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -67,12 +67,12 @@ public class CurrenciesController : ControllerBase
     }
 
     /// <summary>
-    /// Получение текущей валюты пользователя
+    /// Get the current currency of the user
     /// </summary>
-    /// <response code="200">Возвращает текущую валюту пользователя</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the current currency of the user</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No currency with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetCurrentCurrency")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -81,7 +81,7 @@ public class CurrenciesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _currencyService.GetCurrentCurrencyAsync(user, cancellationToken));
     }
@@ -91,11 +91,11 @@ public class CurrenciesController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Добавление новой валюты
+    /// Add a new currency
     /// </summary>
-    /// <response code="200">Валюта успешно добавлена</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The currency was successfully added</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpPost(Name = "PostCurrency")]
     public async Task<ActionResult> PostCurrency(
@@ -111,12 +111,12 @@ public class CurrenciesController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Изменение валюты
+    /// Update a currency
     /// </summary>
-    /// <response code="200">Валюта успешно изменена</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Валюты с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The currency was successfully updated</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No currency with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpPut(Name = "PutCurrencyInfo")]
     public async Task<ActionResult> PutCurrencyInfo(
@@ -128,12 +128,12 @@ public class CurrenciesController : ControllerBase
     }
 
     /// <summary>
-    /// Установка валюты пользователя
+    /// Set the user's currency
     /// </summary>
-    /// <response code="200">Валюта успешно установлена</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Валюты с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The currency was successfully set</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No currency with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPut(Name = "SetCurrency")]
     public async Task<ActionResult> SetCurrency(
@@ -142,7 +142,7 @@ public class CurrenciesController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _currencyService.SetCurrencyAsync(user, request, cancellationToken);
         return Ok();
@@ -153,12 +153,12 @@ public class CurrenciesController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление валюты
+    /// Delete a currency
     /// </summary>
-    /// <response code="200">Валюта успешно удалена</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Валюты с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The currency was successfully deleted</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No currency with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpDelete(Name = "DeleteCurrency")]
     public async Task<ActionResult> DeleteCurrency(

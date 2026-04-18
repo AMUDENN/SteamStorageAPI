@@ -35,7 +35,7 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
                 cancellationToken)
             == await _context.ActiveGroups.CountAsync(cancellationToken))
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
-                "Сегодня уже было выполнено обновление ActiveDynamics!");
+                "ActiveDynamics update has already been performed today!");
 
         List<ActiveGroup> activeGroups = await _context.ActiveGroups
             .AsNoTracking()
@@ -43,7 +43,7 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             .Include(x => x.User)
             .ToListAsync(cancellationToken);
 
-        // Загружаем все нужные валюты одним запросом
+        // Load all required currencies in a single query
         List<int> currencyIds = activeGroups.Select(x => x.User.CurrencyId).Distinct().ToList();
         Dictionary<int, double> currencyRates = await _context.Currencies
             .Where(x => currencyIds.Contains(x.Id))

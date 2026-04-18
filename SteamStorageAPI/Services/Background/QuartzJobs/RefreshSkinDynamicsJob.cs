@@ -1,14 +1,14 @@
 using Quartz;
-using SteamStorageAPI.Services.Background.RefreshCurrenciesService;
+using SteamStorageAPI.Services.Background.RefreshSkinDynamicsService;
 using SteamStorageAPI.Utilities.Config;
 
 namespace SteamStorageAPI.Services.Background.QuartzJobs;
 
-public class RefreshCurrenciesJob : IJob
+public class RefreshSkinDynamicsJob : IJob
 {
     #region Fields
 
-    private readonly ILogger<RefreshCurrenciesJob> _logger;
+    private readonly ILogger<RefreshSkinDynamicsJob> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly AppConfig _config;
 
@@ -16,8 +16,8 @@ public class RefreshCurrenciesJob : IJob
 
     #region Constructor
 
-    public RefreshCurrenciesJob(
-        ILogger<RefreshCurrenciesJob> logger,
+    public RefreshSkinDynamicsJob(
+        ILogger<RefreshSkinDynamicsJob> logger,
         IServiceScopeFactory serviceScopeFactory,
         AppConfig config)
     {
@@ -38,25 +38,25 @@ public class RefreshCurrenciesJob : IJob
         while (!isSuccessful && !context.CancellationToken.IsCancellationRequested)
             try
             {
-                _logger.LogInformation("Currency exchange rate update is starting");
+                _logger.LogInformation("Item price update is starting");
 
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
-                    IRefreshCurrenciesService refreshCurrenciesService =
-                        scope.ServiceProvider.GetRequiredService<IRefreshCurrenciesService>();
+                    IRefreshSkinDynamicsService refreshSkinDynamicsService =
+                        scope.ServiceProvider.GetRequiredService<IRefreshSkinDynamicsService>();
 
-                    await refreshCurrenciesService.RefreshCurrenciesAsync(context.CancellationToken);
+                    await refreshSkinDynamicsService.RefreshSkinDynamicsAsync(context.CancellationToken);
                 }
 
                 isSuccessful = true;
 
-                _logger.LogInformation("Currency exchange rate update completed");
+                _logger.LogInformation("Item price update completed");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error updating currency exchange rate: {ex.Message}");
+                _logger.LogError($"Error updating item prices: {ex.Message}");
 
-                await Task.Delay(_config.BackgroundServices.RefreshCurrencies.ErrorDelayMs,
+                await Task.Delay(_config.BackgroundServices.RefreshSkinDynamicsJob.ErrorDelayMs,
                     context.CancellationToken);
             }
     }

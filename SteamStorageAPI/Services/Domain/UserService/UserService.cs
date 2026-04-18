@@ -117,7 +117,7 @@ public class UserService : IUserService
                         .Include(x => x.StartPage)
                         .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "A user with this Id does not exist");
 
         return await RefreshAndGetUserResponseAsync(user, cancellationToken);
     }

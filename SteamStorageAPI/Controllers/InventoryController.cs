@@ -38,13 +38,13 @@ public class InventoryController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение списка инвентаря
+    /// Get the inventory list
     /// </summary>
-    /// <response code="200">Возвращает список предметов в инвентаре</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of items in the inventory</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetInventory")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -54,7 +54,7 @@ public class InventoryController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         IQueryable<Inventory> inventories = _inventoryService.GetInventoryQuery(
             user, request.GameId, request.Filter);
@@ -66,13 +66,13 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
-    /// Получение статистики по выборке предметов из инвентаря
+    /// Get statistics for the selected inventory items
     /// </summary>
-    /// <response code="200">Возвращает статистику по выборке</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns statistics for the selection</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetInventoriesStatistic")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -82,20 +82,20 @@ public class InventoryController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(await _inventoryService.GetInventoriesStatisticAsync(
             user, request.GameId, request.Filter, cancellationToken));
     }
 
     /// <summary>
-    /// Получение количества страниц инвентаря
+    /// Get the number of inventory pages
     /// </summary>
-    /// <response code="200">Возвращает количество страниц инвентаря</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of inventory pages</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetInventoryPagesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -105,7 +105,7 @@ public class InventoryController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         InventoryPagesCountResponse response =
             await _inventoryService.GetInventoryPagesCountAsync(user, request, cancellationToken);
@@ -114,13 +114,13 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
-    /// Получение количества элементов в инвентаре
+    /// Get the number of items in the inventory
     /// </summary>
-    /// <response code="200">Возвращает количество элементов в инвентаре</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the number of items in the inventory</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetSavedInventoriesCount")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -130,7 +130,7 @@ public class InventoryController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         return Ok(new SavedInventoriesCountResponse(await _inventoryService
             .GetInventoryQuery(user, request.GameId, request.Filter)
@@ -142,13 +142,13 @@ public class InventoryController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Обновление инвентаря
+    /// Refresh the inventory
     /// </summary>
-    /// <response code="200">Инвентарь успешно обновлён</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The inventory was successfully refreshed</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpPost(Name = "RefreshInventory")]
     public async Task<ActionResult> RefreshInventory(
@@ -157,7 +157,7 @@ public class InventoryController : ControllerBase
     {
         User user = await _contextUserService.GetContextUserAsync(cancellationToken)
                     ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
-                        "Пользователя с таким Id не существует");
+                        "No user with the given Id exists");
 
         await _inventoryService.RefreshInventoryAsync(user, request, cancellationToken);
 

@@ -8,6 +8,6 @@ public sealed class GetActiveInfoRequestValidator : AbstractValidator<GetActiveI
     public GetActiveInfoRequestValidator()
     {
         RuleFor(expression => expression.Id)
-            .GreaterThan(0).WithMessage("Id актива не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Active Id cannot be less than 1");
     }
 }

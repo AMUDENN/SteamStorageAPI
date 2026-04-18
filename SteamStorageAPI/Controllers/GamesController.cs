@@ -31,12 +31,12 @@ public class GamesController : ControllerBase
     #region GET
 
     /// <summary>
-    /// Получение списка игр
+    /// Get the list of games
     /// </summary>
-    /// <response code="200">Возвращает список игр</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">Returns the list of games</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize]
     [HttpGet(Name = "GetGames")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -51,12 +51,12 @@ public class GamesController : ControllerBase
     #region POST
 
     /// <summary>
-    /// Добавление новой игры
+    /// Add a new game
     /// </summary>
-    /// <response code="200">Игра успешно добавлена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The game was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpPost(Name = "PostGame")]
     public async Task<ActionResult> PostGame(
@@ -72,13 +72,13 @@ public class GamesController : ControllerBase
     #region PUT
 
     /// <summary>
-    /// Изменение игры
+    /// Update a game
     /// </summary>
-    /// <response code="200">Игра успешно изменена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Игры с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The game was successfully updated</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpPut(Name = "PutGameInfo")]
     public async Task<ActionResult> PutGameInfo(
@@ -94,13 +94,13 @@ public class GamesController : ControllerBase
     #region DELETE
 
     /// <summary>
-    /// Удаление игры
+    /// Delete a game
     /// </summary>
-    /// <response code="200">Игра успешно удалена</response>
-    /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-    /// <response code="401">Пользователь не прошёл авторизацию</response>
-    /// <response code="404">Игры с таким Id не существует</response>
-    /// <response code="499">Операция отменена</response>
+    /// <response code="200">The game was successfully deleted</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
     [HttpDelete(Name = "DeleteGame")]
     public async Task<ActionResult> DeleteGame(

@@ -8,6 +8,6 @@ public sealed class GetSteamSkinsCountRequestValidator : AbstractValidator<GetSt
     public GetSteamSkinsCountRequestValidator()
     {
         RuleFor(expression => expression.GameId)
-            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Game Id cannot be less than 1");
     }
 }
