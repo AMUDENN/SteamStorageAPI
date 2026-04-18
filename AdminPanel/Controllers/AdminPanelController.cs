@@ -1,9 +1,9 @@
 ﻿using AdminPanel.Models;
 using AdminPanel.Utilities;
 using Microsoft.AspNetCore.Mvc;
-using SteamStorageAPI.SDK;
+using SteamStorageAPI.SDK.ApiClient;
 using SteamStorageAPI.SDK.ApiEntities;
-using SteamStorageAPI.SDK.Utilities;
+using SteamStorageAPI.SDK.Utilities.ApiControllers;
 
 namespace AdminPanel.Controllers;
 

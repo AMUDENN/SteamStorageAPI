@@ -105,24 +105,25 @@ public class StatisticsService : IStatisticsService
     {
         double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-        IQueryable<Inventory> inventories = _context.Entry(user)
+        List<Inventory> inventories = await _context.Entry(user)
             .Collection(u => u.Inventories)
             .Query()
             .AsNoTracking()
-            .Include(x => x.Skin).ThenInclude(x => x.Game);
+            .Include(x => x.Skin).ThenInclude(x => x.Game)
+            .ToListAsync(cancellationToken);
 
         int count = inventories.Sum(x => x.Count);
         double sum = (double)inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
 
-        List<Game> games = inventories.Select(x => x.Skin.Game)
-            .GroupBy(x => x.Id)
-            .Select(g => g.First())
+        List<Game> games = inventories
+            .Select(x => x.Skin.Game)
+            .DistinctBy(x => x.Id)
             .ToList();
 
         List<InventoryGameStatisticResponse> gamesResponse = games.Select(item =>
             new InventoryGameStatisticResponse(
                 item.Title,
-                (double)inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / count,
+                count == 0 ? 0 : (double)inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / count,
                 inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
 
         return new InventoryStatisticResponse(count, sum, gamesResponse);

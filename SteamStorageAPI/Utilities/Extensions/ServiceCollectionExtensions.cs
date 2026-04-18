@@ -1,6 +1,6 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Quartz;
 using SteamStorageAPI.Services.Background.BackgroundServices;
 using SteamStorageAPI.Services.Background.QuartzJobs;
@@ -60,8 +60,7 @@ public static partial class ServiceCollectionExtensions
             services.AddScoped<IRefreshActiveGroupDynamicsService, RefreshActiveGroupDynamicsService>();
             services.AddScoped<IRefreshCurrenciesService, RefreshCurrenciesService>();
 
-            services.AddQuartz(q =>
-            {
+            services.AddQuartz(q => {
                 q.AddJob<RefreshCurrenciesJob>(j => j.WithIdentity(nameof(RefreshCurrenciesJob)));
                 q.AddJob<RefreshActiveGroupsDynamicsJob>(j => j.WithIdentity(nameof(RefreshActiveGroupsDynamicsJob)));
 
@@ -92,44 +91,33 @@ public static partial class ServiceCollectionExtensions
 
         public IServiceCollection AddSwagger()
         {
-            services
-                .AddSwaggerGen(options =>
+            services.AddSwaggerGen(options => {
+                options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    options.SwaggerDoc("v1", new OpenApiInfo
-                    {
-                        Title = "SteamStorage API",
-                        Version = "v1",
-                        Description = "API для SteamStorage"
-                    });
-                    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                    {
-                        In = ParameterLocation.Header,
-                        Description = "Авторизация происходит в формате: Bearer {token}",
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.ApiKey,
-                        Scheme = JwtBearerDefaults.AuthenticationScheme,
-                        BearerFormat = "JWT"
-                    });
-                    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                    {
-                        {
-                            new OpenApiSecurityScheme
-                            {
-                                Reference = new OpenApiReference
-                                {
-                                    Type = ReferenceType.SecurityScheme,
-                                    Id = "Bearer"
-                                }
-                            },
-                            Array.Empty<string>()
-                        }
-                    });
-
-                    string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-
-                    options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+                    Title = "SteamStorage API",
+                    Version = "v1",
+                    Description = "API для SteamStorage"
                 });
+
+                options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Авторизация: Bearer {token}"
+                });
+
+                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("bearer", document)] = []
+                });
+
+                string xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
+                options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+            });
 
             return services;
         }

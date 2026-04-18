@@ -28,8 +28,7 @@ public static class Program
         //Controllers
         builder.Services
             .AddControllers(options => { options.AddAutoValidation(); })
-            .AddJsonOptions(options =>
-            {
+            .AddJsonOptions(options => {
                 options.JsonSerializerOptions.WriteIndented = true;
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -85,8 +84,7 @@ public static class Program
         builder.Services.AddHealthChecksServices(config);
 
         builder.Services
-            .AddHealthChecksUI(setup =>
-            {
+            .AddHealthChecksUI(setup => {
                 setup.AddHealthCheckEndpoint("Health details", $"{config.HealthChecks.BaseUrl}/api/health-all");
                 setup.AddHealthCheckEndpoint("SteamStorageAPI", $"{config.HealthChecks.BaseUrl}/api/health-api");
                 setup.AddHealthCheckEndpoint("DataBase", $"{config.HealthChecks.BaseUrl}/api/health-db");
@@ -101,8 +99,7 @@ public static class Program
         builder.Services.AddMemoryCache();
 
         //RateLimit
-        builder.Services.Configure<IpRateLimitOptions>(options =>
-        {
+        builder.Services.Configure<IpRateLimitOptions>(options => {
             options.EnableEndpointRateLimiting = config.RateLimit.EnableEndpointRateLimiting;
             options.StackBlockedRequests = config.RateLimit.StackBlockedRequests;
             options.HttpStatusCode = config.RateLimit.HttpStatusCode;
@@ -122,13 +119,11 @@ public static class Program
         //Authorization
         builder.Services.AddAuthorization();
         builder.Services
-            .AddAuthentication(options =>
-            {
+            .AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options =>
-            {
+            .AddJwtBearer(options => {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -154,8 +149,13 @@ public static class Program
         WebApplication app = builder.Build();
 
 
-        app.UseSwagger(swaggerOptions => { swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json"; });
-        app.UseSwaggerUI(swaggerUiOptions => { swaggerUiOptions.RoutePrefix = "api/swagger"; });
+        app.UseSwagger(swaggerOptions => {
+            swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json";
+        });
+
+        app.UseSwaggerUI(swaggerUiOptions => {
+            swaggerUiOptions.RoutePrefix = "api/swagger";
+        });
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -181,8 +181,7 @@ public static class Program
         app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
             .RequireAuthorization();
 
-        app.MapHealthChecksUI(options =>
-        {
+        app.MapHealthChecksUI(options => {
             options.UIPath = "/api/health-ui";
             options.ApiPath = "/api";
             options.ResourcesPath = "/api";

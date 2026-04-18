@@ -1,4 +1,4 @@
-﻿namespace SteamStorageAPI.Models.SteamAPIModels.Skins;
+namespace SteamStorageAPI.Models.SteamAPIModels.Skins;
 
 public class SteamSkinResponse
 {
@@ -10,7 +10,7 @@ public class SteamSkinResponse
 
     public int total_count { get; set; }
 
-    public SearchData searchdata { get; set; }
+    public SearchData? searchdata { get; set; }
 
-    public SkinResult[] results { get; set; }
+    public SkinResult[]? results { get; set; }
 }

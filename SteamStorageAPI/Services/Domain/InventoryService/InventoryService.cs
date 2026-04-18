@@ -208,7 +208,7 @@ public class InventoryService : IInventoryService
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            foreach (InventoryDescription item in response.descriptions)
+            foreach (InventoryDescription item in response.descriptions ?? [])
             {
                 if (item is { marketable: 0, tradable: 0 })
                     continue;
@@ -216,7 +216,7 @@ public class InventoryService : IInventoryService
                 Skin skin =
                     await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name,
                         cancellationToken)
-                    ?? await _skinService.AddSkinAsync(game.Id, item.market_hash_name, item.name, item.icon_url,
+                    ?? await _skinService.AddSkinAsync(game.Id, item.market_hash_name!, item.name!, item.icon_url!,
                         cancellationToken);
 
                 Inventory? inventory =

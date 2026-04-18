@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.Skins;
 using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
-using SteamStorageAPI.Utilities.Comparers;
 using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Services.Background.RefreshSkinDynamicsService;
@@ -55,9 +54,8 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     public async Task RefreshSkinDynamicsAsync(
         CancellationToken cancellationToken = default)
     {
-        //TODO: Performance Troubles
         Currency baseCurrency =
-            await _context.Currencies.Include(x => x.CurrencyDynamics)
+            await _context.Currencies
                 .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "В базе данных отсутствует базовая валюта");
@@ -84,6 +82,10 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
             int totalCount = int.MaxValue;
 
+            // Загружаем один раз за игру, обновляем инкрементально при добавлении новых скинов
+            HashSet<string> existingHashNames =
+                [.. await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken)];
+
             Random rnd = new();
 
             Stopwatch stopwatch = new();
@@ -104,54 +106,58 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
                     totalCount = response.total_count;
 
-                    List<SkinsDynamic> skinsDynamics = [];
+                    SkinResult[] results = response.results ?? [];
 
-                    List<string> marketHashNames =
-                        await _context.Skins.Select(x => x.MarketHashName).ToListAsync(cancellationToken);
-
-                    List<Skin> skins = response.results
-                        .Where(x => !marketHashNames.Contains(x.hash_name, new InvariantCaseStringComparer()))
-                        .Select(x =>
-                            new Skin
-                            {
-                                GameId = game.Id,
-                                MarketHashName = x.hash_name,
-                                Title = x.name,
-                                SkinIconUrl = x.asset_description.icon_url
-                            })
+                    List<Skin> skins = results
+                        .Where(x => x.hash_name is not null && !existingHashNames.Contains(x.hash_name))
+                        .Select(x => new Skin
+                        {
+                            GameId = game.Id,
+                            MarketHashName = x.hash_name!,
+                            Title = x.name ?? string.Empty,
+                            SkinIconUrl = x.asset_description?.icon_url ?? string.Empty
+                        })
                         .ToList();
 
                     if (skins.Count > 0)
+                    {
                         _logger.LogInformation(
                             $"Добавлены скины:\n {string.Join("\n", skins.Select(x => x.MarketHashName))}");
 
-                    await _context.Skins.AddRangeAsync(skins, cancellationToken);
+                        await _context.Skins.AddRangeAsync(skins, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
 
-                    await _context.SaveChangesAsync(cancellationToken);
-
-                    foreach (SkinResult item in response.results)
-                    {
-                        Skin? skin = await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.hash_name,
-                            cancellationToken);
-
-                        if (skin is null)
-                            continue;
-
-                        skinsDynamics.Add(new SkinsDynamic
-                        {
-                            DateUpdate = DateTime.Now,
-                            Price = Convert.ToDecimal(item.sell_price_text.Replace(baseCurrency.Mark, string.Empty),
-                                new CultureInfo(baseCurrency.CultureInfo)),
-                            SkinId = skin.Id
-                        });
+                        foreach (Skin s in skins)
+                            existingHashNames.Add(s.MarketHashName);
                     }
 
-                    await _context.SkinsDynamics.AddRangeAsync(skinsDynamics, cancellationToken);
+                    // Батчевая загрузка скинов по hash_name вместо N запросов
+                    List<string> resultHashNames = results
+                        .Where(x => x.hash_name is not null)
+                        .Select(x => x.hash_name!)
+                        .ToList();
+                    Dictionary<string, int> skinIds = await _context.Skins
+                        .Where(x => resultHashNames.Contains(x.MarketHashName))
+                        .Select(x => new { x.MarketHashName, x.Id })
+                        .ToDictionaryAsync(x => x.MarketHashName, x => x.Id, cancellationToken);
 
+                    List<SkinsDynamic> skinsDynamics = results
+                        .Where(x => x.hash_name is not null && skinIds.ContainsKey(x.hash_name))
+                        .Select(x => new SkinsDynamic
+                        {
+                            DateUpdate = DateTime.Now,
+                            Price = Convert.ToDecimal(
+                                x.sell_price_text!.Replace(baseCurrency.Mark, string.Empty),
+                                new CultureInfo(baseCurrency.CultureInfo)),
+                            SkinId = skinIds[x.hash_name!]
+                        })
+                        .ToList();
+
+                    await _context.SkinsDynamics.AddRangeAsync(skinsDynamics, cancellationToken);
                     await _context.SaveChangesAsync(cancellationToken);
 
-                    answerCount = response.results.Length;
-                    start += response.results.Length;
+                    answerCount = results.Length;
+                    start += results.Length;
 
                     count = BASE_RESPONSE_COUNT;
 

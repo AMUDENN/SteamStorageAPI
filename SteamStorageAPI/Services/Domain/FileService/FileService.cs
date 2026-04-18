@@ -41,25 +41,21 @@ public class FileService : IFileService
         User user,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Active> actives = _context.Entry(user)
+        List<Active> actives = await _context.Entry(user)
             .Collection(x => x.ActiveGroups)
             .Query()
             .AsNoTracking()
-            .Include(x => x.Actives)
+            .Include(x => x.Actives).ThenInclude(x => x.Skin).ThenInclude(x => x.Game)
             .SelectMany(x => x.Actives)
-            .Include(x => x.Skin)
-            .ThenInclude(x => x.Game)
-            .AsQueryable();
+            .ToListAsync(cancellationToken);
 
-        IQueryable<Archive> archives = _context.Entry(user)
+        List<Archive> archives = await _context.Entry(user)
             .Collection(x => x.ArchiveGroups)
             .Query()
             .AsNoTracking()
-            .Include(x => x.Archives)
+            .Include(x => x.Archives).ThenInclude(x => x.Skin).ThenInclude(x => x.Game)
             .SelectMany(x => x.Archives)
-            .Include(x => x.Skin)
-            .ThenInclude(x => x.Game)
-            .AsQueryable();
+            .ToListAsync(cancellationToken);
 
         double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
@@ -109,19 +105,15 @@ public class FileService : IFileService
         activesWorksheet.Cells[i, 8].Value = "Общее изменение";
         activesWorksheet.Cells[i, 2, i, 8].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
-        int activesTotalCount = await actives.SumAsync(x => x.Count, cancellationToken);
-        decimal activesAverageBuyPrice = activesTotalCount == 0
-            ? 0
-            : await actives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken) / activesTotalCount;
-        decimal activesBuySum = await actives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken);
+        int activesTotalCount = actives.Sum(x => x.Count);
+        decimal activesBuySum = actives.Sum(x => x.BuyPrice * x.Count);
+        decimal activesCurrentPriceSum = actives.Sum(x => x.Skin.CurrentPrice * x.Count);
+
+        decimal activesAverageBuyPrice = activesTotalCount == 0 ? 0 : activesBuySum / activesTotalCount;
         decimal activesAverageCurrentPrice = activesTotalCount == 0
             ? 0
-            : (decimal)((double)await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken)
-                        * currencyExchangeRate)
-              / activesTotalCount;
-        decimal activesCurrentSum =
-            (decimal)((double)await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken)
-                      * currencyExchangeRate);
+            : (decimal)((double)activesCurrentPriceSum * currencyExchangeRate) / activesTotalCount;
+        decimal activesCurrentSum = (decimal)((double)activesCurrentPriceSum * currencyExchangeRate);
         decimal activesTotalChange = activesBuySum == 0 ? 1 : (activesCurrentSum - activesBuySum) / activesBuySum;
 
         activesWorksheet.Cells[i + 1, 2].Value = activesTotalCount;
@@ -180,15 +172,12 @@ public class FileService : IFileService
         archiveWorksheet.Cells[j, 9].Value = "Общее изменение";
         archiveWorksheet.Cells[j, 2, j, 9].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
-        int archivesTotalCount = await archives.SumAsync(x => x.Count, cancellationToken);
-        decimal archivesAverageBuyPrice = archivesTotalCount == 0
-            ? 0
-            : await archives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken) / archivesTotalCount;
-        decimal archivesBuySum = await archives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken);
-        decimal archivesAverageSoldPrice = archivesTotalCount == 0
-            ? 0
-            : await archives.SumAsync(x => x.SoldPrice * x.Count, cancellationToken) / archivesTotalCount;
-        decimal archivesSoldSum = await archives.SumAsync(x => x.SoldPrice * x.Count, cancellationToken);
+        int archivesTotalCount = archives.Sum(x => x.Count);
+        decimal archivesBuySum = archives.Sum(x => x.BuyPrice * x.Count);
+        decimal archivesSoldSum = archives.Sum(x => x.SoldPrice * x.Count);
+
+        decimal archivesAverageBuyPrice = archivesTotalCount == 0 ? 0 : archivesBuySum / archivesTotalCount;
+        decimal archivesAverageSoldPrice = archivesTotalCount == 0 ? 0 : archivesSoldSum / archivesTotalCount;
         decimal archivesTotalChange =
             archivesBuySum == 0 ? 1 : (archivesSoldSum - archivesBuySum) / archivesBuySum;
 

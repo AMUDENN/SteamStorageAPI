@@ -72,7 +72,7 @@ public class GameService : IGameService
         await _context.Games.AddAsync(new Game
         {
             SteamGameId = request.SteamGameId,
-            Title = steamResponse.name,
+            Title = steamResponse.name ?? string.Empty,
             GameIconUrl = request.IconUrlHash
         }, cancellationToken);
 

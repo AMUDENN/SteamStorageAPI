@@ -133,17 +133,16 @@ public class ActiveGroupService : IActiveGroupService
             .AsNoTracking()
             .Include(x => x.Actives).ThenInclude(x => x.Skin).ThenInclude(x => x.Game);
 
-        IQueryable<Active> actives = groups.SelectMany(x => x.Actives);
-
-        List<Game> games = actives
-            .Select(x => x.Skin.Game)
-            .GroupBy(x => x.Id)
-            .Select(g => g.First())
-            .ToList();
+        List<Active> actives = await groups.SelectMany(x => x.Actives).ToListAsync(cancellationToken);
 
         int activesCount = actives.Sum(x => x.Count);
         decimal buyPriceSum = actives.Sum(x => x.BuyPrice * x.Count);
         decimal latestPriceSum = (decimal)((double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate);
+
+        List<Game> games = actives
+            .Select(x => x.Skin.Game)
+            .DistinctBy(x => x.Id)
+            .ToList();
 
         List<ActiveGroupsGameCountResponse> gamesCountResponse = games.Select(item =>
             new ActiveGroupsGameCountResponse(

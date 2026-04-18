@@ -70,7 +70,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                 _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId),
                 cancellationToken);
 
-        AssetDescription? skinResult = skinResponse?.results.FirstOrDefault()?.asset_description;
+        AssetDescription? skinResult = skinResponse?.results?.FirstOrDefault()?.asset_description;
 
         if (skinResult is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
@@ -80,9 +80,9 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             await _context.Skins.Include(skin => skin.Game)
                 .FirstOrDefaultAsync(x => x.MarketHashName == skinResult.market_hash_name, cancellationToken)
             ?? await _skinService.AddSkinAsync(game.Id,
-                skinResult.market_hash_name,
-                skinResult.name,
-                skinResult.icon_url,
+                skinResult.market_hash_name!,
+                skinResult.name!,
+                skinResult.icon_url!,
                 cancellationToken);
 
         SteamPriceResponse? response = await client.GetFromJsonAsync<SteamPriceResponse>(
@@ -109,7 +109,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
                     currency.SteamCurrencyId),
                 cancellationToken);
 
-            if (response is null)
+            if (response?.lowest_price is null)
                 continue;
 
             double price = Convert.ToDouble(response.lowest_price

@@ -111,13 +111,13 @@ public class AuthorizeService : IAuthorizeService
             await client.GetFromJsonAsync<SteamUserResult>(
                 _steamApiUrlBuilder.GetUserInfoUrl(user.SteamId), cancellationToken);
 
-        SteamUser? steamUser = result?.response.players.FirstOrDefault();
+        SteamUser? steamUser = result?.response?.players?.FirstOrDefault();
         if (steamUser is null) return;
 
         user.Username = steamUser.personaname;
-        user.IconUrl = steamUser.avatar.Replace("https://avatars.steamstatic.com/", string.Empty);
-        user.IconUrlMedium = steamUser.avatarmedium.Replace("https://avatars.steamstatic.com/", string.Empty);
-        user.IconUrlFull = steamUser.avatarfull.Replace("https://avatars.steamstatic.com/", string.Empty);
+        user.IconUrl = steamUser.avatar?.Replace("https://avatars.steamstatic.com/", string.Empty);
+        user.IconUrlMedium = steamUser.avatarmedium?.Replace("https://avatars.steamstatic.com/", string.Empty);
+        user.IconUrlFull = steamUser.avatarfull?.Replace("https://avatars.steamstatic.com/", string.Empty);
         user.DateUpdate = DateTime.UtcNow;
     }
 

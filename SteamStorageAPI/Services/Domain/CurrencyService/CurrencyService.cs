@@ -63,19 +63,15 @@ public class CurrencyService : ICurrencyService
     {
         IQueryable<CurrencyResponse> currencies = _context.Currencies
             .AsNoTracking()
-            .Include(x => x.CurrencyDynamics)
             .Select(x => new CurrencyResponse(
                 x.Id,
                 x.SteamCurrencyId,
                 x.Title,
                 x.Mark,
                 x.CultureInfo,
-                x.CurrencyDynamics.Count != 0
-                    ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().Price
-                    : 0,
-                x.CurrencyDynamics.Count != 0
-                    ? x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).First().DateUpdate
-                    : DateTime.Now));
+                x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).Select(y => y.Price).FirstOrDefault(),
+                x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).Select(y => (DateTime?)y.DateUpdate)
+                    .FirstOrDefault() ?? DateTime.Now));
 
         return new CurrenciesResponse(await currencies.CountAsync(cancellationToken), currencies);
     }

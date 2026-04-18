@@ -58,13 +58,14 @@ public class ArchiveService : IArchiveService
 
         int pagesCount = (int)Math.Ceiling((double)archivesCount / pageSize);
 
-        archives = archives.AsNoTracking()
+        List<Archive> archiveList = await archives
             .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize);
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
 
         return new ArchivesResponse(archivesCount,
             pagesCount,
-            await Task.WhenAll(archives.AsEnumerable()
+            await Task.WhenAll(archiveList
                 .Select(async x => new ArchiveResponse(
                     x.Id,
                     x.GroupId,

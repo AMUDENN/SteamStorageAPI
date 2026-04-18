@@ -37,23 +37,31 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
                 "Сегодня уже было выполнено обновление ActiveDynamics!");
 
-        List<ActiveGroupsDynamic> dynamics = [];
-
-        IQueryable<ActiveGroup> activeGroups = _context.ActiveGroups
-            .AsQueryable()
-            .Include(x => x.Actives)
-            .ThenInclude(x => x.Skin)
+        List<ActiveGroup> activeGroups = await _context.ActiveGroups
+            .AsNoTracking()
+            .Include(x => x.Actives).ThenInclude(x => x.Skin)
             .Include(x => x.User)
-            .AsQueryable();
+            .ToListAsync(cancellationToken);
 
-        foreach (ActiveGroup group in activeGroups)
-            dynamics.Add(new ActiveGroupsDynamic
+        // Загружаем все нужные валюты одним запросом
+        List<int> currencyIds = activeGroups.Select(x => x.User.CurrencyId).Distinct().ToList();
+        Dictionary<int, double> currencyRates = await _context.Currencies
+            .Where(x => currencyIds.Contains(x.Id))
+            .Include(x => x.CurrencyDynamics.OrderByDescending(d => d.DateUpdate).Take(1))
+            .ToDictionaryAsync(
+                x => x.Id,
+                x => (double)(x.CurrencyDynamics.FirstOrDefault()?.Price ?? 1),
+                cancellationToken);
+
+        List<ActiveGroupsDynamic> dynamics = activeGroups
+            .Select(group => new ActiveGroupsDynamic
             {
                 GroupId = group.Id,
                 Sum = (decimal)((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count)
-                                * await _currencyService.GetCurrencyExchangeRateAsync(group.User, cancellationToken)),
+                                * currencyRates.GetValueOrDefault(group.User.CurrencyId, 1)),
                 DateUpdate = DateTime.Now
-            });
+            })
+            .ToList();
 
         await _context.ActiveGroupsDynamics.AddRangeAsync(dynamics, cancellationToken);
 
