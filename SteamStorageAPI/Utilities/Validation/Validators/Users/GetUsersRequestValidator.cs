@@ -12,5 +12,9 @@ public sealed class GetUsersRequestValidator : AbstractValidator<GetUsersRequest
 
         RuleFor(expression => expression.PageSize)
             .InclusiveBetween(1, 200).WithMessage("Page size must be in the range from 1 to 200");
+
+        When(expression => expression.UserId.HasValue, () =>
+            RuleFor(expression => expression.UserId!.Value)
+                .GreaterThan(0).WithMessage("User Id cannot be less than 1"));
     }
 }

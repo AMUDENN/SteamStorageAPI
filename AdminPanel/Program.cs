@@ -1,4 +1,5 @@
-using AdminPanel.Utilities;
+using AdminPanel.Models;
+using AdminPanel.Services.CookiesUserService;
 using Microsoft.AspNetCore.HttpOverrides;
 using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection.Api;
 
@@ -12,17 +13,26 @@ public static class Program
     {
         builder.Services.AddControllersWithViews();
 
+        string apiInternalHost = builder.Configuration["STEAMSTORAGE_API_INTERNAL_HOST"] ?? "localhost:8081";
+        string apiPublicHost = builder.Configuration["STEAMSTORAGE_API_PUBLIC_HOST"] ?? "localhost:8081";
+        string apiAddress = $"http://{apiInternalHost}/api";
+
         //SteamStorageApi
         builder.Services.AddSteamStorageApiWeb(options => {
-            options.ClientTimeout = ProgramConstants.API_CLIENT_TIMEOUT;
+            options.ClientTimeout = 15;
             options.ClientName = "MainClient";
-            options.HostName = "localhost:5275";
-            options.ServerAddress = "127.0.0.1:5275";
-            options.ApiAddress = "http://localhost:5275/api";
+            options.HostName = apiPublicHost;
+            options.ServerAddress = apiInternalHost;
+            options.ApiAddress = apiAddress;
             options.TokenHubEndpoint = "https://steamstorage.ru/token/token-hub";
         });
 
+        builder.Services.AddSingleton(new AdminPanelOptions { ApiAddress = apiAddress });
+        builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();
+        
+        //Services
+        builder.Services.AddTransient<ICookiesUserService, CookiesUserService>();
 
         return builder;
     }

@@ -1,16 +1,24 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using SteamStorageAPI.Utilities.Config;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
 
 namespace SteamStorageAPI.Utilities.HealthCheck;
 
 public class AdminPanelHealthChecker : BaseHealthChecker
 {
+    #region Fields
+
+    private readonly string _adminPanelUrl;
+
+    #endregion Fields
+
     #region Constructor
 
     public AdminPanelHealthChecker(
-        IHttpContextAccessor httpContextAccessor,
-        IHttpClientFactory httpClientFactory) : base(httpContextAccessor, httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        AppConfig appConfig) : base(httpClientFactory)
     {
+        _adminPanelUrl = appConfig.HealthChecks.AdminPanelUrl;
     }
 
     #endregion Constructor
@@ -24,8 +32,7 @@ public class AdminPanelHealthChecker : BaseHealthChecker
         try
         {
             HttpClient client = HttpClientFactory.CreateClient();
-            string apiUrl = $"{HostUrl}/admin";
-            HttpResponseMessage response = await client.GetAsync(apiUrl, cancellationToken);
+            HttpResponseMessage response = await client.GetAsync($"{_adminPanelUrl}/admin", cancellationToken);
 
             return response.IsSuccessStatusCode
                 ? HealthCheckResult.Healthy("AdminPanel is working")

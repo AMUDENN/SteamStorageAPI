@@ -38,7 +38,10 @@ public record HasAccessToAdminPanelResponse(
 [Validator<GetUsersRequestValidator>]
 public record GetUsersRequest(
     int PageNumber,
-    int PageSize);
+    int PageSize,
+    int? UserId,
+    string? Nickname,
+    int? SteamId);
 
 [Validator<GetUserRequestValidator>]
 public record GetUserRequest(

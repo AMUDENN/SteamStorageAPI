@@ -16,9 +16,21 @@ public record CurrenciesResponse(
     int Count,
     IEnumerable<CurrencyResponse> Currencies);
 
+public record CurrencyDynamicResponse(
+    int Id,
+    DateTime DateUpdate,
+    double ExchangeRate);
+
+public record CurrencyDynamicsResponse(
+    IEnumerable<CurrencyDynamicResponse> Dynamic);
+
 [Validator<GetCurrencyRequestValidator>]
 public record GetCurrencyRequest(
     int Id);
+
+[Validator<GetCurrencyDynamicsRequestValidator>]
+public record GetCurrencyDynamicsRequest(
+    int CurrencyId);
 
 [Validator<PostCurrencyRequestValidator>]
 public record PostCurrencyRequest(

@@ -8,9 +8,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DC86C371-E48B-4621-8BD6-6D8592DD8794}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yml = docker-compose.yml
-		env\api.env = env\api.env
-		env\loginwebapp.env = env\loginwebapp.env
-		env\adminpanel.env = env\adminpanel.env
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoginWebApp", "LoginWebApp\LoginWebApp.csproj", "{1039616B-7117-4444-864C-FC8A637EBB99}"

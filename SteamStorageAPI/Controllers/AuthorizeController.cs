@@ -21,6 +21,7 @@ public class AuthorizeController : ControllerBase
     private readonly IJwtProvider _jwtProvider;
 
     private readonly string _tokenAddress;
+    private readonly string? _publicHost;
 
     #endregion Fields
 
@@ -36,6 +37,7 @@ public class AuthorizeController : ControllerBase
         _httpContextAccessor = httpContextAccessor;
         _jwtProvider = jwtProvider;
         _tokenAddress = appConfig.App.TokenAddress;
+        _publicHost = appConfig.App.PublicHost;
     }
 
     #endregion Constructor
@@ -55,7 +57,7 @@ public class AuthorizeController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         string scheme = _httpContextAccessor.HttpContext?.Request.Scheme ?? "https";
-        string host = _httpContextAccessor.HttpContext?.Request.Host.ToString() ?? string.Empty;
+        string host = _publicHost ?? _httpContextAccessor.HttpContext?.Request.Host.ToString() ?? string.Empty;
 
         (string Url, string Group) steamAuth = _authorizeService.GetSteamAuthInfo(scheme, host, request.ReturnTo);
 

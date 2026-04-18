@@ -36,4 +36,8 @@ public interface ICurrencyService
     Task DeleteCurrencyAsync(
         DeleteCurrencyRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<CurrencyDynamicsResponse> GetCurrencyDynamicsAsync(
+        GetCurrencyDynamicsRequest request,
+        CancellationToken cancellationToken = default);
 }

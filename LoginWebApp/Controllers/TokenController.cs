@@ -34,7 +34,7 @@ public class TokenController : Controller
     #endregion Records
 
     #region Methods
-
+    
     public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
@@ -42,7 +42,7 @@ public class TokenController : Controller
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
         return RedirectToAction(nameof(Token), new { IsTokenEmpty = false });
     }
-
+    
     public IActionResult Token([FromQuery] TokenRequest request)
     {
         return View(new TokenViewModel
@@ -54,9 +54,9 @@ public class TokenController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel
-        {
-            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        return View(new ErrorViewModel 
+        { 
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier 
         });
     }
 

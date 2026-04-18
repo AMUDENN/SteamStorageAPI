@@ -1,6 +1,7 @@
 app:
   tokenAddress: "https://steamstorage.ru/token/"
   dateFormat: "dd.MM.yyyy"
+  publicHost: "localhost:8081"
 
 jwt:
   key: "your-secret-key-here"
@@ -13,13 +14,11 @@ steam:
 
 database:
   steamStorage: "Server=...;Database=SteamStorage;..."
-  healthChecks: "Server=...;Database=SteamStorageHealthChecks;..."
 
 healthChecks:
-  baseUrl: "https://steamstorage.ru"
-  maximumHistoryEntriesPerEndpoint: 50
-  evaluationTimeInSeconds: 600
-  minimumSecondsBetweenFailureNotifications: 300
+  apiUrl: "http://steamstorage.api"
+  adminPanelUrl: "http://adminpanel"
+  loginWebAppUrl: "http://loginwebapp"
 
 rateLimit:
   enableEndpointRateLimiting: true
@@ -28,6 +27,9 @@ rateLimit:
   realIpHeader: "X-Forwarded-For"
   clientIdHeader: "X-ClientId"
   rules:
+    - endpoint: "get:/api/health-*"
+      period: "1s"
+      limit: 1000
     - endpoint: "*"
       period: "1s"
       limit: 20

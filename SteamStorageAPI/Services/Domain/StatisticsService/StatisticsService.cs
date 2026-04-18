@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Services.Domain.CurrencyService;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Services.Domain.StatisticsService;
 
@@ -137,6 +138,46 @@ public class StatisticsService : IStatisticsService
         int archivesCount = GetArchivesQuery(user).Sum(x => x.Count);
         int inventoriesCount = _context.Entry(user).Collection(u => u.Inventories).Query()
             .AsNoTracking().Sum(x => x.Count);
+
+        return new ItemsCountResponse(activesCount + archivesCount + inventoriesCount);
+    }
+
+    public async Task<UsersCountByCurrencyResponse> GetUsersCountByCurrencyAsync(
+        CancellationToken cancellationToken = default)
+    {
+        List<UsersCountByCurrencyItemResponse> items = await _context.Currencies
+            .AsNoTracking()
+            .Select(c => new UsersCountByCurrencyItemResponse(
+                c.Id,
+                c.Title,
+                c.Users.Count))
+            .ToListAsync(cancellationToken);
+
+        return new UsersCountByCurrencyResponse(items);
+    }
+
+    public async Task<ItemsCountResponse> GetItemsCountByGameAsync(
+        GetItemsCountByGameRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _context.Games.AnyAsync(x => x.Id == request.GameId, cancellationToken))
+            throw new HttpResponseException(StatusCodes.Status404NotFound,
+                "A game with this Id does not exist");
+
+        int activesCount = await _context.Actives
+            .AsNoTracking()
+            .Where(x => x.Skin.GameId == request.GameId)
+            .SumAsync(x => x.Count, cancellationToken);
+
+        int archivesCount = await _context.Archives
+            .AsNoTracking()
+            .Where(x => x.Skin.GameId == request.GameId)
+            .SumAsync(x => x.Count, cancellationToken);
+
+        int inventoriesCount = await _context.Inventories
+            .AsNoTracking()
+            .Where(x => x.Skin.GameId == request.GameId)
+            .SumAsync(x => x.Count, cancellationToken);
 
         return new ItemsCountResponse(activesCount + archivesCount + inventoriesCount);
     }

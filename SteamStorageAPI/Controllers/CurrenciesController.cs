@@ -88,6 +88,23 @@ public class CurrenciesController : ControllerBase
 
     #endregion GET
 
+    /// <summary>
+    /// Get the price dynamics of a currency (admin)
+    /// </summary>
+    /// <response code="200">Returns the price dynamics of the currency</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No currency with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
+    [HttpGet(Name = "GetCurrencyDynamics")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<CurrencyDynamicsResponse>> GetCurrencyDynamics(
+        [FromQuery] GetCurrencyDynamicsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _currencyService.GetCurrencyDynamicsAsync(request, cancellationToken));
+    }
+
     #region POST
 
     /// <summary>

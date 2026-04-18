@@ -17,9 +17,6 @@
 
     <ItemGroup>
         <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0"/>
-        <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0"/>
-        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0"/>
-        <PackageReference Include="AspNetCore.HealthChecks.UI.SqlServer.Storage" Version="9.0.0"/>
         <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0"/>
         <PackageReference Include="EPPlus" Version="8.5.3"/>
         <PackageReference Include="FluentValidation" Version="12.1.1"/>
@@ -35,13 +32,16 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.6"/>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.6"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.4"/>
         <PackageReference Include="Quartz" Version="3.18.0"/>
-        <PackageReference Include="Quartz.AspNetCore" Version="3.18.0"/>
         <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.18.0"/>
         <PackageReference Include="Quartz.Extensions.Hosting" Version="3.18.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.0-beta.1"/>
+        <PackageReference Include="YamlDotNet" Version="17.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -55,7 +55,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="example\"/>
         <Folder Include="Services\Background\"/>
     </ItemGroup>
 

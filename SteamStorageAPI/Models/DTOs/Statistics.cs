@@ -1,3 +1,6 @@
+using SteamStorageAPI.Utilities.Validation.Tools;
+using SteamStorageAPI.Utilities.Validation.Validators.Statistics;
+
 namespace SteamStorageAPI.Models.DTOs;
 
 public record InvestmentSumResponse(
@@ -30,3 +33,15 @@ public record InventoryGameStatisticResponse(
 
 public record ItemsCountResponse(
     int Count);
+
+public record UsersCountByCurrencyItemResponse(
+    int CurrencyId,
+    string CurrencyTitle,
+    int UsersCount);
+
+public record UsersCountByCurrencyResponse(
+    IEnumerable<UsersCountByCurrencyItemResponse> Items);
+
+[Validator<GetItemsCountByGameRequestValidator>]
+public record GetItemsCountByGameRequest(
+    int GameId);

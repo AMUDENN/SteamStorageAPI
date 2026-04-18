@@ -1,4 +1,4 @@
-﻿using AdminPanel.Utilities;
+﻿using AdminPanel.Services.CookiesUserService;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.SDK.ApiClient;
 using SteamStorageAPI.SDK.ApiEntities;
@@ -10,16 +10,19 @@ public class UsersController : Controller
 {
     #region Fields
 
-    private readonly ApiClient _apiClient;
+    private readonly IApiClient _apiClient;
+    private readonly ICookiesUserService _cookieUserService;
 
     #endregion Fields
 
     #region Construtore
 
     public UsersController(
-        ApiClient apiClient)
+        IApiClient apiClient,
+        ICookiesUserService cookieUserService)
     {
         _apiClient = apiClient;
+        _cookieUserService = cookieUserService;
     }
 
     #endregion Constructor
@@ -39,15 +42,14 @@ public class UsersController : Controller
         SetRoleRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
 
         await _apiClient.PutAsync(
             ApiConstants.ApiMethods.SetRole,
             new Roles.SetRoleRequest(request.UserId, request.RoleId),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "users" });
     }
 
     #endregion Methods

@@ -23,18 +23,21 @@ public static class Program
         WebApplication app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment()) app.UseHsts();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHsts();
+        }
 
         //ForwardedHeaders
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        app.UseForwardedHeaders(new()
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
 
         //app.UseHttpsRedirection();
-        app.UseStaticFiles(new StaticFileOptions
+        app.UseStaticFiles(new StaticFileOptions  
         {
-            RequestPath = "/token"
+            RequestPath = "/token"  
         });
 
         app.MapHub<TokenHub>("/token/token-hub");
@@ -42,8 +45,8 @@ public static class Program
         app.UseRouting();
 
         app.MapControllerRoute(
-            "default",
-            "token/{action=Token}/{id?}");
+            name: "default",
+            pattern: "token/{action=Token}/{id?}");
 
         app.Run();
     }

@@ -157,5 +157,25 @@ public class CurrencyService : ICurrencyService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<CurrencyDynamicsResponse> GetCurrencyDynamicsAsync(
+        GetCurrencyDynamicsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _context.Currencies.AnyAsync(x => x.Id == request.CurrencyId, cancellationToken))
+            throw new HttpResponseException(StatusCodes.Status404NotFound,
+                "A currency with this Id does not exist");
+
+        DateTime since = DateTime.Now.AddDays(-30);
+
+        List<CurrencyDynamicResponse> dynamics = await _context.CurrencyDynamics
+            .AsNoTracking()
+            .Where(x => x.CurrencyId == request.CurrencyId && x.DateUpdate >= since)
+            .OrderBy(x => x.DateUpdate)
+            .Select(x => new CurrencyDynamicResponse(x.Id, x.DateUpdate, x.Price))
+            .ToListAsync(cancellationToken);
+
+        return new CurrencyDynamicsResponse(dynamics);
+    }
+
     #endregion Methods
 }

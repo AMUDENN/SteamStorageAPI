@@ -1,16 +1,24 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using SteamStorageAPI.Utilities.Config;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
 
 namespace SteamStorageAPI.Utilities.HealthCheck;
 
 public class LoginWebAppHealthChecker : BaseHealthChecker
 {
+    #region Fields
+
+    private readonly string _loginWebAppUrl;
+
+    #endregion Fields
+
     #region Constructor
 
     public LoginWebAppHealthChecker(
-        IHttpContextAccessor httpContextAccessor,
-        IHttpClientFactory httpClientFactory) : base(httpContextAccessor, httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        AppConfig appConfig) : base(httpClientFactory)
     {
+        _loginWebAppUrl = appConfig.HealthChecks.LoginWebAppUrl;
     }
 
     #endregion Constructor
@@ -24,8 +32,7 @@ public class LoginWebAppHealthChecker : BaseHealthChecker
         try
         {
             HttpClient client = HttpClientFactory.CreateClient();
-            string apiUrl = $"{HostUrl}/token/Token";
-            HttpResponseMessage response = await client.GetAsync(apiUrl, cancellationToken);
+            HttpResponseMessage response = await client.GetAsync($"{_loginWebAppUrl}/token/Token", cancellationToken);
 
             return response.IsSuccessStatusCode
                 ? HealthCheckResult.Healthy("LoginWebApp is working")

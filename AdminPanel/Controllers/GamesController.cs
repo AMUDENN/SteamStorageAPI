@@ -1,4 +1,4 @@
-﻿using AdminPanel.Utilities;
+﻿using AdminPanel.Services.CookiesUserService;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.SDK.ApiClient;
 using SteamStorageAPI.SDK.ApiEntities;
@@ -10,16 +10,19 @@ public class GamesController : Controller
 {
     #region Fields
 
-    private readonly ApiClient _apiClient;
+    private readonly IApiClient _apiClient;
+    private readonly ICookiesUserService _cookieUserService;
 
     #endregion Fields
 
     #region Construtore
 
     public GamesController(
-        ApiClient apiClient)
+        IApiClient apiClient,
+        ICookiesUserService cookieUserService)
     {
         _apiClient = apiClient;
+        _cookieUserService = cookieUserService;
     }
 
     #endregion Constructor
@@ -47,15 +50,14 @@ public class GamesController : Controller
         AddGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
 
         await _apiClient.PostAsync(
             ApiConstants.ApiMethods.PostGame,
             new Games.PostGameRequest(request.SteamGameId, request.IconUrlHash),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "games" });
     }
 
     [HttpPost]
@@ -63,15 +65,14 @@ public class GamesController : Controller
         PutGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
 
         await _apiClient.PutAsync(
             ApiConstants.ApiMethods.PutGameInfo,
             new Games.PutGameRequest(request.GameId, request.IconUrlHash, request.Title),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "games" });
     }
 
     [HttpPost]
@@ -79,15 +80,14 @@ public class GamesController : Controller
         DeleteGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
 
         await _apiClient.DeleteAsync(
             ApiConstants.ApiMethods.DeleteGame,
             new Games.DeleteGameRequest(request.GameId),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "games" });
     }
 
     #endregion Methods

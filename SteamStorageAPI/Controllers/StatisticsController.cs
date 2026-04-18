@@ -162,5 +162,37 @@ public class StatisticsController : ControllerBase
         return Ok(await _statisticsService.GetItemsCountAsync(user, cancellationToken));
     }
 
+    /// <summary>
+    /// Get the number of users per currency (admin)
+    /// </summary>
+    /// <response code="200">Returns the number of users per currency</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
+    [HttpGet(Name = "GetUsersCountByCurrency")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<UsersCountByCurrencyResponse>> GetUsersCountByCurrency(
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _statisticsService.GetUsersCountByCurrencyAsync(cancellationToken));
+    }
+
+    /// <summary>
+    /// Get the total number of items for a game across all users (admin)
+    /// </summary>
+    /// <response code="200">Returns the total number of items for the game</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
+    [HttpGet(Name = "GetItemsCountByGame")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<ItemsCountResponse>> GetItemsCountByGame(
+        [FromQuery] GetItemsCountByGameRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _statisticsService.GetItemsCountByGameAsync(request, cancellationToken));
+    }
+
     #endregion GET
 }

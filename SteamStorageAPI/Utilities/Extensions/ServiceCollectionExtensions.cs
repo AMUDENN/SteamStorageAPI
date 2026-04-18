@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.OpenApi;
+using OpenTelemetry.Metrics;
 using Quartz;
 using SteamStorageAPI.Services.Background.QuartzJobs;
 using SteamStorageAPI.Services.Background.RefreshActiveDynamicsService;
@@ -118,6 +119,18 @@ public static partial class ServiceCollectionExtensions
             return services;
         }
 
+        public IServiceCollection AddTelemetry()
+        {
+            services.AddOpenTelemetry()
+                .WithMetrics(metrics => metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .AddPrometheusExporter());
+
+            return services;
+        }
+
         public IServiceCollection AddHealthChecksServices(AppConfig config)
         {
             services
@@ -129,6 +142,12 @@ public static partial class ServiceCollectionExtensions
                 .AddCheck<ApiHealthChecker>(
                     "api",
                     tags: ["api"])
+                .AddCheck<AdminPanelHealthChecker>(
+                    "adminpanel",
+                    tags: ["adminpanel"])
+                .AddCheck<LoginWebAppHealthChecker>(
+                    "login",
+                    tags: ["login"])
                 .AddCheck<SteamMarketHealthChecker>(
                     "steam-market",
                     tags: ["steam"])

@@ -28,4 +28,11 @@ public interface IStatisticsService
     Task<ItemsCountResponse> GetItemsCountAsync(
         User user,
         CancellationToken cancellationToken = default);
+
+    Task<ItemsCountResponse> GetItemsCountByGameAsync(
+        GetItemsCountByGameRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<UsersCountByCurrencyResponse> GetUsersCountByCurrencyAsync(
+        CancellationToken cancellationToken = default);
 }

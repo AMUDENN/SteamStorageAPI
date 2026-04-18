@@ -10,7 +10,7 @@ public class AuthorizeController : Controller
     #region Fields
 
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ApiClient _apiClient;
+    private readonly IApiClient _apiClient;
 
     #endregion Fields
 
@@ -18,7 +18,7 @@ public class AuthorizeController : Controller
 
     public AuthorizeController(
         IHttpContextAccessor httpContextAccessor,
-        ApiClient apiClient)
+        IApiClient apiClient)
     {
         _httpContextAccessor = httpContextAccessor;
         _apiClient = apiClient;

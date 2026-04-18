@@ -4,6 +4,7 @@ using SteamStorageAPI.Models.DTOs;
 using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 using SteamStorageAPI.Utilities.Exceptions;
+using SteamStorageAPI.Utilities.Extensions;
 
 namespace SteamStorageAPI.Services.Domain.UserService;
 
@@ -87,6 +88,16 @@ public class UserService : IUserService
         CancellationToken cancellationToken = default)
     {
         IQueryable<User> users = _context.Users.AsNoTracking();
+
+        if (request.UserId.HasValue)
+            users = users.WhereMatchFilter(x => x.Id.ToString(), request.UserId.ToString());
+
+        if (!string.IsNullOrWhiteSpace(request.Nickname))
+            users = users.WhereMatchFilter(x => x.Username, request.Nickname);
+
+        if (request.SteamId.HasValue)
+            users = users.WhereMatchFilter(x => x.SteamId.ToString(), request.SteamId.ToString());
+
         int usersCount = await users.CountAsync(cancellationToken);
         int pagesCount = (int)Math.Ceiling((double)usersCount / request.PageSize);
 
@@ -96,10 +107,12 @@ public class UserService : IUserService
             .Include(x => x.Role)
             .Include(x => x.StartPage);
 
+        List<User> userList = await users.ToListAsync(cancellationToken);
+
         return new UsersResponse(
             usersCount,
             pagesCount == 0 ? 1 : pagesCount,
-            users.Select(x => GetUserResponse(x)));
+            userList.Select(GetUserResponse));
     }
 
     public async Task<int> GetUsersCountAsync(

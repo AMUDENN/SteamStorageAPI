@@ -17,6 +17,7 @@ public class AppSettings
 {
     public string TokenAddress { get; set; } = string.Empty;
     public string DateFormat { get; set; } = "dd.MM.yyyy";
+    public string? PublicHost { get; set; }
 }
 
 // ─── JWT ────────────────────────────────────────────────────────────────────
@@ -41,17 +42,15 @@ public class SteamConfig
 public class DatabaseConfig
 {
     public string SteamStorage { get; set; } = string.Empty;
-    public string HealthChecks { get; set; } = string.Empty;
 }
 
 // ─── HealthChecks ───────────────────────────────────────────────────────────
 
 public class HealthChecksConfig
 {
-    public string BaseUrl { get; set; } = string.Empty;
-    public int MaximumHistoryEntriesPerEndpoint { get; set; } = 50;
-    public int EvaluationTimeInSeconds { get; set; } = 600;
-    public int MinimumSecondsBetweenFailureNotifications { get; set; } = 300;
+    public string ApiUrl { get; set; } = string.Empty;
+    public string AdminPanelUrl { get; set; } = string.Empty;
+    public string LoginWebAppUrl { get; set; } = string.Empty;
 }
 
 // ─── RateLimit ──────────────────────────────────────────────────────────────

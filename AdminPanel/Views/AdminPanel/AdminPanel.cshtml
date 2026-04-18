@@ -1,266 +1,510 @@
-﻿@using SteamStorageAPI.SDK.ApiEntities
+@using System.Text.Json
+@using SteamStorageAPI.SDK.ApiEntities
 @model AdminPanel.Models.AdminPanelViewModel
 
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Admin Panel";
+
+    string currenciesJson = JsonSerializer.Serialize(
+        Model.Currencies.Select(c => new { id = c.Id, title = c.Title, mark = c.Mark }));
+
+    string rolesJson = JsonSerializer.Serialize(
+        Model.Roles.Select(r => new { id = r.Id, title = r.Title }));
 }
 
-<!DOCTYPE html>
-<html lang="ru">
+@section PageStyles {
+    <link rel="stylesheet" type="text/css" href="~/admin/css/admin-panel-style.css"/>
+}
 
-<head runat="server">
-    <meta charset="utf-8"/>
-    <title>@ViewData["Title"] - Steam Storage</title>
-    <link rel="stylesheet" type="text/css"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css" runat="server">
-    <link rel="stylesheet" type="text/css" href="~/admin/css/main-style.css" runat="server"/>
-    <link rel="stylesheet" type="text/css" href="~/admin/css/admin-panel-style.css" runat="server"/>
-</head>
+@* TempData toast trigger *@
+@if (TempData["ToastMessage"] is string toastMsg)
+{
+    <span id="server-toast"
+          data-message="@toastMsg"
+          data-type="@(TempData["ToastType"] ?? "info")"
+          style="display:none"></span>
+}
 
-<body>
+@* Embedded data for JS *@
+<script type="application/json" id="currencies-json">@Html.Raw(currenciesJson)</script>
+<script type="application/json" id="roles-json">@Html.Raw(rolesJson)</script>
 
-<div class="wrapper">
-    <div class="admin-panel-content grid-container">
-        <div class="chapter-container currencies-container grid-container">
-            <p>Валюта</p>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Currencies"
-                      asp-action="AddCurrency">
-                    <p>Добавить валюту</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>SteamCurrencyId:</p>
-                        <input name="steamCurrencyId" type="text" pattern="\d*"/>
-                        <p>Mark:</p>
-                        <input name="mark" type="text"/>
-                        <p>Title:</p>
-                        <input name="title" type="text"/>
-                        <p>CultureInfo:</p>
-                        <input name="cultureInfo" type="text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
+<div class="admin-shell" data-active-tab="@Model.ActiveTab">
+
+    <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+    <aside class="sidebar">
+
+        <div class="sidebar-profile">
+            <img class="sidebar-avatar" src="@Model.ProfileImageUrl" alt=""/>
+            <div class="sidebar-info">
+                <p class="sidebar-name">@Model.Nickname</p>
+                <p class="sidebar-role">@Model.Role</p>
             </div>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Currencies"
-                      asp-action="PutCurrency">
-                    <p>Изменить валюту</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>CurrencyId:</p>
-                        <input name="currencyId" type="text" pattern="\d*"/>
-                        <p>Mark:</p>
-                        <input name="mark" type="text"/>
-                        <p>Title:</p>
-                        <input name="title" type="text"/>
-                        <p>CultureInfo:</p>
-                        <input name="cultureInfo" type="text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Currencies"
-                      asp-action="DeleteCurrency">
-                    <p>Удалить валюту</p>
-                    <div class="method-content-container one-row-method-container grid-container">
-                        <p>CurrencyId:</p>
-                        <input name="currencyId" type="text" pattern="\d*" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container list-container grid-container">
-                <p>Список валют</p>
-                <div class="currency-item items-title grid-container">
-                    <p>Id</p>
-                    <p>Title</p>
-                    <p>SteamCurrencyId</p>
-                    <p>Mark</p>
-                    <p>CultureInfo</p>
-                    <p>Price</p>
-                    <p>DateUpdate</p>
+        </div>
+
+        <p class="sidebar-section-title">Управление</p>
+
+        <button class="nav-item" data-tab="currencies">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 7v1m0 8v1"/></svg>
+            <span>Валюты</span>
+        </button>
+
+        <button class="nav-item" data-tab="games">
+            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4m-2-2v4M15 11h.01M17 13h.01"/></svg>
+            <span>Игры</span>
+        </button>
+
+        <button class="nav-item" data-tab="users">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Пользователи</span>
+        </button>
+
+        <button class="nav-item" data-tab="jobs">
+            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Задачи</span>
+            <span class="nav-badge">3</span>
+        </button>
+
+        <p class="sidebar-section-title">Мониторинг</p>
+
+        <button class="nav-item" data-tab="health">
+            <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span>Health Checks</span>
+        </button>
+
+        <button class="nav-item" data-tab="metrics">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Метрики</span>
+        </button>
+
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-footer">SteamStorage · Admin</div>
+    </aside>
+
+    <!-- ── PANELS ────────────────────────────────────────────── -->
+    <main class="panel-container">
+
+        <!-- ════════════════════════ CURRENCIES ════════════════════════ -->
+        <section class="panel" id="panel-currencies">
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h2>Валюты</h2>
+                    <p class="panel-subtitle">Управление валютами системы</p>
                 </div>
-                <div class="list-items">
-                    @foreach (Currencies.CurrencyResponse currency in Model.Currencies)
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <span>Динамика цены</span>
+                        <select id="currency-chart-select" class="chart-select">
+                            @foreach (Currencies.CurrencyResponse c in Model.Currencies)
+                            {
+                                <option value="@c.Id" data-title="@c.Title">@c.Title (@c.Mark)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="currency-dynamics-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <span>Пользователи по валютам</span>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="currency-users-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full-width table -->
+            <div class="data-table-card">
+                <div class="table-header-row">
+                    <span>Список валют (@Model.Currencies.Count)</span>
+                    <button class="btn-add" type="button" onclick="openAddCurrencyModal()">+ Добавить</button>
+                </div>
+                <div class="table-col-row cols-currency">
+                    <span class="col-head">Id</span>
+                    <span class="col-head">Title</span>
+                    <span class="col-head">SteamCurrencyId</span>
+                    <span class="col-head">Mark</span>
+                    <span class="col-head">CultureInfo</span>
+                    <span class="col-head">Price</span>
+                    <span class="col-head">DateUpdate</span>
+                    <span class="col-head"></span>
+                </div>
+                <div class="table-rows-wrap">
+                    @foreach (Currencies.CurrencyResponse c in Model.Currencies)
                     {
-                        <div class="currency-item grid-container">
-                            <p>@currency.Id</p>
-                            <p>@currency.Title</p>
-                            <p>@currency.SteamCurrencyId</p>
-                            <p>@currency.Mark</p>
-                            <p>@currency.CultureInfo</p>
-                            <p>@currency.Price.ToString("N2")</p>
-                            <p>@currency.DateUpdate</p>
+                        <div class="table-data-row cols-currency"
+                             data-id="@c.Id"
+                             data-mark="@c.Mark"
+                             data-title="@c.Title"
+                             data-culture="@c.CultureInfo">
+                            <span class="cell">@c.Id</span>
+                            <span class="cell">@c.Title</span>
+                            <span class="cell">@c.SteamCurrencyId</span>
+                            <span class="cell">@c.Mark</span>
+                            <span class="cell">@c.CultureInfo</span>
+                            <span class="cell">@c.Price.ToString("N2")</span>
+                            <span class="cell">@c.DateUpdate.ToString("dd.MM.yyyy")</span>
+                            <div class="ctx-menu-wrap">
+                                <button class="btn-row-menu" type="button"
+                                        onclick="toggleCtxMenu(this,'currency',event)" aria-label="Действия">⋮</button>
+                            </div>
                         </div>
                     }
                 </div>
             </div>
-        </div>
-        <div class="chapter-container games-container grid-container">
-            <p>Игры</p>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Games"
-                      asp-action="AddGame">
-                    <p>Добавить игру</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>SteamGameId:</p>
-                        <input name="steamGameId" type="text" pattern="\d*" class="long-input-text"/>
-                        <p>IconUrlHash:</p>
-                        <input name="iconUrlHash" type="text" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Games"
-                      asp-action="PutGame">
-                    <p>Изменить игру</p>
-                    <div class="method-content-container two-row-method-container grid-container">
-                        <p>GameId:</p>
-                        <input name="gameId" type="text" pattern="\d*"/>
-                        <p>Title:</p>
-                        <input name="title" type="text"/>
-                        <p>IconUrlHash:</p>
-                        <input name="iconUrlHash" type="text" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Games"
-                      asp-action="DeleteGame">
-                    <p>Удалить игру</p>
-                    <div class="method-content-container one-row-method-container grid-container">
-                        <p>GameId:</p>
-                        <input name="gameId" type="text" pattern="\d*" class="long-input-text"/>
-                    </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container list-container grid-container">
-                <p>Список игр</p>
-                <div class="game-item items-title grid-container">
-                    <p>Icon</p>
-                    <p>Id</p>
-                    <p>Title</p>
-                    <p>SteamGameId</p>
-                    <p>GameIconUrl</p>
+        </section>
+
+        <!-- ════════════════════════ GAMES ════════════════════════ -->
+        <section class="panel" id="panel-games">
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h2>Игры</h2>
+                    <p class="panel-subtitle">Управление играми в каталоге</p>
                 </div>
-                <div class="list-items">
-                    @foreach (Games.GameResponse game in Model.Games)
+            </div>
+
+            <!-- Stats row -->
+            <div class="game-stats-row">
+                <div class="game-select-card">
+                    <span class="stats-label">Выберите игру</span>
+                    <select id="game-stats-select" class="game-select">
+                        @foreach (Games.GameResponse g in Model.Games)
+                        {
+                            <option value="@g.Id">@g.Title</option>
+                        }
+                    </select>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Скинов в Steam</span>
+                    <span class="stat-value" id="game-skins-count">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Предметов пользователей</span>
+                    <span class="stat-value" id="game-items-count">—</span>
+                </div>
+            </div>
+
+            <!-- Full-width table -->
+            <div class="data-table-card">
+                <div class="table-header-row">
+                    <span>Список игр (@Model.Games.Count)</span>
+                    <button class="btn-add" type="button" onclick="openAddGameModal()">+ Добавить</button>
+                </div>
+                <div class="table-col-row cols-game">
+                    <span class="col-head">Icon</span>
+                    <span class="col-head">Id</span>
+                    <span class="col-head">Title</span>
+                    <span class="col-head">SteamGameId</span>
+                    <span class="col-head">Ссылка</span>
+                    <span class="col-head"></span>
+                </div>
+                <div class="table-rows-wrap">
+                    @foreach (Games.GameResponse g in Model.Games)
                     {
-                        <div class="game-item grid-container">
-                            <img src="@game.GameIconUrl" alt=""/>
-                            <p>@game.Id</p>
-                            <p>@game.Title</p>
-                            <p>@game.SteamGameId</p>
-                            <a href="@game.GameIconUrl" target="_blanc">IconUrl</a>
+                        <div class="table-data-row cols-game"
+                             data-id="@g.Id"
+                             data-title="@g.Title"
+                             data-icon-url="@g.GameIconUrl">
+                            <span class="cell"><img src="@g.GameIconUrl" alt=""/></span>
+                            <span class="cell">@g.Id</span>
+                            <span class="cell">@g.Title</span>
+                            <span class="cell">@g.SteamGameId</span>
+                            <a class="cell-link" href="@g.GameIconUrl" target="_blank">Icon</a>
+                            <div class="ctx-menu-wrap">
+                                <button class="btn-row-menu" type="button"
+                                        onclick="toggleCtxMenu(this,'game',event)" aria-label="Действия">⋮</button>
+                            </div>
                         </div>
                     }
                 </div>
             </div>
-        </div>
-        <div class="chapter-container users-container grid-container">
-            <p>Пользователи</p>
-            <div class="border-container">
-                <div class="profile-container grid-container">
-                    <div class="profile-image-container">
+        </section>
+
+        <!-- ════════════════════════ USERS ════════════════════════ -->
+        <section class="panel" id="panel-users">
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h2>Пользователи</h2>
+                    <p class="panel-subtitle">Просмотр и управление аккаунтами</p>
+                </div>
+            </div>
+
+            <!-- Profile + Count + Roles inline -->
+            <div class="user-info-row">
+                <div class="profile-card">
+                    <div class="profile-avatar-wrap">
                         <img src="@Model.ProfileImageUrl" alt=""/>
                     </div>
-                    <div class="profile-content flex-container">
-                        <p>@Model.Nickname</p>
-                        <p>SteamID: @Model.SteamId</p>
-                        <p>Роль: @Model.Role</p>
+                    <div class="profile-info">
+                        <p class="profile-name">@Model.Nickname</p>
+                        <p class="profile-meta">SteamID: @Model.SteamId</p>
+                        <span class="profile-role-badge">@Model.Role</span>
+                    </div>
+                </div>
+
+                <div class="users-count-card">
+                    <span class="users-count-label">Всего пользователей</span>
+                    <span class="users-count-value">@Model.UsersCount</span>
+                </div>
+
+                <div class="data-table-card">
+                    <div class="table-header">Роли (@Model.Roles.Count)</div>
+                    <div class="table-col-row cols-role">
+                        <span class="col-head">Id</span>
+                        <span class="col-head">Title</span>
+                    </div>
+                    <div class="table-rows-wrap">
+                        @foreach (Roles.RoleResponse r in Model.Roles)
+                        {
+                            <div class="table-data-row cols-role">
+                                <span class="cell">@r.Id</span>
+                                <span class="cell">@r.Title</span>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
-            <div class="border-container list-container page-list-container grid-container">
-                <p>Список пользователей</p>
-                <div class="user-item items-title grid-container">
-                    <p>Image</p>
-                    <p>Id</p>
-                    <p>Nickname</p>
-                    <p>Role</p>
-                    <p>DateRegistration</p>
-                    <p>Profile</p>
+
+            <!-- Full-width users table -->
+            <div class="data-table-card">
+                <div class="table-header-row">
+                    <span>Пользователи (@Model.Users.Count / стр.)</span>
+                    <form class="user-search-form" method="get"
+                          asp-controller="AdminPanel" asp-action="AdminPanel">
+                        <input type="hidden" name="tab" value="users"/>
+                        <input class="filter-input" name="userId" type="text"
+                               value="@Model.SearchUserId" placeholder="ID"/>
+                        <input class="filter-input" name="nickname" type="text"
+                               value="@Model.SearchNickname" placeholder="Nickname"/>
+                        <input class="filter-input" name="steamId" type="text"
+                               value="@Model.SearchSteamId" placeholder="SteamID"/>
+                        <button class="btn-search" type="submit">Найти</button>
+                        @if (Model.SearchUserId.HasValue || !string.IsNullOrEmpty(Model.SearchNickname) || Model.SearchSteamId.HasValue)
+                        {
+                            <a class="btn-search btn-search-reset"
+                               asp-controller="AdminPanel" asp-action="AdminPanel"
+                               asp-route-tab="users">✕</a>
+                        }
+                    </form>
                 </div>
-                <div class="list-items">
-                    @foreach (Users.UserResponse user in Model.Users)
+                <div class="table-col-row cols-user">
+                    <span class="col-head">Avatar</span>
+                    <span class="col-head">Id</span>
+                    <span class="col-head">SteamID</span>
+                    <span class="col-head">Nickname</span>
+                    <span class="col-head">Role</span>
+                    <span class="col-head">Дата регистрации</span>
+                    <span class="col-head">Профиль</span>
+                    <span class="col-head"></span>
+                </div>
+                <div class="table-rows-wrap">
+                    @foreach (Users.UserResponse u in Model.Users)
                     {
-                        <div class="user-item grid-container">
-                            <img src="@user.ImageUrlFull" alt=""/>
-                            <p>@user.UserId</p>
-                            <p>@user.Nickname</p>
-                            <p>@user.Role</p>
-                            <p>@user.DateRegistration</p>
-                            <a href="@user.ProfileUrl" target="_blanc">Profile</a>
+                        <div class="table-data-row cols-user"
+                             data-user-id="@u.UserId"
+                             data-nickname="@(u.Nickname ?? string.Empty)"
+                             data-steam-id="@u.SteamId">
+                            <span class="cell"><img src="@u.ImageUrlFull" alt=""/></span>
+                            <span class="cell">@u.UserId</span>
+                            <span class="cell mono">@u.SteamId</span>
+                            <span class="cell">@u.Nickname</span>
+                            <span class="cell">@u.Role</span>
+                            <span class="cell">@u.DateRegistration.ToString("dd.MM.yyyy")</span>
+                            <a class="cell-link" href="@u.ProfileUrl" target="_blank">Steam</a>
+                            <div class="ctx-menu-wrap">
+                                <button class="btn-row-menu" type="button"
+                                        onclick="toggleCtxMenu(this,'user',event)" aria-label="Действия">⋮</button>
+                            </div>
                         </div>
                     }
                 </div>
-                <div class="user-items-footer flex-container">
-                    <form class="flex-container"
-                          method="post"
+                <div class="pagination">
+                    <form method="post"
                           asp-controller="AdminPanel"
-                          asp-action="AdminPanel">
-                        <button class="minus"></button>
-                        <input name="usersPageNumber"
+                          asp-action="AdminPanel"
+                          asp-route-tab="users"
+                          asp-route-userId="@Model.SearchUserId"
+                          asp-route-nickname="@Model.SearchNickname"
+                          asp-route-steamId="@Model.SearchSteamId?.ToString()">
+                        <button type="button" class="btn-page minus"></button>
+                        <input class="page-input"
+                               name="usersPageNumber"
                                type="number"
                                value="@Model.UsersPageNumber"
                                min="1"
-                               max="@Model.UsersPagesCount">
-                        <button class="plus"></button>
+                               max="@Model.UsersPagesCount"/>
+                        <button type="button" class="btn-page plus"></button>
                     </form>
+                    <span class="page-count">/ @Model.UsersPagesCount</span>
+                </div>
+            </div>
+        </section>
 
+        <!-- ════════════════════════ JOBS ════════════════════════ -->
+        <section class="panel" id="panel-jobs">
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h2>Задачи</h2>
+                    <p class="panel-subtitle">Управление фоновыми Quartz-задачами</p>
                 </div>
             </div>
-            <div class="border-container">
-                <form class="method-container grid-container"
-                      method="post"
-                      asp-controller="Users"
-                      asp-action="SetRole">
-                    <p>Установить роль</p>
-                    <div class="method-content-container one-row-method-container grid-container">
-                        <p>UserId:</p>
-                        <input name="userId" type="text" pattern="\d*"/>
-                        <p>RoleId:</p>
-                        <input name="roleId" type="text" pattern="\d*"/>
+
+            <div class="jobs-grid">
+
+                <div class="job-card">
+                    <div class="job-icon">📊</div>
+                    <span class="job-status">Scheduled</span>
+                    <p class="job-name">Refresh Skin Dynamics</p>
+                    <p class="job-desc">Обновляет динамику цен и историю изменений для всех отслеживаемых скинов.</p>
+                    <span class="job-schedule">0 0 0 * * ? — каждый день 00:00</span>
+                    <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshSkinDynamics">
+                        <button type="submit" class="btn-trigger">▶ Запустить</button>
+                    </form>
+                </div>
+
+                <div class="job-card">
+                    <div class="job-icon">💱</div>
+                    <span class="job-status">Scheduled</span>
+                    <p class="job-name">Refresh Currencies</p>
+                    <p class="job-desc">Обновляет курсы валют и их актуальные цены относительно базовой валюты.</p>
+                    <span class="job-schedule">0 0 1 * * ? — каждый день 01:00</span>
+                    <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshCurrencies">
+                        <button type="submit" class="btn-trigger">▶ Запустить</button>
+                    </form>
+                </div>
+
+                <div class="job-card">
+                    <div class="job-icon">📈</div>
+                    <span class="job-status">Scheduled</span>
+                    <p class="job-name">Refresh Active Groups Dynamics</p>
+                    <p class="job-desc">Пересчитывает динамику активных групп скинов и обновляет агрегированную статистику.</p>
+                    <span class="job-schedule">0 0 3 * * ? — каждый день 03:00</span>
+                    <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshActiveGroupsDynamics">
+                        <button type="submit" class="btn-trigger">▶ Запустить</button>
+                    </form>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════════════════════════ HEALTH ════════════════════════ -->
+        <section class="panel" id="panel-health">
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h2>Health Checks</h2>
+                    <p class="panel-subtitle">Статус сервисов в реальном времени</p>
+                </div>
+            </div>
+
+            <div class="health-toolbar">
+                <button class="btn-refresh" id="health-refresh">
+                    <span class="btn-refresh-icon">⟳</span> Обновить
+                </button>
+                <span class="health-last-updated" id="health-last-updated"></span>
+            </div>
+
+            <div id="health-content">
+                <div class="health-grid">
+                    <div class="health-card loading">
+                        <div class="health-card-title"><div class="health-indicator"></div><span class="health-name">Загрузка...</span></div>
                     </div>
-                    <input type="submit" value="Отправить"/>
-                </form>
-            </div>
-            <div class="border-container list-container grid-container">
-                <p>Список ролей</p>
-                <div class="role-item items-title grid-container">
-                    <p>Id</p>
-                    <p>Title</p>
-                </div>
-                <div class="list-items">
-                    @foreach (Roles.RoleResponse role in Model.Roles)
-                    {
-                        <div class="role-item grid-container">
-                            <p>@role.Id</p>
-                            <p>@role.Title</p>
-                        </div>
-                    }
                 </div>
             </div>
+        </section>
+
+        <!-- ════════════════════════ METRICS ════════════════════════ -->
+        <section class="panel" id="panel-metrics">
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h2>Метрики</h2>
+                    <p class="panel-subtitle">Мониторинг производительности через OpenTelemetry</p>
+                </div>
+            </div>
+
+            <div class="metrics-links-grid">
+                <a class="metrics-link-card" href="http://localhost:9090" target="_blank">
+                    <div class="metrics-card-icon">🔥</div>
+                    <p class="metrics-card-title">Prometheus</p>
+                    <p class="metrics-card-desc">Просмотр и запрос метрик, изучение временных рядов и состояние скрейпинга.</p>
+                    <span class="metrics-card-url">localhost:9090</span>
+                </a>
+                <a class="metrics-link-card" href="http://localhost:3000" target="_blank">
+                    <div class="metrics-card-icon">📊</div>
+                    <p class="metrics-card-title">Grafana</p>
+                    <p class="metrics-card-desc">Дашборды и визуализация метрик. Источник данных: Prometheus на порту 9090.</p>
+                    <span class="metrics-card-url">localhost:3000</span>
+                </a>
+            </div>
+
+            <div class="metrics-info-grid">
+                <div class="metrics-info-card">
+                    <div class="metrics-info-header">Эндпоинты API</div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">Prometheus scrape</span>
+                        <a class="metrics-ep-url" href="http://localhost:5275/api/metrics" target="_blank">/api/metrics</a>
+                    </div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">Health (публичный)</span>
+                        <a class="metrics-ep-url" href="http://localhost:5275/api/health" target="_blank">/api/health</a>
+                    </div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">Health (детальный)</span>
+                        <a class="metrics-ep-url" href="http://localhost:5275/api/health-all" target="_blank">/api/health-all</a>
+                    </div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">Health UI</span>
+                        <a class="metrics-ep-url" href="http://localhost:5275/api/health-ui" target="_blank">/api/health-ui</a>
+                    </div>
+                </div>
+
+                <div class="metrics-info-card">
+                    <div class="metrics-info-header">Собираемые метрики</div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">HTTP-запросы</span>
+                        <span class="metrics-ep-url">latency · status · route</span>
+                    </div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">HttpClient (Steam API)</span>
+                        <span class="metrics-ep-url">duration · errors</span>
+                    </div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">.NET Runtime</span>
+                        <span class="metrics-ep-url">GC · thread pool · память</span>
+                    </div>
+                    <div class="metrics-endpoint">
+                        <span class="metrics-ep-name">Retention</span>
+                        <span class="metrics-ep-url">30 дней</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- ── SHARED CONTEXT MENU (outside admin-shell to avoid transform stacking context) ── -->
+<div id="ctx-menu" class="ctx-menu"></div>
+
+<!-- ── SHARED MODAL ───────────────────────────────────────── -->
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span class="modal-header-title" id="modal-header-title"></span>
+            <button class="modal-close" type="button" onclick="closeModal()">✕</button>
         </div>
+        <div class="modal-body" id="modal-body"></div>
     </div>
 </div>
 
-<script src="~/admin/js/input-number.js"></script>
-
-</body>
-
-</html>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="~/admin/js/admin-panel.js"></script>
+}

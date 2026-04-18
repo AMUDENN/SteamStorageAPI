@@ -34,10 +34,13 @@ public class RequestLoggingMiddleware
 
         ControllerActionDescriptor? actionDescriptor =
             context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>();
-        string actionName = actionDescriptor?.ActionName ?? "Unknown Action";
+
+        if (actionDescriptor is null)
+            return;
 
         _logger.LogInformation(
-            $"\n\tMethod: {actionName};\n\tServer time: {DateTime.Now};\n\tExecution time: {stopwatch.ElapsedMilliseconds} ms;\n");
+            "\n\tMethod: {ActionName};\n\tServer time: {ServerTime};\n\tExecution time: {ElapsedMs} ms;\n",
+            actionDescriptor.ActionName, DateTime.UtcNow, stopwatch.ElapsedMilliseconds);
     }
 
     #endregion Methods

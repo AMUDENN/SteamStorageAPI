@@ -77,21 +77,11 @@ public static class Program
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
 
+        //Telemetry
+        builder.Services.AddTelemetry();
+
         //HealthCheck
         builder.Services.AddHealthChecksServices(config);
-
-        builder.Services
-            .AddHealthChecksUI(setup => {
-                setup.AddHealthCheckEndpoint("Health details", $"{config.HealthChecks.BaseUrl}/api/health-all");
-                setup.AddHealthCheckEndpoint("SteamStorageAPI", $"{config.HealthChecks.BaseUrl}/api/health-api");
-                setup.AddHealthCheckEndpoint("DataBase", $"{config.HealthChecks.BaseUrl}/api/health-db");
-                setup.AddHealthCheckEndpoint("Steam", $"{config.HealthChecks.BaseUrl}/api/health-steam");
-                setup.MaximumHistoryEntriesPerEndpoint(config.HealthChecks.MaximumHistoryEntriesPerEndpoint);
-                setup.SetEvaluationTimeInSeconds(config.HealthChecks.EvaluationTimeInSeconds);
-                setup.SetMinimumSecondsBetweenFailureNotifications(config.HealthChecks
-                    .MinimumSecondsBetweenFailureNotifications);
-            })
-            .AddSqlServerStorage(config.Database.HealthChecks);
 
         builder.Services.AddMemoryCache();
 
@@ -165,28 +155,15 @@ public static class Program
             RequestPath = "/api"
         });
 
+        // Prometheus metrics
+        app.MapPrometheusScrapingEndpoint("/api/metrics");
+
         // HealthChecks
-        app.MapHealthChecks("/api/health", CreateHealthCheckOptions(reg => !reg.Tags.Contains("steam")));
-
-        app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(reg => reg.Tags.Contains("api")));
-
-        app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(reg => reg.Tags.Contains("db")));
-
         app.MapHealthChecks("/api/health-all", CreateHealthCheckOptions(_ => true))
             .RequireAuthorization();
-
-        app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(reg => reg.Tags.Contains("steam")))
-            .RequireAuthorization();
-
-        app.MapHealthChecksUI(options => {
-            options.UIPath = "/api/health-ui";
-            options.ApiPath = "/api";
-            options.ResourcesPath = "/api";
-            options.UseRelativeApiPath = false;
-            options.UseRelativeResourcesPath = false;
-            options.UseRelativeWebhookPath = false;
-            options.AddCustomStylesheet("wwwroot/ui/css/health-ui-style.css");
-        });
+        app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(r => r.Tags.Contains("api")));
+        app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(r => r.Tags.Contains("db")));
+        app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(r => r.Tags.Contains("steam")));
 
         // RateLimit
         app.UseIpRateLimiting();
