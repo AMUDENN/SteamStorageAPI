@@ -11,6 +11,9 @@ public class ContextUserService : IContextUserService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly SteamStorageContext _context;
 
+    private User? _cachedUser;
+    private bool _loaded;
+
     #endregion Fields
 
     #region Constructor
@@ -27,10 +30,16 @@ public class ContextUserService : IContextUserService
 
     public async Task<User?> GetContextUserAsync(CancellationToken cancellationToken = default)
     {
+        if (_loaded)
+            return _cachedUser;
+
         string? nameIdentifier = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return nameIdentifier is null
+        _cachedUser = nameIdentifier is null || !int.TryParse(nameIdentifier, out int userId)
             ? null
-            : await _context.Users.FirstOrDefaultAsync(x => x.Id == int.Parse(nameIdentifier), cancellationToken);
+            : await _context.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+        _loaded = true;
+
+        return _cachedUser;
     }
 
     #endregion Methods

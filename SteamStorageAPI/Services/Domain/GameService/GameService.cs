@@ -49,7 +49,7 @@ public class GameService : IGameService
         string iconUrlHash,
         CancellationToken cancellationToken = default)
     {
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
         HttpResponseMessage response =
             await client.GetAsync(_steamApiUrlBuilder.GetGameIconUrl(steamGameId, iconUrlHash), cancellationToken);
         return response.StatusCode == HttpStatusCode.OK;
@@ -59,7 +59,7 @@ public class GameService : IGameService
         PostGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
         SteamGameResponse? steamResponse =
             await client.GetFromJsonAsync<SteamGameResponse>(_steamApiUrlBuilder.GetGameInfoUrl(request.SteamGameId),
                 cancellationToken)

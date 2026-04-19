@@ -42,13 +42,13 @@ public class ActiveGroupService : IActiveGroupService
             group.Description,
             $"#{group.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
             group.GoalSum,
-            group.GoalSum == null
+            group.GoalSum == null || group.GoalSum == 0
                 ? null
                 : group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / group.GoalSum.Value,
             group.Actives.Sum(y => y.Count),
             group.Actives.Sum(y => y.BuyPrice * y.Count),
             group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate,
-            group.Actives.Sum(y => y.BuyPrice) != 0
+            group.Actives.Sum(y => y.BuyPrice * y.Count) != 0
                 ? (group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
                    - group.Actives.Sum(y => y.BuyPrice * y.Count))
                   / group.Actives.Sum(y => y.BuyPrice * y.Count)
@@ -69,13 +69,13 @@ public class ActiveGroupService : IActiveGroupService
             x.Description,
             $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
             x.GoalSum,
-            x.GoalSum == null
+            x.GoalSum == null || x.GoalSum == 0
                 ? null
                 : x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / x.GoalSum.Value,
             x.Actives.Sum(y => y.Count),
             x.Actives.Sum(y => y.BuyPrice * y.Count),
             x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate,
-            x.Actives.Sum(y => y.BuyPrice) != 0
+            x.Actives.Sum(y => y.BuyPrice * y.Count) != 0
                 ? (x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
                    - x.Actives.Sum(y => y.BuyPrice * y.Count))
                   / x.Actives.Sum(y => y.BuyPrice * y.Count)

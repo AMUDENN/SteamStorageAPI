@@ -77,41 +77,41 @@ public class SkinService : ISkinService
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff7)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0)
                 : skins.OrderByDescending(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff7)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0),
             SkinOrderName.Change30D => isAscending.Value
                 ? skins.OrderBy(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff30)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0)
                 : skins.OrderByDescending(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff30)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0),
             _ => skins.OrderBy(x => x.Id)
         };
     }
 
-    public async Task<BaseSkinResponse> GetBaseSkinResponseAsync(
+    public Task<BaseSkinResponse> GetBaseSkinResponseAsync(
         Skin skin,
         CancellationToken cancellationToken = default)
     {
-        return new BaseSkinResponse(
+        return Task.FromResult(new BaseSkinResponse(
             skin.Id,
             _steamApiUrlBuilder.GetSkinIconUrl(skin.SkinIconUrl),
             skin.Title,
             skin.MarketHashName,
-            _steamApiUrlBuilder.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
+            _steamApiUrlBuilder.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName)));
     }
 
     public async Task<SkinResponse> GetSkinResponseAsync(
@@ -142,11 +142,11 @@ public class SkinService : ISkinService
             .Where(x => x.DateUpdate > DateTime.UtcNow.AddDays(-7).Date)
             .ToList();
 
-        decimal change7D = dynamic7.Count == 0
+        decimal change7D = dynamic7.Count == 0 || dynamic7.First().Price == 0
             ? 0
             : (skin.CurrentPrice - dynamic7.First().Price) / dynamic7.First().Price;
 
-        decimal change30D = dynamic30.Count == 0
+        decimal change30D = dynamic30.Count == 0 || dynamic30.First().Price == 0
             ? 0
             : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price;
 
@@ -183,11 +183,11 @@ public class SkinService : ISkinService
                 .OrderBy(y => y.DateUpdate)
                 .ToList();
 
-            decimal change7D = dynamics7.Count == 0
+            decimal change7D = dynamics7.Count == 0 || dynamics7.First().Price == 0
                 ? 0
                 : (x.CurrentPrice - dynamics7.First().Price) / dynamics7.First().Price;
 
-            decimal change30D = dynamics30.Count == 0
+            decimal change30D = dynamics30.Count == 0 || dynamics30.First().Price == 0
                 ? 0
                 : (x.CurrentPrice - dynamics30.First().Price) / dynamics30.First().Price;
 
@@ -288,7 +288,7 @@ public class SkinService : ISkinService
             .AsNoTracking()
             .Include(x => x.Game)
             .Where(x => (request.GameId == null || x.GameId == request.GameId)
-                        && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)))
+                        && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Contains(x.Id)))
             .WhereMatchFilter(x => x.Title, request.Filter);
 
         skins = ApplySkinOrder(skins, request.OrderName, request.IsAscending);
@@ -317,7 +317,7 @@ public class SkinService : ISkinService
         List<SkinDynamicResponse> dynamic =
             await GetSkinDynamicsResponseAsync(skin, user, request.StartDate, request.EndDate, cancellationToken);
 
-        decimal changePeriod = dynamic.Count == 0
+        decimal changePeriod = dynamic.Count == 0 || dynamic.First().Price == 0
             ? 0
             : (dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price;
 
@@ -337,7 +337,7 @@ public class SkinService : ISkinService
             .WhereMatchFilter(x => x.Title, request.Filter)
             .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
                              && (request.IsMarked == null
-                                 || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
+                                 || request.IsMarked == markedSkinsIds.Contains(x.Id)),
                 cancellationToken);
 
         int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
@@ -354,7 +354,7 @@ public class SkinService : ISkinService
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                         "A game with this Id does not exist");
 
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
         SteamSkinResponse response =
             await client.GetFromJsonAsync<SteamSkinResponse>(
                 _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId), cancellationToken)
@@ -377,7 +377,7 @@ public class SkinService : ISkinService
             .WhereMatchFilter(x => x.Title, request.Filter)
             .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
                              && (request.IsMarked == null
-                                 || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
+                                 || request.IsMarked == markedSkinsIds.Contains(x.Id)),
                 cancellationToken);
 
         return new SavedSkinsCountResponse(count);
@@ -391,7 +391,7 @@ public class SkinService : ISkinService
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                         "A game with this Id does not exist");
 
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
         SteamSkinResponse? response = await client.GetFromJsonAsync<SteamSkinResponse>(
             _steamApiUrlBuilder.GetSkinInfoUrl(request.MarketHashName), cancellationToken);
 
@@ -401,16 +401,23 @@ public class SkinService : ISkinService
 
         SkinResult result = response.results.First();
 
-        if (await _context.Skins.AnyAsync(x => x.MarketHashName == result.asset_description!.market_hash_name,
+        if (result.asset_description is null
+            || result.asset_description.market_hash_name is null
+            || result.name is null
+            || result.asset_description.icon_url is null)
+            throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                "An error occurred while retrieving data from the Steam server");
+
+        if (await _context.Skins.AnyAsync(x => x.MarketHashName == result.asset_description.market_hash_name,
                 cancellationToken))
             throw new HttpResponseException(StatusCodes.Status502BadGateway,
                 "A skin with this MarketHashName already exists in the database");
 
         await AddSkinAsync(
             game.Id,
-            result.asset_description!.market_hash_name!,
-            result.name!,
-            result.asset_description.icon_url!,
+            result.asset_description.market_hash_name,
+            result.name,
+            result.asset_description.icon_url,
             cancellationToken);
     }
 

@@ -56,13 +56,14 @@ public class InventoryService : IInventoryService
         int inventoriesCount = await inventories.CountAsync(cancellationToken);
         int pagesCount = (int)Math.Ceiling((double)inventoriesCount / pageSize);
 
-        inventories = inventories.AsNoTracking()
+        List<Inventory> page = await inventories.AsNoTracking()
             .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize);
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
 
         return new InventoriesResponse(inventoriesCount,
             pagesCount,
-            await Task.WhenAll(inventories.AsEnumerable()
+            await Task.WhenAll(page
                 .Select(async x => new InventoryResponse(
                     x.Id,
                     await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
@@ -80,40 +81,37 @@ public class InventoryService : IInventoryService
     {
         decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-        IQueryable<Inventory> inventories = GetInventoryQuery(user, gameId, filter);
+        var gameStats = await GetInventoryQuery(user, gameId, filter)
+            .GroupBy(x => new
+            {
+                x.Skin.GameId,
+                x.Skin.Game.Title
+            })
+            .Select(g => new
+            {
+                GameTitle = g.Key.Title,
+                Count = g.Sum(x => x.Count),
+                PriceSum = g.Sum(x => x.Skin.CurrentPrice * x.Count)
+            })
+            .ToListAsync(cancellationToken);
 
-        int itemsCount = inventories.Sum(x => x.Count);
+        int itemsCount = gameStats.Sum(g => g.Count);
+        decimal rawSum = gameStats.Sum(g => g.PriceSum);
+        decimal currentSum = rawSum * rate;
 
-        decimal currentSum = inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
-
-        List<Game> games = inventories
-            .Select(x => x.Skin.Game)
-            .GroupBy(x => x.Id)
-            .Select(g => g.First())
+        List<InventoryGameCountResponse> gamesCountResponse = gameStats
+            .Select(g => new InventoryGameCountResponse(
+                g.GameTitle,
+                itemsCount == 0 ? 0 : g.Count / (decimal)itemsCount,
+                g.Count))
             .ToList();
 
-        List<InventoryGameCountResponse> gamesCountResponse = games.Select(item =>
-            new InventoryGameCountResponse(
-                item.Title,
-                itemsCount == 0
-                    ? 0
-                    : inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / (decimal)itemsCount,
-                inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
-
-        List<InventoryGameSumResponse> gamesSumResponse = games.Select(item =>
-            new InventoryGameSumResponse(
-                item.Title,
-                currentSum == 0
-                    ? 0
-                    : inventories.Where(x => x.Skin.GameId == item.Id)
-                          .AsEnumerable()
-                          .Sum(x => x.Skin.CurrentPrice * x.Count)
-                      * rate
-                      / currentSum,
-                inventories.Where(x => x.Skin.GameId == item.Id)
-                    .AsEnumerable()
-                    .Sum(x => x.Skin.CurrentPrice * x.Count)
-                * rate)).ToList();
+        List<InventoryGameSumResponse> gamesSumResponse = gameStats
+            .Select(g => new InventoryGameSumResponse(
+                g.GameTitle,
+                currentSum == 0 ? 0 : g.PriceSum * rate / currentSum,
+                g.PriceSum * rate))
+            .ToList();
 
         return new InventoriesStatisticResponse(itemsCount, currentSum, gamesCountResponse, gamesSumResponse);
     }
@@ -186,7 +184,7 @@ public class InventoryService : IInventoryService
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                         "A game with this Id does not exist");
 
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
         SteamInventoryResponse? response =
             await client.GetFromJsonAsync<SteamInventoryResponse>(
                 _steamApiUrlBuilder.GetInventoryUrl(user.SteamId, game.SteamGameId, 2000), cancellationToken);
@@ -208,29 +206,47 @@ public class InventoryService : IInventoryService
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            foreach (InventoryDescription item in response.descriptions ?? [])
+            List<InventoryDescription> validItems = (response.descriptions ?? [])
+                .Where(x => !(x is { marketable: 0, tradable: 0 }))
+                .ToList();
+
+            List<string> hashNames = validItems
+                .Select(x => x.market_hash_name!)
+                .Distinct()
+                .ToList();
+
+            Dictionary<string, Skin> skinsByHash = await _context.Skins
+                .Where(x => hashNames.Contains(x.MarketHashName))
+                .ToDictionaryAsync(x => x.MarketHashName, cancellationToken);
+
+            foreach (string hash in hashNames.Where(h => !skinsByHash.ContainsKey(h)))
             {
-                if (item is { marketable: 0, tradable: 0 })
+                InventoryDescription item = validItems.First(x => x.market_hash_name == hash);
+                Skin newSkin = new()
+                {
+                    GameId = game.Id,
+                    MarketHashName = hash,
+                    Title = item.name!,
+                    SkinIconUrl = item.icon_url!
+                };
+                await _context.Skins.AddAsync(newSkin, cancellationToken);
+                skinsByHash[hash] = newSkin;
+            }
+
+            Dictionary<string, int> counts = new();
+            foreach (InventoryDescription item in validItems)
+                counts[item.market_hash_name!] = counts.GetValueOrDefault(item.market_hash_name!) + 1;
+
+            foreach ((string hash, int count) in counts)
+            {
+                if (!skinsByHash.TryGetValue(hash, out Skin? skin))
                     continue;
-
-                Skin skin =
-                    await _context.Skins.FirstOrDefaultAsync(x => x.MarketHashName == item.market_hash_name,
-                        cancellationToken)
-                    ?? await _skinService.AddSkinAsync(game.Id, item.market_hash_name!, item.name!, item.icon_url!,
-                        cancellationToken);
-
-                Inventory? inventory =
-                    await _context.Inventories.FirstOrDefaultAsync(x => x.SkinId == skin.Id, cancellationToken);
-
-                if (inventory is null)
-                    await _context.Inventories.AddAsync(new Inventory
-                    {
-                        User = user,
-                        Skin = skin,
-                        Count = 1
-                    }, cancellationToken);
-                else
-                    inventory.Count++;
+                await _context.Inventories.AddAsync(new Inventory
+                {
+                    User = user,
+                    Skin = skin,
+                    Count = count
+                }, cancellationToken);
             }
 
             await _context.SaveChangesAsync(cancellationToken);

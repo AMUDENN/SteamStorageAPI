@@ -52,14 +52,14 @@
             </div>
         </div>
 
-        <p class="sidebar-section-title">Управление</p>
+        <p class="sidebar-section-title">Management</p>
 
         <button class="nav-item" data-tab="currencies">
             <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="9"/>
                 <path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 7v1m0 8v1"/>
             </svg>
-            <span>Валюты</span>
+            <span>Currencies</span>
         </button>
 
         <button class="nav-item" data-tab="games">
@@ -67,7 +67,7 @@
                 <rect x="2" y="6" width="20" height="12" rx="4"/>
                 <path d="M6 12h4m-2-2v4M15 11h.01M17 13h.01"/>
             </svg>
-            <span>Игры</span>
+            <span>Games</span>
         </button>
 
         <button class="nav-item" data-tab="users">
@@ -76,18 +76,18 @@
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
-            <span>Пользователи</span>
+            <span>Users</span>
         </button>
 
         <button class="nav-item" data-tab="jobs">
             <svg viewBox="0 0 24 24">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
-            <span>Задачи</span>
+            <span>Jobs</span>
             <span class="nav-badge">3</span>
         </button>
 
-        <p class="sidebar-section-title">Мониторинг</p>
+        <p class="sidebar-section-title">Monitoring</p>
 
         <button class="nav-item" data-tab="health">
             <svg viewBox="0 0 24 24">
@@ -102,7 +102,7 @@
                 <line x1="12" y1="20" x2="12" y2="4"/>
                 <line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
-            <span>Метрики</span>
+            <span>Metrics</span>
         </button>
 
         <div class="sidebar-spacer"></div>
@@ -116,8 +116,8 @@
         <section class="panel" id="panel-currencies">
             <div class="panel-header">
                 <div class="panel-title-wrap">
-                    <h2>Валюты</h2>
-                    <p class="panel-subtitle">Управление валютами системы</p>
+                    <h2>Currencies</h2>
+                    <p class="panel-subtitle">Manage system currencies</p>
                 </div>
             </div>
 
@@ -125,7 +125,7 @@
             <div class="charts-row">
                 <div class="chart-card">
                     <div class="chart-card-header">
-                        <span>Динамика цены</span>
+                        <span>Price dynamics</span>
                         <select id="currency-chart-select" class="chart-select">
                             @foreach (Currencies.CurrencyResponse c in Model.Currencies)
                             {
@@ -139,7 +139,7 @@
                 </div>
                 <div class="chart-card">
                     <div class="chart-card-header">
-                        <span>Пользователи по валютам</span>
+                        <span>Users by currency</span>
                     </div>
                     <div class="chart-wrap">
                         <canvas id="currency-users-chart"></canvas>
@@ -150,8 +150,8 @@
             <!-- Full-width table -->
             <div class="data-table-card">
                 <div class="table-header-row">
-                    <span>Список валют (@Model.Currencies.Count)</span>
-                    <button class="btn-add" type="button" onclick="openAddCurrencyModal()">+ Добавить</button>
+                    <span>Currencies (@Model.Currencies.Count)</span>
+                    <button class="btn-add" type="button" onclick="openAddCurrencyModal()">+ Add</button>
                 </div>
                 <div class="table-col-row cols-currency">
                     <span class="col-head">Id</span>
@@ -180,7 +180,7 @@
                             <span class="cell">@c.DateUpdate.ToString("dd.MM.yyyy")</span>
                             <div class="ctx-menu-wrap">
                                 <button class="btn-row-menu" type="button"
-                                        onclick="toggleCtxMenu(this,'currency',event)" aria-label="Действия">⋮
+                                        onclick="toggleCtxMenu(this,'currency',event)" aria-label="Actions">⋮
                                 </button>
                             </div>
                         </div>
@@ -193,15 +193,15 @@
         <section class="panel" id="panel-games">
             <div class="panel-header">
                 <div class="panel-title-wrap">
-                    <h2>Игры</h2>
-                    <p class="panel-subtitle">Управление играми в каталоге</p>
+                    <h2>Games</h2>
+                    <p class="panel-subtitle">Manage games in the catalogue</p>
                 </div>
             </div>
 
             <!-- Stats row -->
             <div class="game-stats-row">
                 <div class="game-select-card">
-                    <span class="stats-label">Выберите игру</span>
+                    <span class="stats-label">Select game</span>
                     <select id="game-stats-select" class="game-select">
                         @foreach (Games.GameResponse g in Model.Games)
                         {
@@ -210,11 +210,11 @@
                     </select>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Скинов в Steam</span>
+                    <span class="stat-label">Skins in Steam</span>
                     <span class="stat-value" id="game-skins-count">—</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Предметов пользователей</span>
+                    <span class="stat-label">User items</span>
                     <span class="stat-value" id="game-items-count">—</span>
                 </div>
             </div>
@@ -222,15 +222,15 @@
             <!-- Full-width table -->
             <div class="data-table-card">
                 <div class="table-header-row">
-                    <span>Список игр (@Model.Games.Count)</span>
-                    <button class="btn-add" type="button" onclick="openAddGameModal()">+ Добавить</button>
+                    <span>Games (@Model.Games.Count)</span>
+                    <button class="btn-add" type="button" onclick="openAddGameModal()">+ Add</button>
                 </div>
                 <div class="table-col-row cols-game">
                     <span class="col-head">Icon</span>
                     <span class="col-head">Id</span>
                     <span class="col-head">Title</span>
                     <span class="col-head">SteamGameId</span>
-                    <span class="col-head">Ссылка</span>
+                    <span class="col-head">Link</span>
                     <span class="col-head"></span>
                 </div>
                 <div class="table-rows-wrap">
@@ -247,7 +247,7 @@
                             <a class="cell-link" href="@g.GameIconUrl" target="_blank">Icon</a>
                             <div class="ctx-menu-wrap">
                                 <button class="btn-row-menu" type="button"
-                                        onclick="toggleCtxMenu(this,'game',event)" aria-label="Действия">⋮
+                                        onclick="toggleCtxMenu(this,'game',event)" aria-label="Actions">⋮
                                 </button>
                             </div>
                         </div>
@@ -260,8 +260,8 @@
         <section class="panel" id="panel-users">
             <div class="panel-header">
                 <div class="panel-title-wrap">
-                    <h2>Пользователи</h2>
-                    <p class="panel-subtitle">Просмотр и управление аккаунтами</p>
+                    <h2>Users</h2>
+                    <p class="panel-subtitle">View and manage accounts</p>
                 </div>
             </div>
 
@@ -279,12 +279,12 @@
                 </div>
 
                 <div class="users-count-card">
-                    <span class="users-count-label">Всего пользователей</span>
+                    <span class="users-count-label">Total users</span>
                     <span class="users-count-value">@Model.UsersCount</span>
                 </div>
 
                 <div class="data-table-card">
-                    <div class="table-header">Роли (@Model.Roles.Count)</div>
+                    <div class="table-header">Roles (@Model.Roles.Count)</div>
                     <div class="table-col-row cols-role">
                         <span class="col-head">Id</span>
                         <span class="col-head">Title</span>
@@ -304,7 +304,7 @@
             <!-- Full-width users table -->
             <div class="data-table-card">
                 <div class="table-header-row">
-                    <span>Пользователи (@Model.Users.Count / стр.)</span>
+                    <span>Users (@Model.Users.Count / page)</span>
                     <form class="user-search-form" method="get"
                           asp-controller="AdminPanel" asp-action="AdminPanel">
                         <input type="hidden" name="tab" value="users"/>
@@ -314,7 +314,7 @@
                                value="@Model.SearchNickname" placeholder="Nickname"/>
                         <input class="filter-input" name="steamId" type="text"
                                value="@Model.SearchSteamId" placeholder="SteamID"/>
-                        <button class="btn-search" type="submit">Найти</button>
+                        <button class="btn-search" type="submit">Search</button>
                         @if (Model.SearchUserId.HasValue || !string.IsNullOrEmpty(Model.SearchNickname) || Model.SearchSteamId.HasValue)
                         {
                             <a class="btn-search btn-search-reset"
@@ -329,8 +329,8 @@
                     <span class="col-head">SteamID</span>
                     <span class="col-head">Nickname</span>
                     <span class="col-head">Role</span>
-                    <span class="col-head">Дата регистрации</span>
-                    <span class="col-head">Профиль</span>
+                    <span class="col-head">Registration date</span>
+                    <span class="col-head">Profile</span>
                     <span class="col-head"></span>
                 </div>
                 <div class="table-rows-wrap">
@@ -349,7 +349,7 @@
                             <a class="cell-link" href="@u.ProfileUrl" target="_blank">Steam</a>
                             <div class="ctx-menu-wrap">
                                 <button class="btn-row-menu" type="button"
-                                        onclick="toggleCtxMenu(this,'user',event)" aria-label="Действия">⋮
+                                        onclick="toggleCtxMenu(this,'user',event)" aria-label="Actions">⋮
                                 </button>
                             </div>
                         </div>
@@ -381,8 +381,8 @@
         <section class="panel" id="panel-jobs">
             <div class="panel-header">
                 <div class="panel-title-wrap">
-                    <h2>Задачи</h2>
-                    <p class="panel-subtitle">Управление фоновыми Quartz-задачами</p>
+                    <h2>Jobs</h2>
+                    <p class="panel-subtitle">Manage background Quartz jobs</p>
                 </div>
             </div>
 
@@ -392,10 +392,10 @@
                     <div class="job-icon">📊</div>
                     <span class="job-status">Scheduled</span>
                     <p class="job-name">Refresh Skin Dynamics</p>
-                    <p class="job-desc">Обновляет динамику цен и историю изменений для всех отслеживаемых скинов.</p>
-                    <span class="job-schedule">0 0 0 * * ? — каждый день 00:00</span>
+                    <p class="job-desc">Updates price dynamics and change history for all tracked skins.</p>
+                    <span class="job-schedule">0 0 0 * * ? — every day at 00:00</span>
                     <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshSkinDynamics">
-                        <button type="submit" class="btn-trigger">▶ Запустить</button>
+                        <button type="submit" class="btn-trigger">▶ Run</button>
                     </form>
                 </div>
 
@@ -403,10 +403,10 @@
                     <div class="job-icon">💱</div>
                     <span class="job-status">Scheduled</span>
                     <p class="job-name">Refresh Currencies</p>
-                    <p class="job-desc">Обновляет курсы валют и их актуальные цены относительно базовой валюты.</p>
-                    <span class="job-schedule">0 0 1 * * ? — каждый день 01:00</span>
+                    <p class="job-desc">Updates currency exchange rates and their current prices relative to the base currency.</p>
+                    <span class="job-schedule">0 0 1 * * ? — every day at 01:00</span>
                     <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshCurrencies">
-                        <button type="submit" class="btn-trigger">▶ Запустить</button>
+                        <button type="submit" class="btn-trigger">▶ Run</button>
                     </form>
                 </div>
 
@@ -414,11 +414,10 @@
                     <div class="job-icon">📈</div>
                     <span class="job-status">Scheduled</span>
                     <p class="job-name">Refresh Active Groups Dynamics</p>
-                    <p class="job-desc">Пересчитывает динамику активных групп скинов и обновляет агрегированную
-                        статистику.</p>
-                    <span class="job-schedule">0 0 3 * * ? — каждый день 03:00</span>
+                    <p class="job-desc">Recalculates the dynamics of active skin groups and updates aggregated statistics.</p>
+                    <span class="job-schedule">0 0 3 * * ? — every day at 03:00</span>
                     <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshActiveGroupsDynamics">
-                        <button type="submit" class="btn-trigger">▶ Запустить</button>
+                        <button type="submit" class="btn-trigger">▶ Run</button>
                     </form>
                 </div>
 
@@ -430,13 +429,13 @@
             <div class="panel-header">
                 <div class="panel-title-wrap">
                     <h2>Health Checks</h2>
-                    <p class="panel-subtitle">Статус сервисов в реальном времени</p>
+                    <p class="panel-subtitle">Real-time service status</p>
                 </div>
             </div>
 
             <div class="health-toolbar">
                 <button class="btn-refresh" id="health-refresh">
-                    <span class="btn-refresh-icon">⟳</span> Обновить
+                    <span class="btn-refresh-icon">⟳</span> Refresh
                 </button>
                 <span class="health-last-updated" id="health-last-updated"></span>
             </div>
@@ -446,7 +445,7 @@
                     <div class="health-card loading">
                         <div class="health-card-title">
                             <div class="health-indicator"></div>
-                            <span class="health-name">Загрузка...</span></div>
+                            <span class="health-name">Loading...</span></div>
                     </div>
                 </div>
             </div>
@@ -456,8 +455,8 @@
         <section class="panel" id="panel-metrics">
             <div class="panel-header">
                 <div class="panel-title-wrap">
-                    <h2>Метрики</h2>
-                    <p class="panel-subtitle">Мониторинг производительности через OpenTelemetry</p>
+                    <h2>Metrics</h2>
+                    <p class="panel-subtitle">Performance monitoring via OpenTelemetry</p>
                 </div>
             </div>
 
@@ -465,34 +464,32 @@
                 <a class="metrics-link-card" href="http://localhost:9090" target="_blank">
                     <div class="metrics-card-icon">🔥</div>
                     <p class="metrics-card-title">Prometheus</p>
-                    <p class="metrics-card-desc">Просмотр и запрос метрик, изучение временных рядов и состояние
-                        скрейпинга.</p>
+                    <p class="metrics-card-desc">Browse and query metrics, explore time series and scraping status.</p>
                     <span class="metrics-card-url">localhost:9090</span>
                 </a>
                 <a class="metrics-link-card" href="http://localhost:3000" target="_blank">
                     <div class="metrics-card-icon">📊</div>
                     <p class="metrics-card-title">Grafana</p>
-                    <p class="metrics-card-desc">Дашборды и визуализация метрик. Источник данных: Prometheus на порту
-                        9090.</p>
+                    <p class="metrics-card-desc">Dashboards and metric visualisation. Data source: Prometheus on port 9090.</p>
                     <span class="metrics-card-url">localhost:3000</span>
                 </a>
             </div>
 
             <div class="metrics-info-grid">
                 <div class="metrics-info-card">
-                    <div class="metrics-info-header">Эндпоинты API</div>
+                    <div class="metrics-info-header">API Endpoints</div>
                     <div class="metrics-endpoint">
                         <span class="metrics-ep-name">Prometheus scrape</span>
                         <a class="metrics-ep-url" href="http://localhost:5275/api/metrics"
                            target="_blank">/api/metrics</a>
                     </div>
                     <div class="metrics-endpoint">
-                        <span class="metrics-ep-name">Health (публичный)</span>
+                        <span class="metrics-ep-name">Health (public)</span>
                         <a class="metrics-ep-url" href="http://localhost:5275/api/health"
                            target="_blank">/api/health</a>
                     </div>
                     <div class="metrics-endpoint">
-                        <span class="metrics-ep-name">Health (детальный)</span>
+                        <span class="metrics-ep-name">Health (detailed)</span>
                         <a class="metrics-ep-url" href="http://localhost:5275/api/health-all" target="_blank">/api/health-all</a>
                     </div>
                     <div class="metrics-endpoint">
@@ -502,9 +499,9 @@
                 </div>
 
                 <div class="metrics-info-card">
-                    <div class="metrics-info-header">Собираемые метрики</div>
+                    <div class="metrics-info-header">Collected metrics</div>
                     <div class="metrics-endpoint">
-                        <span class="metrics-ep-name">HTTP-запросы</span>
+                        <span class="metrics-ep-name">HTTP requests</span>
                         <span class="metrics-ep-url">latency · status · route</span>
                     </div>
                     <div class="metrics-endpoint">
@@ -513,11 +510,11 @@
                     </div>
                     <div class="metrics-endpoint">
                         <span class="metrics-ep-name">.NET Runtime</span>
-                        <span class="metrics-ep-url">GC · thread pool · память</span>
+                        <span class="metrics-ep-url">GC · thread pool · memory</span>
                     </div>
                     <div class="metrics-endpoint">
                         <span class="metrics-ep-name">Retention</span>
-                        <span class="metrics-ep-url">30 дней</span>
+                        <span class="metrics-ep-url">30 days</span>
                     </div>
                 </div>
             </div>

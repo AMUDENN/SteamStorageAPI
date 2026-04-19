@@ -52,9 +52,13 @@ public class RefreshCurrenciesJob : IJob
 
                 _logger.LogInformation("Currency exchange rate update completed");
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError("Error updating currency exchange rate: {ExMessage}", ex.Message);
+                _logger.LogError(ex, "Error updating currency exchange rate: {ExMessage}", ex.Message);
 
                 await Task.Delay(_config.BackgroundServices.RefreshCurrencies.ErrorDelayMs,
                     context.CancellationToken);

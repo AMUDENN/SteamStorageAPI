@@ -87,7 +87,7 @@ public class FileService : IFileService
             activesWorksheet.Cells[i, 6].Value = active.Skin.CurrentPrice * currencyExchangeRate;
             activesWorksheet.Cells[i, 7].Value = active.Skin.CurrentPrice * active.Count * currencyExchangeRate;
             activesWorksheet.Cells[i, 8].Value =
-                $"{(active.Skin.CurrentPrice * currencyExchangeRate - active.BuyPrice) / active.BuyPrice * 100:N2}%";
+                active.BuyPrice == 0 ? "N/A" : $"{(active.Skin.CurrentPrice * currencyExchangeRate - active.BuyPrice) / active.BuyPrice * 100:N2}%";
             activesWorksheet.Cells[i, 9].Value =
                 _steamApiUrlBuilder.GetSkinMarketUrl(active.Skin.Game.SteamGameId, active.Skin.MarketHashName);
             i++;
@@ -113,7 +113,7 @@ public class FileService : IFileService
             ? 0
             : activesCurrentPriceSum * currencyExchangeRate / activesTotalCount;
         decimal activesCurrentSum = activesCurrentPriceSum * currencyExchangeRate;
-        decimal activesTotalChange = activesBuySum == 0 ? 1 : (activesCurrentSum - activesBuySum) / activesBuySum;
+        decimal activesTotalChange = activesBuySum == 0 ? 0 : (activesCurrentSum - activesBuySum) / activesBuySum;
 
         activesWorksheet.Cells[i + 1, 2].Value = activesTotalCount;
         activesWorksheet.Cells[i + 1, 3].Value = Math.Round(activesAverageBuyPrice, 2);
@@ -154,7 +154,7 @@ public class FileService : IFileService
             archiveWorksheet.Cells[j, 7].Value = archive.SoldPrice * archive.Count;
             archiveWorksheet.Cells[j, 8].Value = archive.SoldDate.ToString(_dateFormat);
             archiveWorksheet.Cells[j, 9].Value =
-                $"{(archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice * 100:N2}%";
+                archive.BuyPrice == 0 ? "N/A" : $"{(archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice * 100:N2}%";
             archiveWorksheet.Cells[j, 10].Value =
                 _steamApiUrlBuilder.GetSkinMarketUrl(archive.Skin.Game.SteamGameId, archive.Skin.MarketHashName);
             j++;

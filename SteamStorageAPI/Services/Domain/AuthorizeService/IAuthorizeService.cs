@@ -19,4 +19,10 @@ public interface IAuthorizeService
         string signed,
         string sig,
         CancellationToken cancellationToken = default);
+
+    Task<string> DeliverTokenViaSignalRAsync(string group, string jwt, CancellationToken cancellationToken = default);
+
+    string DeliverTokenViaAuthCode(string returnTo, string jwt);
+
+    string? ExchangeAuthCode(string authCode);
 }

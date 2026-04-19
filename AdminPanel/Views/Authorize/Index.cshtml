@@ -1,6 +1,6 @@
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Авторизация";
+    ViewData["Title"] = "Authorization";
 }
 
 @section PageStyles {
@@ -9,8 +9,8 @@
 
 <div class="authorize-container flex-container">
     <div class="authorize-content flex-container">
-        <p>Для доступа к панели администратора пройдите авторизацию</p>
-        <input type="button" value="Авторизация через Steam"
+        <p>Please sign in to access the admin panel</p>
+        <input type="button" value="Sign in via Steam"
                onclick="location.href='@Url.Action("LogIn", "Authorize")'"/>
     </div>
 </div>

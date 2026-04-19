@@ -44,7 +44,7 @@ public class ArchiveService : IArchiveService
             archive.BuyPrice,
             archive.SoldPrice,
             archive.SoldPrice * archive.Count,
-            (archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice,
+            archive.BuyPrice == 0 ? 0 : (archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice,
             archive.Description);
     }
 
@@ -76,7 +76,7 @@ public class ArchiveService : IArchiveService
                     x.BuyPrice,
                     x.SoldPrice,
                     x.SoldPrice * x.Count,
-                    (x.SoldPrice - x.BuyPrice) / x.BuyPrice,
+                    x.BuyPrice == 0 ? 0 : (x.SoldPrice - x.BuyPrice) / x.BuyPrice,
                     x.Description))).WaitAsync(cancellationToken));
     }
 
@@ -124,8 +124,8 @@ public class ArchiveService : IArchiveService
                 ? archives.OrderBy(x => x.SoldPrice * x.Count)
                 : archives.OrderByDescending(x => x.SoldPrice * x.Count),
             ArchiveOrderName.Change => isAscending.Value
-                ? archives.OrderBy(x => (x.SoldPrice - x.BuyPrice) / x.BuyPrice)
-                : archives.OrderByDescending(x => (x.SoldPrice - x.BuyPrice) / x.BuyPrice),
+                ? archives.OrderBy(x => x.BuyPrice == 0 ? 0 : (x.SoldPrice - x.BuyPrice) / x.BuyPrice)
+                : archives.OrderByDescending(x => x.BuyPrice == 0 ? 0 : (x.SoldPrice - x.BuyPrice) / x.BuyPrice),
             _ => archives.OrderBy(x => x.Id)
         };
     }

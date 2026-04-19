@@ -52,9 +52,13 @@ public class RefreshActiveGroupsDynamicsJob : IJob
 
                 _logger.LogInformation("ActiveGroupsDynamic update completed");
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError("Error updating ActiveGroupsDynamic: {ExMessage}", ex.Message);
+                _logger.LogError(ex, "Error updating ActiveGroupsDynamic: {ExMessage}", ex.Message);
 
                 await Task.Delay(_config.BackgroundServices.RefreshActiveGroupsDynamicsJob.ErrorDelayMs,
                     context.CancellationToken);

@@ -52,9 +52,13 @@ public class RefreshSkinDynamicsJob : IJob
 
                 _logger.LogInformation("Item price update completed");
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError("Error updating item prices: {ExMessage}", ex.Message);
+                _logger.LogError(ex, "Error updating item prices: {ExMessage}", ex.Message);
 
                 await Task.Delay(_config.BackgroundServices.RefreshSkinDynamicsJob.ErrorDelayMs,
                     context.CancellationToken);

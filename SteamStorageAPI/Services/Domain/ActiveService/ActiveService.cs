@@ -53,7 +53,7 @@ public class ActiveService : IActiveService
             active.GoalPrice == null
                 ? null
                 : active.Skin.CurrentPrice * rate / active.GoalPrice.Value,
-            (active.Skin.CurrentPrice * rate - active.BuyPrice) / active.BuyPrice,
+            active.BuyPrice == 0 ? 0 : (active.Skin.CurrentPrice * rate - active.BuyPrice) / active.BuyPrice,
             active.Description);
     }
 
@@ -215,8 +215,8 @@ public class ActiveService : IActiveService
                 ? actives.OrderBy(x => x.Skin.CurrentPrice * x.Count)
                 : actives.OrderByDescending(x => x.Skin.CurrentPrice * x.Count),
             ActiveOrderName.Change => isAscending.Value
-                ? actives.OrderBy(x => (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice)
-                : actives.OrderByDescending(x => (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice),
+                ? actives.OrderBy(x => x.BuyPrice == 0 ? 0 : (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice)
+                : actives.OrderByDescending(x => x.BuyPrice == 0 ? 0 : (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice),
             _ => actives.OrderBy(x => x.Id)
         };
     }

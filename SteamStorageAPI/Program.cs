@@ -54,7 +54,7 @@ public static class Program
 
         //Services
         builder.Services.AddScoped<IJwtProvider, JwtProvider>();
-        builder.Services.AddTransient<IContextUserService, ContextUserService>();
+        builder.Services.AddScoped<IContextUserService, ContextUserService>();
 
         // Domain services
         builder.Services.AddDomainServices();
@@ -140,13 +140,16 @@ public static class Program
         WebApplication app = builder.Build();
 
 
-        app.UseSwagger(swaggerOptions => {
-            swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json";
-        });
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger(swaggerOptions => {
+                swaggerOptions.RouteTemplate = "api/swagger/{documentname}/swagger.json";
+            });
 
-        app.UseSwaggerUI(swaggerUiOptions => {
-            swaggerUiOptions.RoutePrefix = "api/swagger";
-        });
+            app.UseSwaggerUI(swaggerUiOptions => {
+                swaggerUiOptions.RoutePrefix = "api/swagger";
+            });
+        }
 
         //ForwardedHeaders
         app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -165,9 +168,12 @@ public static class Program
         // HealthChecks
         app.MapHealthChecks("/api/health-all", CreateHealthCheckOptions(_ => true))
             .RequireAuthorization();
-        app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(r => r.Tags.Contains("api")));
-        app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(r => r.Tags.Contains("db")));
-        app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(r => r.Tags.Contains("steam")));
+        app.MapHealthChecks("/api/health-api", CreateHealthCheckOptions(r => r.Tags.Contains("api")))
+            .RequireAuthorization();
+        app.MapHealthChecks("/api/health-db", CreateHealthCheckOptions(r => r.Tags.Contains("db")))
+            .RequireAuthorization();
+        app.MapHealthChecks("/api/health-steam", CreateHealthCheckOptions(r => r.Tags.Contains("steam")))
+            .RequireAuthorization();
 
         // RateLimit
         app.UseIpRateLimiting();

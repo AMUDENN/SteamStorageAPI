@@ -30,15 +30,15 @@ let _ctxRow = null;
 
 const CTX_ITEMS = {
     currency: [
-        {label: 'Редактировать', fn: () => openCurrencyEdit()},
-        {label: 'Удалить', fn: () => confirmDeleteCurrency(), danger: true}
+        {label: 'Edit', fn: () => openCurrencyEdit()},
+        {label: 'Delete', fn: () => confirmDeleteCurrency(), danger: true}
     ],
     game: [
-        {label: 'Редактировать', fn: () => openGameEdit()},
-        {label: 'Удалить', fn: () => confirmDeleteGame(), danger: true}
+        {label: 'Edit', fn: () => openGameEdit()},
+        {label: 'Delete', fn: () => confirmDeleteGame(), danger: true}
     ],
     user: [
-        {label: 'Назначить роль', fn: () => openSetRole()}
+        {label: 'Assign role', fn: () => openSetRole()}
     ]
 };
 
@@ -90,7 +90,7 @@ function closeModal() {
 // ── Currency actions ──────────────────────────────────────
 
 function openAddCurrencyModal() {
-    openModal('Добавить валюту', `
+    openModal('Add currency', `
         <form method="post" action="/admin/Currencies/AddCurrency">
             <div class="form-grid g-2">
                 <label class="form-label">SteamCurrencyId</label>
@@ -102,7 +102,7 @@ function openAddCurrencyModal() {
                 <label class="form-label">CultureInfo</label>
                 <input name="cultureInfo" class="form-input" type="text"/>
             </div>
-            <input type="submit" class="btn-submit" value="Добавить"/>
+            <input type="submit" class="btn-submit" value="Add"/>
         </form>
     `);
 }
@@ -112,7 +112,7 @@ function openCurrencyEdit() {
     closeCtxMenus();
     if (!row) return;
     const {id, mark, title, culture} = row.dataset;
-    openModal('Редактировать валюту', `
+    openModal('Edit currency', `
         <form method="post" action="/admin/Currencies/PutCurrency">
             <input type="hidden" name="currencyId" value="${ea(id)}"/>
             <div class="form-grid g-2">
@@ -123,7 +123,7 @@ function openCurrencyEdit() {
                 <label class="form-label">CultureInfo</label>
                 <input name="cultureInfo" class="form-input" type="text" value="${ea(culture)}"/>
             </div>
-            <input type="submit" class="btn-submit" value="Сохранить"/>
+            <input type="submit" class="btn-submit" value="Save"/>
         </form>
     `);
 }
@@ -133,14 +133,14 @@ function confirmDeleteCurrency() {
     closeCtxMenus();
     if (!row) return;
     const {id, title} = row.dataset;
-    if (!confirm(`Удалить валюту «${title}» (#${id})?`)) return;
+    if (!confirm(`Delete currency "${title}" (#${id})?`)) return;
     submitPost('/admin/Currencies/DeleteCurrency', {currencyId: id});
 }
 
 // ── Game actions ──────────────────────────────────────────
 
 function openAddGameModal() {
-    openModal('Добавить игру', `
+    openModal('Add game', `
         <form method="post" action="/admin/Games/AddGame">
             <div class="form-grid g-2">
                 <label class="form-label">SteamGameId</label>
@@ -148,7 +148,7 @@ function openAddGameModal() {
                 <label class="form-label">IconUrlHash</label>
                 <input name="iconUrlHash" class="form-input" type="text"/>
             </div>
-            <input type="submit" class="btn-submit" value="Добавить"/>
+            <input type="submit" class="btn-submit" value="Add"/>
         </form>
     `);
 }
@@ -159,7 +159,7 @@ function openGameEdit() {
     if (!row) return;
     const {id, title, iconUrl} = row.dataset;
     const hash = iconUrl ? iconUrl.split('/').pop().replace('.jpg', '') : '';
-    openModal('Редактировать игру', `
+    openModal('Edit game', `
         <form method="post" action="/admin/Games/PutGame">
             <input type="hidden" name="gameId" value="${ea(id)}"/>
             <div class="form-grid g-2">
@@ -168,7 +168,7 @@ function openGameEdit() {
                 <label class="form-label">IconUrlHash</label>
                 <input name="iconUrlHash" class="form-input" type="text" value="${ea(hash)}"/>
             </div>
-            <input type="submit" class="btn-submit" value="Сохранить"/>
+            <input type="submit" class="btn-submit" value="Save"/>
         </form>
     `);
 }
@@ -178,7 +178,7 @@ function confirmDeleteGame() {
     closeCtxMenus();
     if (!row) return;
     const {id, title} = row.dataset;
-    if (!confirm(`Удалить игру «${title}» (#${id})?`)) return;
+    if (!confirm(`Delete game "${title}" (#${id})?`)) return;
     submitPost('/admin/Games/DeleteGame', {gameId: id});
 }
 
@@ -193,14 +193,14 @@ function openSetRole() {
     const options = rolesData
         .map(r => `<option value="${ea(String(r.id))}">${escHtml(r.title)}</option>`)
         .join('');
-    openModal(`Назначить роль — ${escHtml(nickname || '')} (#${userId})`, `
+    openModal(`Assign role — ${escHtml(nickname || '')} (#${userId})`, `
         <form method="post" action="/admin/Users/SetRole">
             <input type="hidden" name="userId" value="${ea(userId)}"/>
             <div class="form-grid g-2">
-                <label class="form-label">Роль</label>
+                <label class="form-label">Role</label>
                 <select name="roleId" class="form-input form-select">${options}</select>
             </div>
-            <input type="submit" class="btn-submit" value="Применить"/>
+            <input type="submit" class="btn-submit" value="Apply"/>
         </form>
     `);
 }
@@ -260,8 +260,8 @@ async function loadGameStats(gameId) {
     try {
         const res = await fetch(`/admin/AdminPanel/GameStatsProxy?gameId=${gameId}`);
         const data = await res.json();
-        if (skinsEl) skinsEl.textContent = data.skinsCount != null ? data.skinsCount.toLocaleString('ru-RU') : '—';
-        if (itemsEl) itemsEl.textContent = data.itemsCount != null ? data.itemsCount.toLocaleString('ru-RU') : '—';
+        if (skinsEl) skinsEl.textContent = data.skinsCount != null ? data.skinsCount.toLocaleString('en-US') : '—';
+        if (itemsEl) itemsEl.textContent = data.itemsCount != null ? data.itemsCount.toLocaleString('en-US') : '—';
     } catch {
         if (skinsEl) skinsEl.textContent = '—';
         if (itemsEl) itemsEl.textContent = '—';
@@ -390,7 +390,7 @@ async function loadCurrencyDynamics(currencyId, title) {
         const res = await fetch(`/admin/AdminPanel/CurrencyDynamicsProxy?currencyId=${currencyId}`);
         const data = await res.json();
         const points = data.dynamic || [];
-        _dynamicsChart.data.labels = points.map(p => new Date(p.dateUpdate).toLocaleDateString('ru-RU'));
+        _dynamicsChart.data.labels = points.map(p => new Date(p.dateUpdate).toLocaleDateString('en-US'));
         _dynamicsChart.data.datasets[0].data = points.map(p => p.exchangeRate);
         _dynamicsChart.data.datasets[0].label = title || '';
         _dynamicsChart.update();
@@ -416,13 +416,13 @@ async function loadHealthData() {
         renderHealthData(content, data);
 
         if (updated)
-            updated.textContent = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
+            updated.textContent = `Updated: ${new Date().toLocaleTimeString('en-US')}`;
     } catch (err) {
         content.innerHTML = errorCard(err.message);
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<span class="btn-refresh-icon">⟳</span> Обновить';
+            btn.innerHTML = '<span class="btn-refresh-icon">⟳</span> Refresh';
         }
     }
 }
@@ -432,20 +432,20 @@ function setHealthLoading(content, btn) {
     content.innerHTML = `<div class="health-grid">${names.map(n => loadingCard(n)).join('')}</div>`;
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="btn-refresh-icon spin">⟳</span> Загрузка...';
+        btn.innerHTML = '<span class="btn-refresh-icon spin">⟳</span> Loading...';
     }
 }
 
 function loadingCard(name) {
     return `<div class="health-card loading">
         <div class="health-card-title"><div class="health-indicator"></div><span class="health-name">${name}</span></div>
-        <span class="health-status-text">Загрузка...</span>
+        <span class="health-status-text">Loading...</span>
     </div>`;
 }
 
 function errorCard(msg) {
     return `<div class="health-card unhealthy" style="grid-column:1/-1">
-        <div class="health-card-title"><div class="health-indicator"></div><span class="health-name">Ошибка подключения</span></div>
+        <div class="health-card-title"><div class="health-indicator"></div><span class="health-name">Connection error</span></div>
         <span class="health-status-text">Unavailable</span>
         <span class="health-duration">${escHtml(msg)}</span>
     </div>`;
@@ -459,7 +459,7 @@ function renderHealthData(content, data) {
         <div class="health-card ${overall} health-card-overall">
             <div class="health-card-title">
                 <div class="health-indicator"></div>
-                <span class="health-name">Общий</span>
+                <span class="health-name">Overall</span>
             </div>
             <span class="health-status-text">${data.status || '—'}</span>
             <span class="health-duration">⏱ ${fmtDuration(data.totalDuration)}</span>
@@ -495,9 +495,9 @@ function renderHealthData(content, data) {
     content.innerHTML = `
         <div class="health-grid">${overallCard}${cards}</div>
         <div class="health-detail-card">
-            <div class="health-detail-header">Подробная информация</div>
+            <div class="health-detail-header">Details</div>
             <div class="health-detail-list">
-                ${rows || '<div class="health-empty">Нет данных</div>'}
+                ${rows || '<div class="health-empty">No data</div>'}
             </div>
         </div>`;
 }

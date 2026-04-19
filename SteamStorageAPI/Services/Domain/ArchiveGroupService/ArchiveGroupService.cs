@@ -34,7 +34,7 @@ public class ArchiveGroupService : IArchiveGroupService
             group.Archives.Sum(y => y.Count),
             group.Archives.Sum(y => y.BuyPrice * y.Count),
             group.Archives.Sum(y => y.SoldPrice * y.Count),
-            group.Archives.Sum(y => y.BuyPrice) != 0
+            group.Archives.Sum(y => y.BuyPrice * y.Count) != 0
                 ? (group.Archives.Sum(y => y.SoldPrice * y.Count)
                    - group.Archives.Sum(y => y.BuyPrice * y.Count))
                   / group.Archives.Sum(y => y.BuyPrice * y.Count)
@@ -54,7 +54,7 @@ public class ArchiveGroupService : IArchiveGroupService
             x.Archives.Sum(y => y.Count),
             x.Archives.Sum(y => y.BuyPrice * y.Count),
             x.Archives.Sum(y => y.SoldPrice * y.Count),
-            x.Archives.Sum(y => y.BuyPrice) != 0
+            x.Archives.Sum(y => y.BuyPrice * y.Count) != 0
                 ? (x.Archives.Sum(y => y.SoldPrice * y.Count)
                    - x.Archives.Sum(y => y.BuyPrice * y.Count))
                   / x.Archives.Sum(y => y.BuyPrice * y.Count)

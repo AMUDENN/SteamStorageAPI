@@ -39,7 +39,7 @@ public class JobsController : Controller
             new Jobs.TriggerJobRequest(Jobs.JobName.RefreshSkinDynamicsJob),
             cancellationToken);
 
-        TempData["ToastMessage"] = "RefreshSkinDynamics запущен";
+        TempData["ToastMessage"] = "RefreshSkinDynamics triggered";
         TempData["ToastType"] = "success";
         return RedirectToAction(
             nameof(AdminPanelController.AdminPanel),
@@ -60,7 +60,7 @@ public class JobsController : Controller
             new Jobs.TriggerJobRequest(Jobs.JobName.RefreshCurrenciesJob),
             cancellationToken);
 
-        TempData["ToastMessage"] = "RefreshCurrencies запущен";
+        TempData["ToastMessage"] = "RefreshCurrencies triggered";
         TempData["ToastType"] = "success";
         return RedirectToAction(
             nameof(AdminPanelController.AdminPanel),
@@ -81,7 +81,7 @@ public class JobsController : Controller
             new Jobs.TriggerJobRequest(Jobs.JobName.RefreshActiveGroupsDynamicsJob),
             cancellationToken);
 
-        TempData["ToastMessage"] = "RefreshActiveGroupsDynamics запущен";
+        TempData["ToastMessage"] = "RefreshActiveGroupsDynamics triggered";
         TempData["ToastType"] = "success";
         return RedirectToAction(
             nameof(AdminPanelController.AdminPanel),

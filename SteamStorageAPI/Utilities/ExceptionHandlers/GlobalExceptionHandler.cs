@@ -36,7 +36,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError("Error passed to the global handler: {ExceptionMessage}", exception.Message);
+        _logger.LogError(exception, "Error passed to the global handler: {ExceptionMessage}", exception.Message);
 
         ProblemDetails problemDetails = new()
         {

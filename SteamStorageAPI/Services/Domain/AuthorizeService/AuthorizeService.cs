@@ -1,17 +1,32 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Models.SteamAPIModels.User;
 using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
+using SteamStorageAPI.Utilities.Config;
+using SteamStorageAPI.Utilities.Exceptions;
 
 namespace SteamStorageAPI.Services.Domain.AuthorizeService;
 
 public class AuthorizeService : IAuthorizeService
 {
+    #region Constants
+
+    private static readonly TimeSpan AuthCodeTtl = TimeSpan.FromSeconds(60);
+
+    #endregion Constants
+
     #region Fields
 
     private readonly ISteamApiUrlBuilder _steamApiUrlBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IMemoryCache _memoryCache;
     private readonly SteamStorageContext _context;
+
+    private readonly string _tokenAddress;
+    private readonly string _internalApiKey;
+
+    private const string InternalApiKeyHeader = "X-Internal-Api-Key";
 
     #endregion Fields
 
@@ -20,11 +35,16 @@ public class AuthorizeService : IAuthorizeService
     public AuthorizeService(
         ISteamApiUrlBuilder steamApiUrlBuilder,
         IHttpClientFactory httpClientFactory,
-        SteamStorageContext context)
+        IMemoryCache memoryCache,
+        SteamStorageContext context,
+        AppConfig appConfig)
     {
         _steamApiUrlBuilder = steamApiUrlBuilder;
         _httpClientFactory = httpClientFactory;
+        _memoryCache = memoryCache;
         _context = context;
+        _tokenAddress = appConfig.App.TokenAddress;
+        _internalApiKey = appConfig.App.InternalApiKey;
     }
 
     #endregion Constructor
@@ -62,6 +82,12 @@ public class AuthorizeService : IAuthorizeService
 
     public (string Url, string Group) GetSteamAuthInfo(string scheme, string host, string? returnTo = null)
     {
+        if (returnTo is not null
+            && (!Uri.TryCreate(returnTo, UriKind.Absolute, out Uri? returnUri)
+                || returnUri.Scheme != Uri.UriSchemeHttp && returnUri.Scheme != Uri.UriSchemeHttps))
+            throw new HttpResponseException(StatusCodes.Status400BadRequest,
+                "returnTo must be an absolute http/https URL");
+
         string group = Guid.NewGuid().ToString();
         string baseUrl = $"{scheme}://{host}/";
         string callbackParam = returnTo is null
@@ -87,7 +113,7 @@ public class AuthorizeService : IAuthorizeService
         string sig,
         CancellationToken cancellationToken = default)
     {
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
 
         HttpRequestMessage request = new(HttpMethod.Post, _steamApiUrlBuilder.GetAuthCheckUrl())
         {
@@ -104,9 +130,42 @@ public class AuthorizeService : IAuthorizeService
         return Convert.ToBoolean(strResponse[(strResponse.LastIndexOf(':') + 1)..]);
     }
 
+    public async Task<string> DeliverTokenViaSignalRAsync(string group, string jwt, CancellationToken cancellationToken = default)
+    {
+        using HttpClient client = _httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(10);
+        client.DefaultRequestHeaders.Add(InternalApiKeyHeader, _internalApiKey);
+
+        await client.PostAsJsonAsync(
+            $"{_tokenAddress}SetToken",
+            new
+            {
+                Group = group,
+                Token = jwt
+            },
+            cancellationToken);
+
+        return $"{_tokenAddress}Token";
+    }
+
+    public string DeliverTokenViaAuthCode(string returnTo, string jwt)
+    {
+        string authCode = Guid.NewGuid().ToString("N");
+        _memoryCache.Set(authCode, jwt, AuthCodeTtl);
+        return $"{returnTo}?authCode={authCode}";
+    }
+
+    public string? ExchangeAuthCode(string authCode)
+    {
+        if (!_memoryCache.TryGetValue<string>(authCode, out string? jwt))
+            return null;
+        _memoryCache.Remove(authCode);
+        return jwt;
+    }
+
     private async Task UpdateSteamProfileAsync(User user, CancellationToken cancellationToken)
     {
-        HttpClient client = _httpClientFactory.CreateClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
         SteamUserResult? result =
             await client.GetFromJsonAsync<SteamUserResult>(
                 _steamApiUrlBuilder.GetUserInfoUrl(user.SteamId), cancellationToken);

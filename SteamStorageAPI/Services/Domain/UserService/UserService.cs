@@ -56,13 +56,9 @@ public class UserService : IUserService
         User user,
         CancellationToken cancellationToken = default)
     {
-        if (user.Username is null
-            || user.IconUrl is null
-            || user.IconUrlMedium is null
-            || user.IconUrlFull is null
-            || user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.UtcNow.AddDays(-1))
+        if (!user.DateUpdate.HasValue || user.DateUpdate.Value < DateTime.UtcNow.AddDays(-1))
         {
-            HttpClient client = _httpClientFactory.CreateClient();
+            using HttpClient client = _httpClientFactory.CreateClient();
             SteamUserResult? steamUserResult =
                 await client.GetFromJsonAsync<SteamUserResult>(
                     _steamApiUrlBuilder.GetUserInfoUrl(user.SteamId), cancellationToken);
@@ -90,7 +86,7 @@ public class UserService : IUserService
         IQueryable<User> users = _context.Users.AsNoTracking();
 
         if (request.UserId.HasValue)
-            users = users.WhereMatchFilter(x => x.Id.ToString(), request.UserId.ToString());
+            users = users.Where(x => x.Id == request.UserId.Value);
 
         if (!string.IsNullOrWhiteSpace(request.Nickname))
             users = users.WhereMatchFilter(x => x.Username, request.Nickname);
