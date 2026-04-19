@@ -44,7 +44,10 @@ public class JobsController : Controller
         return RedirectToAction(
             nameof(AdminPanelController.AdminPanel),
             "AdminPanel",
-            new { tab = "jobs" });
+            new
+            {
+                tab = "jobs"
+            });
     }
 
     [HttpPost]
@@ -62,7 +65,10 @@ public class JobsController : Controller
         return RedirectToAction(
             nameof(AdminPanelController.AdminPanel),
             "AdminPanel",
-            new { tab = "jobs" });
+            new
+            {
+                tab = "jobs"
+            });
     }
 
     [HttpPost]
@@ -80,7 +86,10 @@ public class JobsController : Controller
         return RedirectToAction(
             nameof(AdminPanelController.AdminPanel),
             "AdminPanel",
-            new { tab = "jobs" });
+            new
+            {
+                tab = "jobs"
+            });
     }
 
     #endregion Methods

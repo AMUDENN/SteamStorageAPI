@@ -44,7 +44,7 @@ public class ArchiveService : IArchiveService
             archive.BuyPrice,
             archive.SoldPrice,
             archive.SoldPrice * archive.Count,
-            (double)((archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice),
+            (archive.SoldPrice - archive.BuyPrice) / archive.BuyPrice,
             archive.Description);
     }
 
@@ -76,7 +76,7 @@ public class ArchiveService : IArchiveService
                     x.BuyPrice,
                     x.SoldPrice,
                     x.SoldPrice * x.Count,
-                    (double)((x.SoldPrice - x.BuyPrice) / x.BuyPrice),
+                    (x.SoldPrice - x.BuyPrice) / x.BuyPrice,
                     x.Description))).WaitAsync(cancellationToken));
     }
 

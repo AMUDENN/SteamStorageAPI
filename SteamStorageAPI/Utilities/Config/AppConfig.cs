@@ -18,6 +18,7 @@ public class AppSettings
     public string TokenAddress { get; set; } = string.Empty;
     public string DateFormat { get; set; } = "dd.MM.yyyy";
     public string? PublicHost { get; set; }
+    public string InternalApiKey { get; set; } = string.Empty;
 }
 
 // ─── JWT ────────────────────────────────────────────────────────────────────

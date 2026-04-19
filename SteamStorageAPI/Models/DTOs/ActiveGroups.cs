@@ -10,11 +10,11 @@ public record ActiveGroupResponse(
     string? Description,
     string Colour,
     decimal? GoalSum,
-    double? GoalSumCompletion,
+    decimal? GoalSumCompletion,
     int Count,
     decimal BuySum,
     decimal CurrentSum,
-    double Change,
+    decimal Change,
     DateTime DateCreation);
 
 public record ActiveGroupsResponse(
@@ -23,17 +23,17 @@ public record ActiveGroupsResponse(
 
 public record ActiveGroupsGameCountResponse(
     string GameTitle,
-    double Percentage,
+    decimal Percentage,
     int Count);
 
 public record ActiveGroupsGameInvestmentSumResponse(
     string GameTitle,
-    double Percentage,
+    decimal Percentage,
     decimal InvestmentSum);
 
 public record ActiveGroupsGameCurrentSumResponse(
     string GameTitle,
-    double Percentage,
+    decimal Percentage,
     decimal CurrentSum);
 
 public record ActiveGroupsStatisticResponse(
@@ -50,7 +50,7 @@ public record ActiveGroupDynamicResponse(
     decimal Sum);
 
 public record ActiveGroupDynamicStatsResponse(
-    double ChangePeriod,
+    decimal ChangePeriod,
     IEnumerable<ActiveGroupDynamicResponse> Dynamic);
 
 public record ActiveGroupsCountResponse(

@@ -54,7 +54,7 @@ public class RefreshActiveGroupDynamicsService : IRefreshActiveGroupDynamicsServ
             .Include(x => x.CurrencyDynamics.OrderByDescending(d => d.DateUpdate).Take(1))
             .ToDictionaryAsync(
                 x => x.Id,
-                x => (decimal)(x.CurrencyDynamics.FirstOrDefault()?.Price ?? 1),
+                x => x.CurrencyDynamics.FirstOrDefault()?.Price ?? 1m,
                 cancellationToken);
 
         List<ActiveGroupsDynamic> dynamics = activeGroups

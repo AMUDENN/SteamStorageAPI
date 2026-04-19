@@ -65,10 +65,9 @@ body::before {
     content: "";
     position: fixed;
     inset: 0;
-    background:
-        radial-gradient(ellipse 800px 600px at 15% 20%, rgba(139, 92, 246, 0.18), transparent 60%),
-        radial-gradient(ellipse 700px 500px at 85% 80%, rgba(34, 211, 238, 0.12), transparent 60%),
-        radial-gradient(ellipse 500px 400px at 50% 50%, rgba(236, 72, 153, 0.08), transparent 60%);
+    background: radial-gradient(ellipse 800px 600px at 15% 20%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 85% 80%, rgba(34, 211, 238, 0.12), transparent 60%),
+    radial-gradient(ellipse 500px 400px at 50% 50%, rgba(236, 72, 153, 0.08), transparent 60%);
     pointer-events: none;
     z-index: 0;
     animation: ambientShift 20s ease-in-out infinite alternate;
@@ -78,9 +77,8 @@ body::after {
     content: "";
     position: fixed;
     inset: 0;
-    background-image:
-        linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
     background-size: 50px 50px;
     pointer-events: none;
     z-index: 0;
@@ -89,9 +87,15 @@ body::after {
 }
 
 @keyframes ambientShift {
-    0%   { transform: translate(0, 0) scale(1); }
-    50%  { transform: translate(-2%, 2%) scale(1.05); }
-    100% { transform: translate(2%, -1%) scale(0.98); }
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(-2%, 2%) scale(1.05);
+    }
+    100% {
+        transform: translate(2%, -1%) scale(0.98);
+    }
 }
 
 .wrapper {
@@ -100,18 +104,52 @@ body::after {
     z-index: 1;
 }
 
-.flex-container  { display: flex; }
-.grid-container  { display: grid; }
+.flex-container {
+    display: flex;
+}
 
-.first-color-text  { color: var(--fg-color-first); }
-.second-color-text { color: var(--fg-color-second); }
-.center-text       { text-align: center; }
-.right-text        { text-align: right; }
+.grid-container {
+    display: grid;
+}
 
-.large-text  { font-size: var(--large-text);  font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; }
-.big-text    { font-size: var(--big-text);    font-family: var(--font-display); font-weight: 600; }
-.middle-text { font-size: var(--middle-text); font-family: var(--font-display); font-weight: 500; }
-.small-text  { font-size: var(--small-text); }
+.first-color-text {
+    color: var(--fg-color-first);
+}
+
+.second-color-text {
+    color: var(--fg-color-second);
+}
+
+.center-text {
+    text-align: center;
+}
+
+.right-text {
+    text-align: right;
+}
+
+.large-text {
+    font-size: var(--large-text);
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.big-text {
+    font-size: var(--big-text);
+    font-family: var(--font-display);
+    font-weight: 600;
+}
+
+.middle-text {
+    font-size: var(--middle-text);
+    font-family: var(--font-display);
+    font-weight: 500;
+}
+
+.small-text {
+    font-size: var(--small-text);
+}
 
 .gradient-text {
     background: var(--gradient-primary);
@@ -121,17 +159,28 @@ body::after {
     color: transparent;
 }
 
-::-webkit-scrollbar       { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, var(--accent-color), var(--accent-deep));
     border-radius: 20px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, var(--accent-glow), var(--accent-color));
 }
 
-::selection { background: var(--accent-color); color: #fff; }
+::selection {
+    background: var(--accent-color);
+    color: #fff;
+}
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

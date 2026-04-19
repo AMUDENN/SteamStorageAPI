@@ -64,7 +64,10 @@ public class CurrenciesController : Controller
                 request.CultureInfo),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "currencies" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "currencies"
+        });
     }
 
     [HttpPost]
@@ -83,7 +86,10 @@ public class CurrenciesController : Controller
                 request.CultureInfo),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "currencies" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "currencies"
+        });
     }
 
     [HttpPost]
@@ -98,7 +104,10 @@ public class CurrenciesController : Controller
             new Currencies.DeleteCurrencyRequest(request.CurrencyId),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "currencies" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "currencies"
+        });
     }
 
     #endregion Methods

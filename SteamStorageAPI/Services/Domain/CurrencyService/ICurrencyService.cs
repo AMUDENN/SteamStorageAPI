@@ -5,7 +5,7 @@ namespace SteamStorageAPI.Services.Domain.CurrencyService;
 
 public interface ICurrencyService
 {
-    Task<double> GetCurrencyExchangeRateAsync(
+    Task<decimal> GetCurrencyExchangeRateAsync(
         User user,
         CancellationToken cancellationToken = default);
 

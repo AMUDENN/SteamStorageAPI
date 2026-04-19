@@ -37,7 +37,7 @@ public class ActiveService : IActiveService
 
     private async Task<ActiveResponse> MapToResponseAsync(
         Active active,
-        double rate,
+        decimal rate,
         CancellationToken cancellationToken = default)
     {
         return new ActiveResponse(
@@ -47,13 +47,13 @@ public class ActiveService : IActiveService
             active.BuyDate,
             active.Count,
             active.BuyPrice,
-            (decimal)((double)active.Skin.CurrentPrice * rate),
-            (decimal)((double)active.Skin.CurrentPrice * rate * active.Count),
+            active.Skin.CurrentPrice * rate,
+            active.Skin.CurrentPrice * rate * active.Count,
             active.GoalPrice,
             active.GoalPrice == null
                 ? null
-                : (double)active.Skin.CurrentPrice * rate / (double)active.GoalPrice,
-            ((double)active.Skin.CurrentPrice * rate - (double)active.BuyPrice) / (double)active.BuyPrice,
+                : active.Skin.CurrentPrice * rate / active.GoalPrice.Value,
+            (active.Skin.CurrentPrice * rate - active.BuyPrice) / active.BuyPrice,
             active.Description);
     }
 
@@ -62,7 +62,7 @@ public class ActiveService : IActiveService
         User user,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
         return await MapToResponseAsync(active, rate, cancellationToken);
     }
 
@@ -92,7 +92,7 @@ public class ActiveService : IActiveService
         User user,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         int activesCount = await actives.CountAsync(cancellationToken);
         int pagesCount = (int)Math.Ceiling((double)activesCount / pageSize);
@@ -124,12 +124,12 @@ public class ActiveService : IActiveService
                         && (request.GroupId == null || x.GroupId == request.GroupId))
             .WhereMatchFilter(x => x.Skin.Title, request.Filter);
 
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         return new ActivesStatisticResponse(
             await actives.SumAsync(x => x.Count, cancellationToken),
             await actives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken),
-            (decimal)((double)await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate));
+            await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate);
     }
 
     public async Task<ActivesPagesCountResponse> GetActivesPagesCountAsync(

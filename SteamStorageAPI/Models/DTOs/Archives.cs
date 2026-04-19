@@ -14,7 +14,7 @@ public record ArchiveResponse(
     decimal BuyPrice,
     decimal SoldPrice,
     decimal SoldSum,
-    double Change,
+    decimal Change,
     string? Description);
 
 public record ArchivesResponse(

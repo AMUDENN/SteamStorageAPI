@@ -2,6 +2,7 @@ app:
   tokenAddress: "https://steamstorage.ru/token/"
   dateFormat: "dd.MM.yyyy"
   publicHost: "localhost:8081"
+  internalApiKey: "your-internal-api-key-here"
 
 jwt:
   key: "your-secret-key-here"

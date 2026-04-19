@@ -63,11 +63,11 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         }
 
         Currency baseCurrency = currencies.FirstOrDefault(x => x.Id == Currency.BASE_CURRENCY_ID)
-            ?? throw new InvalidOperationException("Base currency missing from database");
+                                ?? throw new InvalidOperationException("Base currency missing from database");
 
         Game game = await _context.Games
-            .FirstOrDefaultAsync(x => x.Id == Game.BASE_GAME_ID, cancellationToken)
-            ?? throw new InvalidOperationException("No games found in database");
+                        .FirstOrDefaultAsync(x => x.Id == Game.BASE_GAME_ID, cancellationToken)
+                    ?? throw new InvalidOperationException("No games found in database");
 
         using HttpClient client = _httpClientFactory.CreateClient();
 
@@ -103,8 +103,8 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
 
             if (await _context.CurrencyDynamics.AnyAsync(
                     x => x.CurrencyId == currency.Id
-                      && x.DateUpdate >= todayUtc
-                      && x.DateUpdate < todayUtc.AddDays(1),
+                         && x.DateUpdate >= todayUtc
+                         && x.DateUpdate < todayUtc.AddDays(1),
                     cancellationToken))
             {
                 _logger.LogDebug("Currency {Title} already updated today, skipping", currency.Title);
@@ -124,12 +124,12 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             {
                 CurrencyId = currency.Id,
                 DateUpdate = DateTime.UtcNow,
-                Price = (double)(price.Value / baseCurrencyPrice.Value)
+                Price = price.Value / baseCurrencyPrice.Value
             });
             savedCount++;
 
             _logger.LogInformation(
-                "Currency {Title}: rate = {Rate:F6}", currency.Title, (double)(price.Value / baseCurrencyPrice.Value));
+                "Currency {Title}: rate = {Rate:F6}", currency.Title, price.Value / baseCurrencyPrice.Value);
 
             await Task.Delay(REFRESH_DELAY, cancellationToken);
         }
@@ -207,7 +207,7 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
         // Fallback: keep only digits and the culture's decimal/group separators
         string decSep = culture.NumberFormat.NumberDecimalSeparator;
         string grpSep = culture.NumberFormat.NumberGroupSeparator;
-        string numericOnly = new string(
+        string numericOnly = new(
             cleaned.Where(c => char.IsDigit(c) || c.ToString() == decSep || c.ToString() == grpSep).ToArray());
 
         if (decimal.TryParse(numericOnly, NumberStyles.Any, culture, out result) && result > 0)

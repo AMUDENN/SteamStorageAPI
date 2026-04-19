@@ -35,9 +35,9 @@ public class ArchiveGroupService : IArchiveGroupService
             group.Archives.Sum(y => y.BuyPrice * y.Count),
             group.Archives.Sum(y => y.SoldPrice * y.Count),
             group.Archives.Sum(y => y.BuyPrice) != 0
-                ? ((double)group.Archives.Sum(y => y.SoldPrice * y.Count)
-                   - (double)group.Archives.Sum(y => y.BuyPrice * y.Count))
-                  / (double)group.Archives.Sum(y => y.BuyPrice * y.Count)
+                ? (group.Archives.Sum(y => y.SoldPrice * y.Count)
+                   - group.Archives.Sum(y => y.BuyPrice * y.Count))
+                  / group.Archives.Sum(y => y.BuyPrice * y.Count)
                 : 0,
             group.DateCreation);
     }
@@ -55,9 +55,9 @@ public class ArchiveGroupService : IArchiveGroupService
             x.Archives.Sum(y => y.BuyPrice * y.Count),
             x.Archives.Sum(y => y.SoldPrice * y.Count),
             x.Archives.Sum(y => y.BuyPrice) != 0
-                ? ((double)x.Archives.Sum(y => y.SoldPrice * y.Count)
-                   - (double)x.Archives.Sum(y => y.BuyPrice * y.Count))
-                  / (double)x.Archives.Sum(y => y.BuyPrice * y.Count)
+                ? (x.Archives.Sum(y => y.SoldPrice * y.Count)
+                   - x.Archives.Sum(y => y.BuyPrice * y.Count))
+                  / x.Archives.Sum(y => y.BuyPrice * y.Count)
                 : 0,
             x.DateCreation)).ToListAsync(cancellationToken);
     }
@@ -126,7 +126,7 @@ public class ArchiveGroupService : IArchiveGroupService
                 item.Title,
                 archivesCount == 0
                     ? 0
-                    : (double)archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / archivesCount,
+                    : archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / (decimal)archivesCount,
                 archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
 
         List<ArchiveGroupsGameBuySumResponse> gamesBuySumResponse = games.Select(item =>
@@ -134,8 +134,8 @@ public class ArchiveGroupService : IArchiveGroupService
                 item.Title,
                 buySum == 0
                     ? 0
-                    : (double)(archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count)
-                               / buySum),
+                    : archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count)
+                      / buySum,
                 archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count))).ToList();
 
         List<ArchiveGroupsGameSoldSumResponse> gamesSoldSumResponse = games.Select(item =>
@@ -143,8 +143,8 @@ public class ArchiveGroupService : IArchiveGroupService
                 item.Title,
                 soldSum == 0
                     ? 0
-                    : (double)(archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.SoldPrice * x.Count)
-                               / soldSum),
+                    : archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.SoldPrice * x.Count)
+                      / soldSum,
                 archives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.SoldPrice * x.Count))).ToList();
 
         return new ArchiveGroupsStatisticResponse(archivesCount, buySum, soldSum,

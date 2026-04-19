@@ -9,7 +9,9 @@ public class ApiHealthChecker : BaseHealthChecker
     #region Constructor
 
     public ApiHealthChecker(IHttpClientFactory httpClientFactory)
-        : base(httpClientFactory) { }
+        : base(httpClientFactory)
+    {
+    }
 
     #endregion Constructor
 
@@ -18,7 +20,9 @@ public class ApiHealthChecker : BaseHealthChecker
     public override Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
-        => Task.FromResult(HealthCheckResult.Healthy("API is working"));
+    {
+        return Task.FromResult(HealthCheckResult.Healthy("API is working"));
+    }
 
     #endregion Methods
 }

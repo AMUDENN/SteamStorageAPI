@@ -51,7 +51,7 @@ public class InventoryService : IInventoryService
         User user,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         int inventoriesCount = await inventories.CountAsync(cancellationToken);
         int pagesCount = (int)Math.Ceiling((double)inventoriesCount / pageSize);
@@ -67,8 +67,8 @@ public class InventoryService : IInventoryService
                     x.Id,
                     await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
                     x.Count,
-                    (decimal)((double)x.Skin.CurrentPrice * rate),
-                    (decimal)((double)x.Skin.CurrentPrice * rate * x.Count)
+                    x.Skin.CurrentPrice * rate,
+                    x.Skin.CurrentPrice * rate * x.Count
                 ))).WaitAsync(cancellationToken));
     }
 
@@ -78,13 +78,13 @@ public class InventoryService : IInventoryService
         string? filter,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         IQueryable<Inventory> inventories = GetInventoryQuery(user, gameId, filter);
 
         int itemsCount = inventories.Sum(x => x.Count);
 
-        decimal currentSum = (decimal)((double)inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * rate);
+        decimal currentSum = inventories.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
 
         List<Game> games = inventories
             .Select(x => x.Skin.Game)
@@ -97,7 +97,7 @@ public class InventoryService : IInventoryService
                 item.Title,
                 itemsCount == 0
                     ? 0
-                    : (double)inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / itemsCount,
+                    : inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / (decimal)itemsCount,
                 inventories.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
 
         List<InventoryGameSumResponse> gamesSumResponse = games.Select(item =>
@@ -105,15 +105,15 @@ public class InventoryService : IInventoryService
                 item.Title,
                 currentSum == 0
                     ? 0
-                    : (double)inventories.Where(x => x.Skin.GameId == item.Id)
+                    : inventories.Where(x => x.Skin.GameId == item.Id)
                           .AsEnumerable()
                           .Sum(x => x.Skin.CurrentPrice * x.Count)
                       * rate
-                      / (double)currentSum,
-                (decimal)((double)inventories.Where(x => x.Skin.GameId == item.Id)
-                              .AsEnumerable()
-                              .Sum(x => x.Skin.CurrentPrice * x.Count)
-                          * rate))).ToList();
+                      / currentSum,
+                inventories.Where(x => x.Skin.GameId == item.Id)
+                    .AsEnumerable()
+                    .Sum(x => x.Skin.CurrentPrice * x.Count)
+                * rate)).ToList();
 
         return new InventoriesStatisticResponse(itemsCount, currentSum, gamesCountResponse, gamesSumResponse);
     }

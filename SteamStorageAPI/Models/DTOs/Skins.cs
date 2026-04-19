@@ -18,8 +18,8 @@ public record BaseSkinsResponse(
 public record SkinResponse(
     BaseSkinResponse Skin,
     decimal CurrentPrice,
-    double Change7D,
-    double Change30D,
+    decimal Change7D,
+    decimal Change30D,
     bool IsMarked);
 
 public record SkinsResponse(
@@ -33,7 +33,7 @@ public record SkinDynamicResponse(
     decimal Price);
 
 public record SkinDynamicStatsResponse(
-    double ChangePeriod,
+    decimal ChangePeriod,
     IEnumerable<SkinDynamicResponse> Dynamic);
 
 public record SkinPagesCountResponse(

@@ -99,7 +99,11 @@ public partial class SteamStorageContext : DbContext
 
             entity.ToTable("ActiveGroupsDynamic");
 
-            entity.HasIndex(e => new { e.GroupId, e.DateUpdate });
+            entity.HasIndex(e => new
+            {
+                e.GroupId,
+                e.DateUpdate
+            });
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.DateUpdate).HasColumnType("datetime");
@@ -169,11 +173,17 @@ public partial class SteamStorageContext : DbContext
         modelBuilder.Entity<CurrencyDynamic>(entity => {
             entity.HasKey(e => e.Id).HasName("PK__Currency__3214EC27555441E3");
 
-            entity.HasIndex(e => new { e.CurrencyId, e.DateUpdate });
+            entity.HasIndex(e => new
+            {
+                e.CurrencyId,
+                e.DateUpdate
+            });
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CurrencyId).HasColumnName("CurrencyID");
             entity.Property(e => e.DateUpdate).HasColumnType("datetime");
+            entity.Property(e => e.Price).HasColumnType("decimal(14, 4)");
+            ;
 
             entity.HasOne(d => d.Currency).WithMany(p => p.CurrencyDynamics)
                 .HasForeignKey(d => d.CurrencyId)
@@ -270,7 +280,11 @@ public partial class SteamStorageContext : DbContext
 
             entity.ToTable("SkinsDynamic", tb => tb.HasTrigger("UpdateSkinsCurrentPrice"));
 
-            entity.HasIndex(e => new { e.SkinId, e.DateUpdate });
+            entity.HasIndex(e => new
+            {
+                e.SkinId,
+                e.DateUpdate
+            });
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.DateUpdate).HasColumnType("datetime");

@@ -4,31 +4,31 @@ using SteamStorageAPI.Utilities.Validation.Validators.Statistics;
 namespace SteamStorageAPI.Models.DTOs;
 
 public record InvestmentSumResponse(
-    double TotalSum,
-    double PercentageGrowth);
+    decimal TotalSum,
+    decimal PercentageGrowth);
 
 public record FinancialGoalResponse(
-    double FinancialGoal,
-    double PercentageCompletion);
+    decimal FinancialGoal,
+    decimal PercentageCompletion);
 
 public record ActiveStatisticResponse(
     int Count,
-    double CurrentSum,
-    double PercentageGrowth);
+    decimal CurrentSum,
+    decimal PercentageGrowth);
 
 public record ArchiveStatisticResponse(
     int Count,
-    double SoldSum,
-    double PercentageGrowth);
+    decimal SoldSum,
+    decimal PercentageGrowth);
 
 public record InventoryStatisticResponse(
     int Count,
-    double Sum,
+    decimal Sum,
     IEnumerable<InventoryGameStatisticResponse> Games);
 
 public record InventoryGameStatisticResponse(
     string GameTitle,
-    double Percentage,
+    decimal Percentage,
     int Count);
 
 public record ItemsCountResponse(

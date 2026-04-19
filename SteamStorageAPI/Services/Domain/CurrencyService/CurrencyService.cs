@@ -45,7 +45,7 @@ public class CurrencyService : ICurrencyService
             lastDynamic?.DateUpdate ?? DateTime.Now);
     }
 
-    public async Task<double> GetCurrencyExchangeRateAsync(
+    public async Task<decimal> GetCurrencyExchangeRateAsync(
         User user,
         CancellationToken cancellationToken = default)
     {
@@ -55,7 +55,7 @@ public class CurrencyService : ICurrencyService
                 .FirstOrDefaultAsync(x => x.Id == user.CurrencyId, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound, "User currency not found");
 
-        return currency.CurrencyDynamics.FirstOrDefault()?.Price ?? 1;
+        return currency.CurrencyDynamics.FirstOrDefault()?.Price ?? 1m;
     }
 
     public async Task<CurrenciesResponse> GetCurrenciesAsync(

@@ -57,7 +57,7 @@ public class FileService : IFileService
             .SelectMany(x => x.Archives)
             .ToListAsync(cancellationToken);
 
-        double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         using ExcelPackage package = new();
 
@@ -84,11 +84,10 @@ public class FileService : IFileService
             activesWorksheet.Cells[i, 3].Value = active.BuyPrice;
             activesWorksheet.Cells[i, 4].Value = active.BuyPrice * active.Count;
             activesWorksheet.Cells[i, 5].Value = active.BuyDate.ToString(_dateFormat);
-            activesWorksheet.Cells[i, 6].Value = (double)active.Skin.CurrentPrice * currencyExchangeRate;
-            activesWorksheet.Cells[i, 7].Value =
-                (double)active.Skin.CurrentPrice * active.Count * currencyExchangeRate;
+            activesWorksheet.Cells[i, 6].Value = active.Skin.CurrentPrice * currencyExchangeRate;
+            activesWorksheet.Cells[i, 7].Value = active.Skin.CurrentPrice * active.Count * currencyExchangeRate;
             activesWorksheet.Cells[i, 8].Value =
-                $"{((double)active.Skin.CurrentPrice * currencyExchangeRate - (double)active.BuyPrice) / (double)active.BuyPrice * 100:N2}%";
+                $"{(active.Skin.CurrentPrice * currencyExchangeRate - active.BuyPrice) / active.BuyPrice * 100:N2}%";
             activesWorksheet.Cells[i, 9].Value =
                 _steamApiUrlBuilder.GetSkinMarketUrl(active.Skin.Game.SteamGameId, active.Skin.MarketHashName);
             i++;
@@ -112,8 +111,8 @@ public class FileService : IFileService
         decimal activesAverageBuyPrice = activesTotalCount == 0 ? 0 : activesBuySum / activesTotalCount;
         decimal activesAverageCurrentPrice = activesTotalCount == 0
             ? 0
-            : (decimal)((double)activesCurrentPriceSum * currencyExchangeRate) / activesTotalCount;
-        decimal activesCurrentSum = (decimal)((double)activesCurrentPriceSum * currencyExchangeRate);
+            : activesCurrentPriceSum * currencyExchangeRate / activesTotalCount;
+        decimal activesCurrentSum = activesCurrentPriceSum * currencyExchangeRate;
         decimal activesTotalChange = activesBuySum == 0 ? 1 : (activesCurrentSum - activesBuySum) / activesBuySum;
 
         activesWorksheet.Cells[i + 1, 2].Value = activesTotalCount;

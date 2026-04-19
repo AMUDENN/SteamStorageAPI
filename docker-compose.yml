@@ -18,8 +18,11 @@
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
       - ASPNETCORE_URLS=http://+:80
+      - CONFIG_PATH=.config.yaml
     ports:
       - "8083:80"
+    volumes:
+      - ./LoginWebApp/.config.yaml:/app/.config.yaml:ro
     build:
       context: .
       dockerfile: LoginWebApp/Dockerfile

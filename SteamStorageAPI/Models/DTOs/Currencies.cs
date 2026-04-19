@@ -9,7 +9,7 @@ public record CurrencyResponse(
     string Title,
     string Mark,
     string CultureInfo,
-    double Price,
+    decimal Price,
     DateTime DateUpdate);
 
 public record CurrenciesResponse(
@@ -19,7 +19,7 @@ public record CurrenciesResponse(
 public record CurrencyDynamicResponse(
     int Id,
     DateTime DateUpdate,
-    double ExchangeRate);
+    decimal ExchangeRate);
 
 public record CurrencyDynamicsResponse(
     IEnumerable<CurrencyDynamicResponse> Dynamic);

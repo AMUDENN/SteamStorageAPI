@@ -20,7 +20,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
     // Exponential backoff on rate limiting: 2min → 4min → 8min → cap 10min
     private const int BACKOFF_BASE_MS = 120_000;
-    private const int BACKOFF_MAX_MS  = 600_000;
+    private const int BACKOFF_MAX_MS = 600_000;
 
     #endregion Constants
 
@@ -76,10 +76,12 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
         _logger.LogInformation("Starting skin update for game {GameId}", game.SteamGameId);
 
         HashSet<string> existingHashNames =
-            [.. await _context.Skins
+        [
+            .. await _context.Skins
                 .Where(x => x.GameId == game.Id)
                 .Select(x => x.MarketHashName)
-                .ToListAsync(cancellationToken)];
+                .ToListAsync(cancellationToken)
+        ];
 
         int start = 0;
         int totalCount = int.MaxValue;
@@ -226,13 +228,17 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
 
         Dictionary<string, int> skinIds = await _context.Skins
             .Where(x => hashNames.Contains(x.MarketHashName))
-            .Select(x => new { x.MarketHashName, x.Id })
+            .Select(x => new
+            {
+                x.MarketHashName,
+                x.Id
+            })
             .ToDictionaryAsync(x => x.MarketHashName, x => x.Id, cancellationToken);
 
         List<SkinsDynamic> dynamics = results
             .Where(x => x.hash_name is not null
-                     && skinIds.ContainsKey(x.hash_name)
-                     && x.sell_price > 0)
+                        && skinIds.ContainsKey(x.hash_name)
+                        && x.sell_price > 0)
             .Select(x => new SkinsDynamic
             {
                 DateUpdate = DateTime.UtcNow,

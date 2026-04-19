@@ -31,3 +31,6 @@ public record SteamAuthRequest(
 
 public record CheckCookieAuthRequest(
     long SteamId);
+
+public record ExchangeTokenResponse(
+    string Token);

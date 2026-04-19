@@ -28,20 +28,33 @@
 .header::after {
     content: "";
     position: absolute;
-    left: 0; right: 0; bottom: -1px;
+    left: 0;
+    right: 0;
+    bottom: -1px;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
     opacity: 0.4;
 }
 
 @keyframes slideDown {
-    from { transform: translateY(-100%); opacity: 0; }
-    to   { transform: translateY(0);     opacity: 1; }
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .left-header, .right-header,
-.left-footer,  .right-footer  { width: 30%; }
-.center-header, .center-footer { width: 40%; }
+.left-footer, .right-footer {
+    width: 30%;
+}
+
+.center-header, .center-footer {
+    width: 40%;
+}
 
 .left-header, .right-header, .left-footer,
 .right-footer, .center-header, .center-footer {
@@ -90,8 +103,12 @@
 }
 
 @keyframes gradientShift {
-    0%, 100% { background-position: 0% 50%;   }
-    50%       { background-position: 100% 50%; }
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
 }
 
 /* ------ MAIN CONTENT ------ */
@@ -102,8 +119,14 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0);    }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ------ FOOTER ------ */
@@ -125,15 +148,23 @@
 .footer::before {
     content: "";
     position: absolute;
-    left: 0; right: 0; top: -1px;
+    left: 0;
+    right: 0;
+    top: -1px;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
     opacity: 0.4;
 }
 
 @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .right-footer p {
@@ -151,16 +182,30 @@
 }
 
 @keyframes blink {
-    0%, 100% { opacity: 1;   }
-    50%       { opacity: 0.3; }
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
 }
 
 /* ------ RESPONSIVE ------ */
 @media screen and (max-width: 930px) {
-    .layout-page-content { grid-template-rows: 64px 1fr 56px; }
+    .layout-page-content {
+        grid-template-rows: 64px 1fr 56px;
+    }
 
-    .left-footer, .center-footer, .center-header, .right-header { display: none; }
+    .left-footer, .center-footer, .center-header, .right-header {
+        display: none;
+    }
 
-    .left-header  { width: 100%; justify-content: center; }
-    .right-footer { width: 100%; }
+    .left-header {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .right-footer {
+        width: 100%;
+    }
 }

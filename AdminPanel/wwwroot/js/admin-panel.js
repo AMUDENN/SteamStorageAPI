@@ -14,31 +14,31 @@ function switchTab(tabName, pushState = true) {
     if (pushState) {
         const url = new URL(window.location.href);
         url.searchParams.set('tab', tabName);
-        window.history.pushState({ tab: tabName }, '', url);
+        window.history.pushState({tab: tabName}, '', url);
     }
 
-    if (tabName === 'health')     loadHealthData();
+    if (tabName === 'health') loadHealthData();
     if (tabName === 'currencies') initCurrencyChartsOnce();
-    if (tabName === 'games')      initGameStatsOnce();
+    if (tabName === 'games') initGameStatsOnce();
 }
 
 // ── Context menus ─────────────────────────────────────────
 // Single shared menu outside any transformed ancestor to avoid position:fixed bugs
 
 let _activeCtxMenu = null;
-let _ctxRow        = null;
+let _ctxRow = null;
 
 const CTX_ITEMS = {
     currency: [
-        { label: 'Редактировать',  fn: () => openCurrencyEdit() },
-        { label: 'Удалить',        fn: () => confirmDeleteCurrency(), danger: true }
+        {label: 'Редактировать', fn: () => openCurrencyEdit()},
+        {label: 'Удалить', fn: () => confirmDeleteCurrency(), danger: true}
     ],
     game: [
-        { label: 'Редактировать',  fn: () => openGameEdit() },
-        { label: 'Удалить',        fn: () => confirmDeleteGame(), danger: true }
+        {label: 'Редактировать', fn: () => openGameEdit()},
+        {label: 'Удалить', fn: () => confirmDeleteGame(), danger: true}
     ],
     user: [
-        { label: 'Назначить роль', fn: () => openSetRole() }
+        {label: 'Назначить роль', fn: () => openSetRole()}
     ]
 };
 
@@ -46,7 +46,7 @@ function toggleCtxMenu(btn, type, evt) {
     if (evt) evt.stopPropagation();
 
     const menu = document.getElementById('ctx-menu');
-    const row  = btn.closest('.table-data-row');
+    const row = btn.closest('.table-data-row');
 
     if (_activeCtxMenu && menu.classList.contains('open') && _ctxRow === row) {
         menu.classList.remove('open');
@@ -63,7 +63,7 @@ function toggleCtxMenu(btn, type, evt) {
     ).join('');
 
     const rect = btn.getBoundingClientRect();
-    menu.style.top   = (rect.bottom + 4) + 'px';
+    menu.style.top = (rect.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - rect.right) + 'px';
     menu.classList.add('open');
     _activeCtxMenu = menu;
@@ -111,7 +111,7 @@ function openCurrencyEdit() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
-    const { id, mark, title, culture } = row.dataset;
+    const {id, mark, title, culture} = row.dataset;
     openModal('Редактировать валюту', `
         <form method="post" action="/admin/Currencies/PutCurrency">
             <input type="hidden" name="currencyId" value="${ea(id)}"/>
@@ -132,9 +132,9 @@ function confirmDeleteCurrency() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
-    const { id, title } = row.dataset;
+    const {id, title} = row.dataset;
     if (!confirm(`Удалить валюту «${title}» (#${id})?`)) return;
-    submitPost('/admin/Currencies/DeleteCurrency', { currencyId: id });
+    submitPost('/admin/Currencies/DeleteCurrency', {currencyId: id});
 }
 
 // ── Game actions ──────────────────────────────────────────
@@ -157,7 +157,7 @@ function openGameEdit() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
-    const { id, title, iconUrl } = row.dataset;
+    const {id, title, iconUrl} = row.dataset;
     const hash = iconUrl ? iconUrl.split('/').pop().replace('.jpg', '') : '';
     openModal('Редактировать игру', `
         <form method="post" action="/admin/Games/PutGame">
@@ -177,9 +177,9 @@ function confirmDeleteGame() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
-    const { id, title } = row.dataset;
+    const {id, title} = row.dataset;
     if (!confirm(`Удалить игру «${title}» (#${id})?`)) return;
-    submitPost('/admin/Games/DeleteGame', { gameId: id });
+    submitPost('/admin/Games/DeleteGame', {gameId: id});
 }
 
 // ── User actions ──────────────────────────────────────────
@@ -188,7 +188,7 @@ function openSetRole() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
-    const { userId, nickname } = row.dataset;
+    const {userId, nickname} = row.dataset;
     const rolesData = JSON.parse(document.getElementById('roles-json')?.textContent || '[]');
     const options = rolesData
         .map(r => `<option value="${ea(String(r.id))}">${escHtml(r.title)}</option>`)
@@ -213,7 +213,8 @@ function submitPost(action, fields) {
     f.action = action;
     Object.entries(fields).forEach(([k, v]) => {
         const inp = document.createElement('input');
-        inp.name = k; inp.value = v;
+        inp.name = k;
+        inp.value = v;
         f.appendChild(inp);
     });
     document.body.appendChild(f);
@@ -257,7 +258,7 @@ async function loadGameStats(gameId) {
     if (skinsEl) skinsEl.textContent = '...';
     if (itemsEl) itemsEl.textContent = '...';
     try {
-        const res  = await fetch(`/admin/AdminPanel/GameStatsProxy?gameId=${gameId}`);
+        const res = await fetch(`/admin/AdminPanel/GameStatsProxy?gameId=${gameId}`);
         const data = await res.json();
         if (skinsEl) skinsEl.textContent = data.skinsCount != null ? data.skinsCount.toLocaleString('ru-RU') : '—';
         if (itemsEl) itemsEl.textContent = data.itemsCount != null ? data.itemsCount.toLocaleString('ru-RU') : '—';
@@ -270,21 +271,21 @@ async function loadGameStats(gameId) {
 // ── Currency charts ───────────────────────────────────────
 
 let _dynamicsChart = null;
-let _usersChart    = null;
-let _chartsInited  = false;
+let _usersChart = null;
+let _chartsInited = false;
 
 function initCurrencyChartsOnce() {
     if (_chartsInited || typeof Chart === 'undefined') return;
     _chartsInited = true;
 
-    const currData  = JSON.parse(document.getElementById('currencies-json')?.textContent || '[]');
-    const palette   = ['#8b5cf6', '#22d3ee', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#a78bfa', '#fb923c'];
-    const colors    = currData.map((_, i) => palette[i % palette.length]);
+    const currData = JSON.parse(document.getElementById('currencies-json')?.textContent || '[]');
+    const palette = ['#8b5cf6', '#22d3ee', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#a78bfa', '#fb923c'];
+    const colors = currData.map((_, i) => palette[i % palette.length]);
     const gridColor = 'rgba(139, 92, 246, 0.08)';
     const tickColor = '#6b6e94';
-    const tickFont  = { family: "'JetBrains Mono', monospace", size: 10 };
+    const tickFont = {family: "'JetBrains Mono', monospace", size: 10};
 
-    const dynCtx   = document.getElementById('currency-dynamics-chart');
+    const dynCtx = document.getElementById('currency-dynamics-chart');
     const usersCtx = document.getElementById('currency-users-chart');
 
     if (dynCtx) {
@@ -308,12 +309,12 @@ function initCurrencyChartsOnce() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
-                    tooltip: { mode: 'index', intersect: false }
+                    legend: {display: false},
+                    tooltip: {mode: 'index', intersect: false}
                 },
                 scales: {
-                    x: { grid: { color: gridColor }, ticks: { color: tickColor, font: tickFont } },
-                    y: { grid: { color: gridColor }, ticks: { color: tickColor, font: tickFont } }
+                    x: {grid: {color: gridColor}, ticks: {color: tickColor, font: tickFont}},
+                    y: {grid: {color: gridColor}, ticks: {color: tickColor, font: tickFont}}
                 }
             }
         });
@@ -339,7 +340,7 @@ function initCurrencyChartsOnce() {
                         position: 'right',
                         labels: {
                             color: '#a8a8c0',
-                            font: { family: "'JetBrains Mono', monospace", size: 11 },
+                            font: {family: "'JetBrains Mono', monospace", size: 11},
                             boxWidth: 12,
                             padding: 14
                         }
@@ -370,8 +371,8 @@ function initCurrencyChartsOnce() {
 async function loadUsersCountByCurrency() {
     if (!_usersChart) return;
     try {
-        const res   = await fetch('/admin/AdminPanel/UsersCountByCurrencyProxy');
-        const data  = await res.json();
+        const res = await fetch('/admin/AdminPanel/UsersCountByCurrencyProxy');
+        const data = await res.json();
         const items = data.items || [];
         const currData = JSON.parse(document.getElementById('currencies-json')?.textContent || '[]');
         _usersChart.data.datasets[0].data = currData.map(c => {
@@ -379,27 +380,29 @@ async function loadUsersCountByCurrency() {
             return found ? found.usersCount : 0;
         });
         _usersChart.update();
-    } catch { /* ignore */ }
+    } catch { /* ignore */
+    }
 }
 
 async function loadCurrencyDynamics(currencyId, title) {
     if (!_dynamicsChart) return;
     try {
-        const res    = await fetch(`/admin/AdminPanel/CurrencyDynamicsProxy?currencyId=${currencyId}`);
-        const data   = await res.json();
+        const res = await fetch(`/admin/AdminPanel/CurrencyDynamicsProxy?currencyId=${currencyId}`);
+        const data = await res.json();
         const points = data.dynamic || [];
-        _dynamicsChart.data.labels            = points.map(p => new Date(p.dateUpdate).toLocaleDateString('ru-RU'));
-        _dynamicsChart.data.datasets[0].data  = points.map(p => p.exchangeRate);
+        _dynamicsChart.data.labels = points.map(p => new Date(p.dateUpdate).toLocaleDateString('ru-RU'));
+        _dynamicsChart.data.datasets[0].data = points.map(p => p.exchangeRate);
         _dynamicsChart.data.datasets[0].label = title || '';
         _dynamicsChart.update();
-    } catch { /* ignore */ }
+    } catch { /* ignore */
+    }
 }
 
 // ── Health checks ─────────────────────────────────────────
 
 async function loadHealthData() {
     const content = document.getElementById('health-content');
-    const btn     = document.getElementById('health-refresh');
+    const btn = document.getElementById('health-refresh');
     const updated = document.getElementById('health-last-updated');
 
     if (!content) return;
@@ -407,7 +410,7 @@ async function loadHealthData() {
     setHealthLoading(content, btn);
 
     try {
-        const res  = await fetch('/admin/AdminPanel/HealthProxy');
+        const res = await fetch('/admin/AdminPanel/HealthProxy');
         const data = await res.json();
 
         renderHealthData(content, data);
@@ -463,7 +466,7 @@ function renderHealthData(content, data) {
         </div>`;
 
     const cards = Object.entries(entries).map(([name, info]) => {
-        const st   = (info.status || 'unknown').toLowerCase();
+        const st = (info.status || 'unknown').toLowerCase();
         const tags = (info.tags || []).map(t => `<span class="health-tag">${escHtml(t)}</span>`).join('');
         return `
             <div class="health-card ${st}">
@@ -478,7 +481,7 @@ function renderHealthData(content, data) {
     }).join('');
 
     const rows = Object.entries(entries).map(([name, info]) => {
-        const st   = (info.status || '').toLowerCase();
+        const st = (info.status || '').toLowerCase();
         const desc = info.description || info.exception || fmtData(info.data);
         return `
             <div class="health-detail-row">
@@ -531,9 +534,9 @@ function showToast(message, type = 'info') {
 // ── Pagination ────────────────────────────────────────────
 
 function initPagination() {
-    const form  = document.querySelector('.pagination form');
+    const form = document.querySelector('.pagination form');
     const input = document.querySelector('.pagination .page-input');
-    const plus  = document.querySelector('.pagination .btn-page.plus');
+    const plus = document.querySelector('.pagination .btn-page.plus');
     const minus = document.querySelector('.pagination .btn-page.minus');
 
     if (!form || !input) return;
@@ -556,7 +559,7 @@ function initPagination() {
 // ── Init ──────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-    const shell   = document.querySelector('.admin-shell');
+    const shell = document.querySelector('.admin-shell');
     const initTab = shell?.dataset.activeTab || 'currencies';
 
     switchTab(initTab, false);

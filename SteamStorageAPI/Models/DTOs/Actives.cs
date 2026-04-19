@@ -14,8 +14,8 @@ public record ActiveResponse(
     decimal CurrentPrice,
     decimal CurrentSum,
     decimal? GoalPrice,
-    double? GoalPriceCompletion,
-    double Change,
+    decimal? GoalPriceCompletion,
+    decimal Change,
     string? Description);
 
 public record ActivesResponse(

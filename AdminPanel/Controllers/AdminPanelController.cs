@@ -37,9 +37,7 @@ public class AdminPanelController : Controller
 
     #region Records
 
-    public record TokenRequest(
-        string Group,
-        string Token);
+    private record ExchangeTokenResponse(string Token);
 
     public record AdminPanelRequest(
         [FromForm(Name = "usersPageNumber")] int? UsersPageNumber,
@@ -52,10 +50,24 @@ public class AdminPanelController : Controller
 
     #region Methods
 
-    public IActionResult CheckAdmin(
-        [FromQuery] TokenRequest request)
+    public async Task<IActionResult> CheckAdmin(
+        [FromQuery] string? authCode,
+        CancellationToken cancellationToken = default)
     {
-        _cookieUserService.SetCookiesToken(request.Token);
+        if (string.IsNullOrEmpty(authCode))
+            return RedirectToAction(nameof(AccessDenied));
+
+        using HttpClient client = _httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(10);
+
+        ExchangeTokenResponse? result = await client.GetFromJsonAsync<ExchangeTokenResponse>(
+            $"{_options.ApiAddress}/Authorize/ExchangeToken?authCode={authCode}",
+            cancellationToken);
+
+        if (result is null)
+            return RedirectToAction(nameof(AccessDenied));
+
+        _cookieUserService.SetCookiesToken(result.Token, cancellationToken);
         return RedirectToAction(nameof(AdminPanel));
     }
 

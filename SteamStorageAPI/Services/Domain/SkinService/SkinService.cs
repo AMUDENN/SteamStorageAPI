@@ -77,26 +77,26 @@ public class SkinService : ISkinService
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff7)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (double?)((double)(x.CurrentPrice - y.Price) / (double)y.Price))
+                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0)
                 : skins.OrderByDescending(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff7)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (double?)((double)(x.CurrentPrice - y.Price) / (double)y.Price))
+                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0),
             SkinOrderName.Change30D => isAscending.Value
                 ? skins.OrderBy(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff30)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (double?)((double)(x.CurrentPrice - y.Price) / (double)y.Price))
+                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0)
                 : skins.OrderByDescending(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff30)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => (double?)((double)(x.CurrentPrice - y.Price) / (double)y.Price))
+                        .Select(y => (decimal?)((x.CurrentPrice - y.Price) / y.Price))
                         .FirstOrDefault() ?? 0),
             _ => skins.OrderBy(x => x.Id)
         };
@@ -120,13 +120,13 @@ public class SkinService : ISkinService
         IEnumerable<int> markedSkinsIds,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
         return await GetSkinResponseAsync(skin, rate, markedSkinsIds, cancellationToken);
     }
 
     private async Task<SkinResponse> GetSkinResponseAsync(
         Skin skin,
-        double rate,
+        decimal rate,
         IEnumerable<int> markedSkinsIds,
         CancellationToken cancellationToken = default)
     {
@@ -142,17 +142,17 @@ public class SkinService : ISkinService
             .Where(x => x.DateUpdate > DateTime.Now.AddDays(-7).Date)
             .ToList();
 
-        double change7D = (double)(dynamic7.Count == 0
+        decimal change7D = dynamic7.Count == 0
             ? 0
-            : (skin.CurrentPrice - dynamic7.First().Price) / dynamic7.First().Price);
+            : (skin.CurrentPrice - dynamic7.First().Price) / dynamic7.First().Price;
 
-        double change30D = (double)(dynamic30.Count == 0
+        decimal change30D = dynamic30.Count == 0
             ? 0
-            : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price);
+            : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price;
 
         return new SkinResponse(
             await GetBaseSkinResponseAsync(skin, cancellationToken),
-            (decimal)((double)skin.CurrentPrice * rate),
+            skin.CurrentPrice * rate,
             change7D,
             change30D,
             markedSkinsIds.Any(x => x == skin.Id));
@@ -164,7 +164,7 @@ public class SkinService : ISkinService
         IEnumerable<int> markedSkinsIds,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         DateTime cutoff30 = DateTime.Now.AddDays(-30).Date;
         DateTime cutoff7 = DateTime.Now.AddDays(-7).Date;
@@ -183,17 +183,17 @@ public class SkinService : ISkinService
                 .OrderBy(y => y.DateUpdate)
                 .ToList();
 
-            double change7D = dynamics7.Count == 0
+            decimal change7D = dynamics7.Count == 0
                 ? 0
-                : (double)((x.CurrentPrice - dynamics7.First().Price) / dynamics7.First().Price);
+                : (x.CurrentPrice - dynamics7.First().Price) / dynamics7.First().Price;
 
-            double change30D = dynamics30.Count == 0
+            decimal change30D = dynamics30.Count == 0
                 ? 0
-                : (double)((x.CurrentPrice - dynamics30.First().Price) / dynamics30.First().Price);
+                : (x.CurrentPrice - dynamics30.First().Price) / dynamics30.First().Price;
 
             return new SkinResponse(
                 await GetBaseSkinResponseAsync(x, cancellationToken),
-                (decimal)((double)x.CurrentPrice * rate),
+                x.CurrentPrice * rate,
                 change7D,
                 change30D,
                 markedSkinsIds.Any(y => y == x.Id));
@@ -207,7 +207,7 @@ public class SkinService : ISkinService
         DateTime endDate,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         startDate = startDate.Date;
         endDate = endDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
@@ -218,7 +218,7 @@ public class SkinService : ISkinService
             .AsNoTracking()
             .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
             .OrderBy(x => x.DateUpdate)
-            .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, (decimal)((double)x.Price * rate)))
+            .Select(x => new SkinDynamicResponse(x.Id, x.DateUpdate, x.Price * rate))
             .ToListAsync(cancellationToken);
     }
 
@@ -317,9 +317,9 @@ public class SkinService : ISkinService
         List<SkinDynamicResponse> dynamic =
             await GetSkinDynamicsResponseAsync(skin, user, request.StartDate, request.EndDate, cancellationToken);
 
-        double changePeriod = dynamic.Count == 0
+        decimal changePeriod = dynamic.Count == 0
             ? 0
-            : (double)((dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price);
+            : (dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price;
 
         return new SkinDynamicStatsResponse(changePeriod, dynamic);
     }
@@ -431,7 +431,11 @@ public class SkinService : ISkinService
             throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "A skin with this Id has already been added to favourites");
 
-        await _context.MarkedSkins.AddAsync(new MarkedSkin { SkinId = skin.Id, UserId = user.Id }, cancellationToken);
+        await _context.MarkedSkins.AddAsync(new MarkedSkin
+        {
+            SkinId = skin.Id,
+            UserId = user.Id
+        }, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 

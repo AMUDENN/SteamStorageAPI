@@ -7,10 +7,19 @@
     ViewData["Title"] = "Admin Panel";
 
     string currenciesJson = JsonSerializer.Serialize(
-        Model.Currencies.Select(c => new { id = c.Id, title = c.Title, mark = c.Mark }));
+        Model.Currencies.Select(c => new
+        {
+            id = c.Id,
+            title = c.Title,
+            mark = c.Mark
+        }));
 
     string rolesJson = JsonSerializer.Serialize(
-        Model.Roles.Select(r => new { id = r.Id, title = r.Title }));
+        Model.Roles.Select(r => new
+        {
+            id = r.Id,
+            title = r.Title
+        }));
 }
 
 @section PageStyles {
@@ -46,22 +55,34 @@
         <p class="sidebar-section-title">Управление</p>
 
         <button class="nav-item" data-tab="currencies">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 7v1m0 8v1"/></svg>
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1M12 7v1m0 8v1"/>
+            </svg>
             <span>Валюты</span>
         </button>
 
         <button class="nav-item" data-tab="games">
-            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4m-2-2v4M15 11h.01M17 13h.01"/></svg>
+            <svg viewBox="0 0 24 24">
+                <rect x="2" y="6" width="20" height="12" rx="4"/>
+                <path d="M6 12h4m-2-2v4M15 11h.01M17 13h.01"/>
+            </svg>
             <span>Игры</span>
         </button>
 
         <button class="nav-item" data-tab="users">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
             <span>Пользователи</span>
         </button>
 
         <button class="nav-item" data-tab="jobs">
-            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <svg viewBox="0 0 24 24">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
             <span>Задачи</span>
             <span class="nav-badge">3</span>
         </button>
@@ -69,12 +90,18 @@
         <p class="sidebar-section-title">Мониторинг</p>
 
         <button class="nav-item" data-tab="health">
-            <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
             <span>Health Checks</span>
         </button>
 
         <button class="nav-item" data-tab="metrics">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <svg viewBox="0 0 24 24">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
             <span>Метрики</span>
         </button>
 
@@ -153,7 +180,8 @@
                             <span class="cell">@c.DateUpdate.ToString("dd.MM.yyyy")</span>
                             <div class="ctx-menu-wrap">
                                 <button class="btn-row-menu" type="button"
-                                        onclick="toggleCtxMenu(this,'currency',event)" aria-label="Действия">⋮</button>
+                                        onclick="toggleCtxMenu(this,'currency',event)" aria-label="Действия">⋮
+                                </button>
                             </div>
                         </div>
                     }
@@ -219,7 +247,8 @@
                             <a class="cell-link" href="@g.GameIconUrl" target="_blank">Icon</a>
                             <div class="ctx-menu-wrap">
                                 <button class="btn-row-menu" type="button"
-                                        onclick="toggleCtxMenu(this,'game',event)" aria-label="Действия">⋮</button>
+                                        onclick="toggleCtxMenu(this,'game',event)" aria-label="Действия">⋮
+                                </button>
                             </div>
                         </div>
                     }
@@ -320,7 +349,8 @@
                             <a class="cell-link" href="@u.ProfileUrl" target="_blank">Steam</a>
                             <div class="ctx-menu-wrap">
                                 <button class="btn-row-menu" type="button"
-                                        onclick="toggleCtxMenu(this,'user',event)" aria-label="Действия">⋮</button>
+                                        onclick="toggleCtxMenu(this,'user',event)" aria-label="Действия">⋮
+                                </button>
                             </div>
                         </div>
                     }
@@ -384,7 +414,8 @@
                     <div class="job-icon">📈</div>
                     <span class="job-status">Scheduled</span>
                     <p class="job-name">Refresh Active Groups Dynamics</p>
-                    <p class="job-desc">Пересчитывает динамику активных групп скинов и обновляет агрегированную статистику.</p>
+                    <p class="job-desc">Пересчитывает динамику активных групп скинов и обновляет агрегированную
+                        статистику.</p>
                     <span class="job-schedule">0 0 3 * * ? — каждый день 03:00</span>
                     <form method="post" asp-controller="Jobs" asp-action="TriggerRefreshActiveGroupsDynamics">
                         <button type="submit" class="btn-trigger">▶ Запустить</button>
@@ -413,7 +444,9 @@
             <div id="health-content">
                 <div class="health-grid">
                     <div class="health-card loading">
-                        <div class="health-card-title"><div class="health-indicator"></div><span class="health-name">Загрузка...</span></div>
+                        <div class="health-card-title">
+                            <div class="health-indicator"></div>
+                            <span class="health-name">Загрузка...</span></div>
                     </div>
                 </div>
             </div>
@@ -432,13 +465,15 @@
                 <a class="metrics-link-card" href="http://localhost:9090" target="_blank">
                     <div class="metrics-card-icon">🔥</div>
                     <p class="metrics-card-title">Prometheus</p>
-                    <p class="metrics-card-desc">Просмотр и запрос метрик, изучение временных рядов и состояние скрейпинга.</p>
+                    <p class="metrics-card-desc">Просмотр и запрос метрик, изучение временных рядов и состояние
+                        скрейпинга.</p>
                     <span class="metrics-card-url">localhost:9090</span>
                 </a>
                 <a class="metrics-link-card" href="http://localhost:3000" target="_blank">
                     <div class="metrics-card-icon">📊</div>
                     <p class="metrics-card-title">Grafana</p>
-                    <p class="metrics-card-desc">Дашборды и визуализация метрик. Источник данных: Prometheus на порту 9090.</p>
+                    <p class="metrics-card-desc">Дашборды и визуализация метрик. Источник данных: Prometheus на порту
+                        9090.</p>
                     <span class="metrics-card-url">localhost:3000</span>
                 </a>
             </div>
@@ -448,11 +483,13 @@
                     <div class="metrics-info-header">Эндпоинты API</div>
                     <div class="metrics-endpoint">
                         <span class="metrics-ep-name">Prometheus scrape</span>
-                        <a class="metrics-ep-url" href="http://localhost:5275/api/metrics" target="_blank">/api/metrics</a>
+                        <a class="metrics-ep-url" href="http://localhost:5275/api/metrics"
+                           target="_blank">/api/metrics</a>
                     </div>
                     <div class="metrics-endpoint">
                         <span class="metrics-ep-name">Health (публичный)</span>
-                        <a class="metrics-ep-url" href="http://localhost:5275/api/health" target="_blank">/api/health</a>
+                        <a class="metrics-ep-url" href="http://localhost:5275/api/health"
+                           target="_blank">/api/health</a>
                     </div>
                     <div class="metrics-endpoint">
                         <span class="metrics-ep-name">Health (детальный)</span>

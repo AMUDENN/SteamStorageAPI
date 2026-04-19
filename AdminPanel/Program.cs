@@ -27,10 +27,13 @@ public static class Program
             options.TokenHubEndpoint = "https://steamstorage.ru/token/token-hub";
         });
 
-        builder.Services.AddSingleton(new AdminPanelOptions { ApiAddress = apiAddress });
+        builder.Services.AddSingleton(new AdminPanelOptions
+        {
+            ApiAddress = apiAddress
+        });
         builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();
-        
+
         //Services
         builder.Services.AddTransient<ICookiesUserService, CookiesUserService>();
 

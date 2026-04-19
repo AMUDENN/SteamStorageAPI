@@ -37,7 +37,7 @@ public static class Program
 
 
         // Initialize config
-        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH") ?? ".config.yaml";
+        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
         if (configPath is null) throw new Exception("Path to configuration file not set");
 
         AppConfig config = ConfigurationReader.Read(configPath);
@@ -94,7 +94,11 @@ public static class Program
             options.ClientIdHeader = config.RateLimit.ClientIdHeader;
             options.GeneralRules = config.RateLimit.Rules
                 .Select(r => new AspNetCoreRateLimit.RateLimitRule
-                    { Endpoint = r.Endpoint, Period = r.Period, Limit = r.Limit })
+                {
+                    Endpoint = r.Endpoint,
+                    Period = r.Period,
+                    Limit = r.Limit
+                })
                 .ToList();
         });
         builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();

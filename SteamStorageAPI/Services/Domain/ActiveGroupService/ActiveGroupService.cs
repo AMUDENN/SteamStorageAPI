@@ -35,7 +35,7 @@ public class ActiveGroupService : IActiveGroupService
         User user,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         return new ActiveGroupResponse(group.Id,
             group.Title,
@@ -44,14 +44,14 @@ public class ActiveGroupService : IActiveGroupService
             group.GoalSum,
             group.GoalSum == null
                 ? null
-                : (double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / (double)group.GoalSum,
+                : group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / group.GoalSum.Value,
             group.Actives.Sum(y => y.Count),
             group.Actives.Sum(y => y.BuyPrice * y.Count),
-            (decimal)((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate),
+            group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate,
             group.Actives.Sum(y => y.BuyPrice) != 0
-                ? ((double)group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
-                   - (double)group.Actives.Sum(y => y.BuyPrice * y.Count))
-                  / (double)group.Actives.Sum(y => y.BuyPrice * y.Count)
+                ? (group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
+                   - group.Actives.Sum(y => y.BuyPrice * y.Count))
+                  / group.Actives.Sum(y => y.BuyPrice * y.Count)
                 : 0,
             group.DateCreation);
     }
@@ -61,7 +61,7 @@ public class ActiveGroupService : IActiveGroupService
         User user,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         return await groups.Select(x => new ActiveGroupResponse(
             x.Id,
@@ -71,14 +71,14 @@ public class ActiveGroupService : IActiveGroupService
             x.GoalSum,
             x.GoalSum == null
                 ? null
-                : (double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / (double)x.GoalSum,
+                : x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / x.GoalSum.Value,
             x.Actives.Sum(y => y.Count),
             x.Actives.Sum(y => y.BuyPrice * y.Count),
-            (decimal)((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate),
+            x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate,
             x.Actives.Sum(y => y.BuyPrice) != 0
-                ? ((double)x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
-                   - (double)x.Actives.Sum(y => y.BuyPrice * y.Count))
-                  / (double)x.Actives.Sum(y => y.BuyPrice * y.Count)
+                ? (x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
+                   - x.Actives.Sum(y => y.BuyPrice * y.Count))
+                  / x.Actives.Sum(y => y.BuyPrice * y.Count)
                 : 0,
             x.DateCreation)).ToListAsync(cancellationToken);
     }
@@ -125,7 +125,7 @@ public class ActiveGroupService : IActiveGroupService
         User user,
         CancellationToken cancellationToken = default)
     {
-        double rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
         IQueryable<ActiveGroup> groups = _context.Entry(user)
             .Collection(x => x.ActiveGroups)
@@ -137,7 +137,7 @@ public class ActiveGroupService : IActiveGroupService
 
         int activesCount = actives.Sum(x => x.Count);
         decimal buyPriceSum = actives.Sum(x => x.BuyPrice * x.Count);
-        decimal latestPriceSum = (decimal)((double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate);
+        decimal latestPriceSum = actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
 
         List<Game> games = actives
             .Select(x => x.Skin.Game)
@@ -149,7 +149,7 @@ public class ActiveGroupService : IActiveGroupService
                 item.Title,
                 activesCount == 0
                     ? 0
-                    : (double)actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / activesCount,
+                    : actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / (decimal)activesCount,
                 actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
 
         List<ActiveGroupsGameInvestmentSumResponse> gamesInvestmentSumResponse = games.Select(item =>
@@ -157,8 +157,8 @@ public class ActiveGroupService : IActiveGroupService
                 item.Title,
                 buyPriceSum == 0
                     ? 0
-                    : (double)(actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count)
-                               / buyPriceSum),
+                    : actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count)
+                      / buyPriceSum,
                 actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count))).ToList();
 
         List<ActiveGroupsGameCurrentSumResponse> gamesCurrentSumResponse = games.Select(item =>
@@ -166,12 +166,11 @@ public class ActiveGroupService : IActiveGroupService
                 item.Title,
                 latestPriceSum == 0
                     ? 0
-                    : (double)actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Skin.CurrentPrice * x.Count)
+                    : actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Skin.CurrentPrice * x.Count)
                       * rate
-                      / (double)latestPriceSum,
-                (decimal)((double)actives.Where(x => x.Skin.GameId == item.Id)
-                              .Sum(x => x.Skin.CurrentPrice * x.Count)
-                          * rate))).ToList();
+                      / latestPriceSum,
+                actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Skin.CurrentPrice * x.Count)
+                * rate)).ToList();
 
         return new ActiveGroupsStatisticResponse(activesCount, buyPriceSum, latestPriceSum,
             gamesCountResponse, gamesInvestmentSumResponse, gamesCurrentSumResponse);
@@ -201,9 +200,9 @@ public class ActiveGroupService : IActiveGroupService
             .Select(x => new ActiveGroupDynamicResponse(x.Id, x.DateUpdate, x.Sum))
             .ToListAsync(cancellationToken);
 
-        double changePeriod = (double)(dynamic.Count == 0 || dynamic.First().Sum == 0
+        decimal changePeriod = dynamic.Count == 0 || dynamic.First().Sum == 0
             ? 0
-            : (dynamic.Last().Sum - dynamic.First().Sum) / dynamic.First().Sum);
+            : (dynamic.Last().Sum - dynamic.First().Sum) / dynamic.First().Sum;
 
         return new ActiveGroupDynamicStatsResponse(changePeriod, dynamic);
     }

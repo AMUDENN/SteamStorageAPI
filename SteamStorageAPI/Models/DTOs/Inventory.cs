@@ -18,12 +18,12 @@ public record InventoriesResponse(
 
 public record InventoryGameCountResponse(
     string GameTitle,
-    double Percentage,
+    decimal Percentage,
     int Count);
 
 public record InventoryGameSumResponse(
     string GameTitle,
-    double Percentage,
+    decimal Percentage,
     decimal Sum);
 
 public record InventoriesStatisticResponse(

@@ -49,7 +49,10 @@ public class UsersController : Controller
             new Roles.SetRoleRequest(request.UserId, request.RoleId),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "users" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "users"
+        });
     }
 
     #endregion Methods

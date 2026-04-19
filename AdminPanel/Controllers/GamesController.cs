@@ -57,7 +57,10 @@ public class GamesController : Controller
             new Games.PostGameRequest(request.SteamGameId, request.IconUrlHash),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "games" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "games"
+        });
     }
 
     [HttpPost]
@@ -72,7 +75,10 @@ public class GamesController : Controller
             new Games.PutGameRequest(request.GameId, request.IconUrlHash, request.Title),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "games" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "games"
+        });
     }
 
     [HttpPost]
@@ -87,7 +93,10 @@ public class GamesController : Controller
             new Games.DeleteGameRequest(request.GameId),
             cancellationToken);
 
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new { tab = "games" });
+        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        {
+            tab = "games"
+        });
     }
 
     #endregion Methods

@@ -36,12 +36,12 @@
         <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.18.0"/>
         <PackageReference Include="Quartz.Extensions.Hosting" Version="3.18.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0"/>
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.0-beta.1"/>
-        <PackageReference Include="YamlDotNet" Version="17.0.1" />
+        <PackageReference Include="YamlDotNet" Version="17.0.1"/>
     </ItemGroup>
 
     <ItemGroup>
