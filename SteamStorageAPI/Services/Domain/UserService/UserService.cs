@@ -60,7 +60,7 @@ public class UserService : IUserService
             || user.IconUrl is null
             || user.IconUrlMedium is null
             || user.IconUrlFull is null
-            || user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.Now.AddDays(-1))
+            || user.DateUpdate.HasValue && user.DateUpdate.Value < DateTime.UtcNow.AddDays(-1))
         {
             HttpClient client = _httpClientFactory.CreateClient();
             SteamUserResult? steamUserResult =
@@ -74,7 +74,7 @@ public class UserService : IUserService
                 user.IconUrl = steamUser?.avatar?.Replace("https://avatars.steamstatic.com/", string.Empty);
                 user.IconUrlMedium = steamUser?.avatarmedium?.Replace("https://avatars.steamstatic.com/", string.Empty);
                 user.IconUrlFull = steamUser?.avatarfull?.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.DateUpdate = DateTime.Now;
+                user.DateUpdate = DateTime.UtcNow;
             }
         }
 

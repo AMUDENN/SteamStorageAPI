@@ -56,7 +56,7 @@ public class FileController : ControllerBase
 
         return File(fileBytes,
             "application/octet-stream",
-            $"{DateTime.Now:dd.MM.yyyy#hh.mm}.xlsx");
+            $"{DateTime.UtcNow:dd.MM.yyyy#hh.mm}.xlsx");
     }
 
     #endregion GET

@@ -36,7 +36,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError($"Error passed to the global handler: {exception.Message}");
+        _logger.LogError("Error passed to the global handler: {ExceptionMessage}", exception.Message);
 
         ProblemDetails problemDetails = new()
         {
@@ -54,8 +54,8 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Title = ex.StatusCode.ToString();
                 break;
             default:
-                problemDetails.Status = StatusCodes.Status400BadRequest;
-                problemDetails.Title = "BadRequest";
+                problemDetails.Status = StatusCodes.Status500InternalServerError;
+                problemDetails.Title = "InternalServerError";
                 break;
         }
 

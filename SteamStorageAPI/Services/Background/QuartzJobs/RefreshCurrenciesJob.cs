@@ -54,7 +54,7 @@ public class RefreshCurrenciesJob : IJob
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error updating currency exchange rate: {ex.Message}");
+                _logger.LogError("Error updating currency exchange rate: {ExMessage}", ex.Message);
 
                 await Task.Delay(_config.BackgroundServices.RefreshCurrencies.ErrorDelayMs,
                     context.CancellationToken);

@@ -4,6 +4,7 @@ using LoginWebApp.Utilities.Config;
 using LoginWebApp.Utilities.TokenHub;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Primitives;
 
 namespace LoginWebApp.Controllers;
 
@@ -49,7 +50,7 @@ public class TokenController : Controller
     public async Task<IActionResult> SetToken([FromBody] SetTokenRequest request)
     {
         if (string.IsNullOrEmpty(_internalApiKey)
-            || !Request.Headers.TryGetValue(InternalApiKeyHeader, out var providedKey)
+            || !Request.Headers.TryGetValue(InternalApiKeyHeader, out StringValues providedKey)
             || providedKey != _internalApiKey)
             return Unauthorized();
 

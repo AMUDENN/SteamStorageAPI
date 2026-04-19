@@ -219,7 +219,7 @@ public class ActiveGroupService : IActiveGroupService
             Description = request.Description,
             Colour = request.Colour,
             GoalSum = request.GoalSum,
-            DateCreation = DateTime.Now
+            DateCreation = DateTime.UtcNow
         }, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);

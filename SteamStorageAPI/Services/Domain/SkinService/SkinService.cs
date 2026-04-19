@@ -60,9 +60,9 @@ public class SkinService : ISkinService
             return skins.OrderBy(x => x.Id);
 
         // Compute dates once — EF will pass them as parameters in SQL,
-        // rather than recalculating DateTime.Now on every row
-        DateTime cutoff7 = DateTime.Now.AddDays(-7);
-        DateTime cutoff30 = DateTime.Now.AddDays(-30);
+        // rather than recalculating DateTime.UtcNow on every row
+        DateTime cutoff7 = DateTime.UtcNow.AddDays(-7);
+        DateTime cutoff30 = DateTime.UtcNow.AddDays(-30);
 
         return orderName switch
         {
@@ -134,12 +134,12 @@ public class SkinService : ISkinService
             .Collection(x => x.SkinsDynamics)
             .Query()
             .AsNoTracking()
-            .Where(x => x.DateUpdate > DateTime.Now.AddDays(-30).Date)
+            .Where(x => x.DateUpdate > DateTime.UtcNow.AddDays(-30).Date)
             .OrderBy(x => x.DateUpdate)
             .ToListAsync(cancellationToken);
 
         List<SkinsDynamic> dynamic7 = dynamic30
-            .Where(x => x.DateUpdate > DateTime.Now.AddDays(-7).Date)
+            .Where(x => x.DateUpdate > DateTime.UtcNow.AddDays(-7).Date)
             .ToList();
 
         decimal change7D = dynamic7.Count == 0
@@ -166,8 +166,8 @@ public class SkinService : ISkinService
     {
         decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
 
-        DateTime cutoff30 = DateTime.Now.AddDays(-30).Date;
-        DateTime cutoff7 = DateTime.Now.AddDays(-7).Date;
+        DateTime cutoff30 = DateTime.UtcNow.AddDays(-30).Date;
+        DateTime cutoff7 = DateTime.UtcNow.AddDays(-7).Date;
 
         List<Skin> skinList = await skins
             .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30))

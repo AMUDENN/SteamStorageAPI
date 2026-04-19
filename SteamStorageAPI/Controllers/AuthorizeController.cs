@@ -164,7 +164,11 @@ public class AuthorizeController : ControllerBase
 
         await client.PostAsJsonAsync(
             $"{_tokenAddress}SetToken",
-            new { Group = group, Token = jwt },
+            new
+            {
+                Group = group,
+                Token = jwt
+            },
             cancellationToken);
 
         return $"{_tokenAddress}Token";

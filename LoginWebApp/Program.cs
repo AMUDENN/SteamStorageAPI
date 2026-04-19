@@ -17,7 +17,7 @@ public static class Program
         //Initialize config
         string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
         if (configPath is null) throw new Exception("Path to configuration file not set");
-        
+
         AppConfig config = ConfigurationReader.Read(configPath);
         builder.Services.AddSingleton(config);
 

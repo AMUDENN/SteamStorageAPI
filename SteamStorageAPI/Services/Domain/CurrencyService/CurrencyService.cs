@@ -42,7 +42,7 @@ public class CurrencyService : ICurrencyService
             currency.Mark,
             currency.CultureInfo,
             lastDynamic?.Price ?? 0,
-            lastDynamic?.DateUpdate ?? DateTime.Now);
+            lastDynamic?.DateUpdate ?? DateTime.UtcNow);
     }
 
     public async Task<decimal> GetCurrencyExchangeRateAsync(
@@ -71,7 +71,7 @@ public class CurrencyService : ICurrencyService
                 x.CultureInfo,
                 x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).Select(y => y.Price).FirstOrDefault(),
                 x.CurrencyDynamics.OrderByDescending(y => y.DateUpdate).Select(y => (DateTime?)y.DateUpdate)
-                    .FirstOrDefault() ?? DateTime.Now));
+                    .FirstOrDefault() ?? DateTime.UtcNow));
 
         return new CurrenciesResponse(await currencies.CountAsync(cancellationToken), currencies);
     }
@@ -165,7 +165,7 @@ public class CurrencyService : ICurrencyService
             throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "A currency with this Id does not exist");
 
-        DateTime since = DateTime.Now.AddDays(-30);
+        DateTime since = DateTime.UtcNow.AddDays(-30);
 
         List<CurrencyDynamicResponse> dynamics = await _context.CurrencyDynamics
             .AsNoTracking()

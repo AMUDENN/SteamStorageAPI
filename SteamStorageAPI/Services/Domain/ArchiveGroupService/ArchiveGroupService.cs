@@ -162,7 +162,7 @@ public class ArchiveGroupService : IArchiveGroupService
             Title = request.Title,
             Description = request.Description,
             Colour = request.Colour,
-            DateCreation = DateTime.Now
+            DateCreation = DateTime.UtcNow
         }, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
