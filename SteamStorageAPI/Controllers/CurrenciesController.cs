@@ -110,7 +110,7 @@ public class CurrenciesController : ControllerBase
     /// <summary>
     /// Add a new currency
     /// </summary>
-    /// <response code="200">The currency was successfully added</response>
+    /// <response code="201">The currency was successfully added</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="499">The operation was cancelled</response>
     [Authorize(Roles = nameof(Role.Roles.Admin))]
@@ -120,7 +120,7 @@ public class CurrenciesController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         await _currencyService.PostCurrencyAsync(request, cancellationToken);
-        return Ok();
+        return Created();
     }
 
     #endregion POST

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using SteamStorageAPI.Utilities.Config;
 
 namespace SteamStorageAPI.Utilities.HealthCheck.Tools;
 

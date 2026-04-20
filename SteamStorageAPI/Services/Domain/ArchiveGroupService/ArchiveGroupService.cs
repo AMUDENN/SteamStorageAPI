@@ -111,15 +111,15 @@ public class ArchiveGroupService : IArchiveGroupService
             .Include(x => x.Archives).ThenInclude(x => x.Skin).ThenInclude(x => x.Game)
             .SelectMany(x => x.Archives);
 
-        List<Game> games = archives
+        List<Game> games = await archives
             .Select(x => x.Skin.Game)
             .GroupBy(x => x.Id)
             .Select(g => g.First())
-            .ToList();
+            .ToListAsync(cancellationToken);
 
-        int archivesCount = archives.Sum(x => x.Count);
-        decimal buySum = archives.Sum(x => x.BuyPrice * x.Count);
-        decimal soldSum = archives.Sum(x => x.SoldPrice * x.Count);
+        int archivesCount = await archives.SumAsync(x => x.Count, cancellationToken);
+        decimal buySum = await archives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken);
+        decimal soldSum = await archives.SumAsync(x => x.SoldPrice * x.Count, cancellationToken);
 
         List<ArchiveGroupsGameCountResponse> gamesCountResponse = games.Select(item =>
             new ArchiveGroupsGameCountResponse(

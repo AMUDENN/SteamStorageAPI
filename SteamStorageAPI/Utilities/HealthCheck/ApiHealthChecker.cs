@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using SteamStorageAPI.Utilities.Config;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
 
 namespace SteamStorageAPI.Utilities.HealthCheck;
@@ -9,9 +8,7 @@ public class ApiHealthChecker : BaseHealthChecker
     #region Constructor
 
     public ApiHealthChecker(IHttpClientFactory httpClientFactory)
-        : base(httpClientFactory)
-    {
-    }
+        : base(httpClientFactory) {}
 
     #endregion Constructor
 

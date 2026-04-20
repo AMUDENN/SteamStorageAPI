@@ -26,7 +26,7 @@ public class AuthorizeService : IAuthorizeService
     private readonly string _tokenAddress;
     private readonly string _internalApiKey;
 
-    private const string InternalApiKeyHeader = "X-Internal-Api-Key";
+    private const string INTERNAL_API_KEY_HEADER = "X-Internal-Api-Key";
 
     #endregion Fields
 
@@ -61,14 +61,16 @@ public class AuthorizeService : IAuthorizeService
             return user;
 
         Role role = await _context.Roles.FirstAsync(x => x.Title == nameof(Role.Roles.User), cancellationToken);
+        Page startPage = await _context.Pages.FirstAsync(cancellationToken);
+        Currency currency = await _context.Currencies.FirstAsync(x => x.IsBase, cancellationToken);
 
         user = new User
         {
             SteamId = steamId,
             RoleId = role.Id,
             Role = role,
-            StartPageId = Page.BASE_START_PAGE_ID,
-            CurrencyId = Currency.BASE_CURRENCY_ID,
+            StartPageId = startPage.Id,
+            CurrencyId = currency.Id,
             DateRegistration = DateTime.UtcNow
         };
 
@@ -134,7 +136,7 @@ public class AuthorizeService : IAuthorizeService
     {
         using HttpClient client = _httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(10);
-        client.DefaultRequestHeaders.Add(InternalApiKeyHeader, _internalApiKey);
+        client.DefaultRequestHeaders.Add(INTERNAL_API_KEY_HEADER, _internalApiKey);
 
         await client.PostAsJsonAsync(
             $"{_tokenAddress}SetToken",
@@ -157,7 +159,7 @@ public class AuthorizeService : IAuthorizeService
 
     public string? ExchangeAuthCode(string authCode)
     {
-        if (!_memoryCache.TryGetValue<string>(authCode, out string? jwt))
+        if (!_memoryCache.TryGetValue(authCode, out string? jwt))
             return null;
         _memoryCache.Remove(authCode);
         return jwt;

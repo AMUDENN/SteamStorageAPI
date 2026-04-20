@@ -53,7 +53,7 @@ public class CurrenciesController : Controller
         AddCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PostAsync(
             ApiConstants.ApiMethods.PostCurrency,
@@ -75,7 +75,7 @@ public class CurrenciesController : Controller
         PutCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PutAsync(
             ApiConstants.ApiMethods.PutCurrencyInfo,
@@ -97,7 +97,7 @@ public class CurrenciesController : Controller
         DeleteCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.DeleteAsync(
             ApiConstants.ApiMethods.DeleteCurrency,

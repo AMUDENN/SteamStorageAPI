@@ -62,17 +62,17 @@ public class RefreshCurrenciesService : IRefreshCurrenciesService
             return;
         }
 
-        Currency baseCurrency = currencies.FirstOrDefault(x => x.Id == Currency.BASE_CURRENCY_ID)
-                                ?? throw new InvalidOperationException("Base currency missing from database");
+        Currency baseCurrency = currencies.FirstOrDefault(x => x.IsBase)
+                                ?? throw new InvalidOperationException("Base currency is not set in database");
 
         Game game = await _context.Games
-                        .FirstOrDefaultAsync(x => x.Id == Game.BASE_GAME_ID, cancellationToken)
-                    ?? throw new InvalidOperationException("No games found in database");
+                        .FirstOrDefaultAsync(x => x.IsBase, cancellationToken)
+                    ?? throw new InvalidOperationException("Base game is not set in database");
 
         using HttpClient client = _httpClientFactory.CreateClient();
 
         SteamSkinResponse? skinResponse = await client.GetFromJsonAsync<SteamSkinResponse>(
-            _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId), cancellationToken);
+            _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId, baseCurrency.SteamCurrencyId), cancellationToken);
 
         AssetDescription? skinResult = skinResponse?.results?.FirstOrDefault()?.asset_description;
         if (skinResult?.market_hash_name is null)

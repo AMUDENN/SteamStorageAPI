@@ -53,7 +53,7 @@ public class GamesController : ControllerBase
     /// <summary>
     /// Add a new game
     /// </summary>
-    /// <response code="200">The game was successfully added</response>
+    /// <response code="201">The game was successfully added</response>
     /// <response code="400">An error occurred during method execution (see description)</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="499">The operation was cancelled</response>
@@ -64,7 +64,7 @@ public class GamesController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         await _gameService.PostGameAsync(request, cancellationToken);
-        return Ok();
+        return Created();
     }
 
     #endregion POST

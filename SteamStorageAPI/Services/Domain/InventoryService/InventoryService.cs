@@ -63,14 +63,14 @@ public class InventoryService : IInventoryService
 
         return new InventoriesResponse(inventoriesCount,
             pagesCount,
-            await Task.WhenAll(page
-                .Select(async x => new InventoryResponse(
+            page
+                .Select(x => new InventoryResponse(
                     x.Id,
-                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                    _skinService.GetBaseSkinResponse(x.Skin),
                     x.Count,
                     x.Skin.CurrentPrice * rate,
                     x.Skin.CurrentPrice * rate * x.Count
-                ))).WaitAsync(cancellationToken));
+                )));
     }
 
     public async Task<InventoriesStatisticResponse> GetInventoriesStatisticAsync(
@@ -207,7 +207,7 @@ public class InventoryService : IInventoryService
             await _context.SaveChangesAsync(cancellationToken);
 
             List<InventoryDescription> validItems = (response.descriptions ?? [])
-                .Where(x => !(x is { marketable: 0, tradable: 0 }))
+                .Where(x => x is not { marketable: 0, tradable: 0 })
                 .ToList();
 
             List<string> hashNames = validItems

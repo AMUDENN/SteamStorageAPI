@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
 
@@ -37,7 +38,7 @@ public class SteamMarketHealthChecker : IHealthCheck
         try
         {
             HttpClient client = _httpClientFactory.CreateClient();
-            Skin? skin = _context.Skins.FirstOrDefault();
+            Skin? skin = await _context.Skins.FirstOrDefaultAsync(cancellationToken);
             if (skin is null) return HealthCheckResult.Healthy("Cannot check HealthStatus");
             string marketUrl = _steamApiUrlBuilder.GetSkinInfoUrl(skin.MarketHashName);
             HttpResponseMessage response = await client.GetAsync(marketUrl, cancellationToken);

@@ -9,10 +9,12 @@
       - "8081:80"
     volumes:
       - ./SteamStorageAPI/.config.yaml:/app/.config.yaml:ro
+    networks:
+      - steamstorage-network
     build:
       context: .
       dockerfile: SteamStorageAPI/Dockerfile
-  
+
   loginwebapp:
     image: loginwebapp
     environment:
@@ -23,10 +25,12 @@
       - "8083:80"
     volumes:
       - ./LoginWebApp/.config.yaml:/app/.config.yaml:ro
+    networks:
+      - steamstorage-network
     build:
       context: .
       dockerfile: LoginWebApp/Dockerfile
-  
+
   adminpanel:
     image: adminpanel
     environment:
@@ -36,6 +40,8 @@
       - STEAMSTORAGE_API_PUBLIC_HOST=localhost:8081
     ports:
       - "8085:80"
+    networks:
+      - steamstorage-network
     build:
       context: .
       dockerfile: AdminPanel/Dockerfile
@@ -52,6 +58,8 @@
       - "--storage.tsdb.retention.time=30d"
     depends_on:
       - steamstorage.api
+    networks:
+      - steamstorage-network
 
   grafana:
     image: grafana/grafana:latest
@@ -63,6 +71,15 @@
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+    networks:
+      - steamstorage-network
+
+networks:
+  steamstorage-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.0.0/24"
 
 volumes:
   prometheus_data:

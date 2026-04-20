@@ -63,6 +63,7 @@ public class RateLimitConfig
     public int HttpStatusCode { get; set; } = 429;
     public string RealIpHeader { get; set; } = "X-Forwarded-For";
     public string ClientIdHeader { get; set; } = "X-ClientId";
+    public List<string> IpWhiteList { get; set; } = [];
     public List<RateLimitRule> Rules { get; set; } = [];
 }
 

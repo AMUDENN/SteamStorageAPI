@@ -67,7 +67,7 @@ public class AdminPanelController : Controller
         if (result is null)
             return RedirectToAction(nameof(AccessDenied));
 
-        _cookieUserService.SetCookiesToken(result.Token, cancellationToken);
+        _cookieUserService.SetCookiesToken(result.Token);
         return RedirectToAction(nameof(AdminPanel));
     }
 
@@ -80,7 +80,7 @@ public class AdminPanelController : Controller
         AdminPanelRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         Users.HasAccessToAdminPanelResponse? hasAccess = await _apiClient.GetAsync<Users.HasAccessToAdminPanelResponse>(
             ApiConstants.ApiMethods.GetHasAccessToAdminPanel,
@@ -137,7 +137,7 @@ public class AdminPanelController : Controller
         [FromQuery] int currencyId,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         Currencies.CurrencyDynamicsResponse? dynamics =
             await _apiClient.GetAsync<Currencies.CurrencyDynamicsResponse, Currencies.GetCurrencyDynamicsRequest>(
@@ -154,7 +154,7 @@ public class AdminPanelController : Controller
     public async Task<IActionResult> UsersCountByCurrencyProxy(
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         Statistics.UsersCountByCurrencyResponse? result =
             await _apiClient.GetAsync<Statistics.UsersCountByCurrencyResponse>(
@@ -171,7 +171,7 @@ public class AdminPanelController : Controller
         [FromQuery] int gameId,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         Skins.SteamSkinsCountResponse? skinsCountResponse =
             await _apiClient.GetAsync<Skins.SteamSkinsCountResponse, Skins.GetSteamSkinsCountRequest>(
@@ -195,7 +195,7 @@ public class AdminPanelController : Controller
 
     public async Task<IActionResult> HealthProxy(CancellationToken cancellationToken = default)
     {
-        string? token = _cookieUserService.GetCookiesToken(cancellationToken);
+        string? token = _cookieUserService.GetCookiesToken();
 
         using HttpClient client = _httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(10);

@@ -7,11 +7,6 @@ public interface IGameService
     Task<GamesResponse> GetGamesAsync(
         CancellationToken cancellationToken = default);
 
-    Task<bool> IsGameIconExistsAsync(
-        int steamGameId,
-        string iconUrlHash,
-        CancellationToken cancellationToken = default);
-
     Task PostGameAsync(
         PostGameRequest request,
         CancellationToken cancellationToken = default);

@@ -35,15 +35,14 @@ public class ActiveService : IActiveService
 
     #region Methods
 
-    private async Task<ActiveResponse> MapToResponseAsync(
+    private ActiveResponse MapToResponse(
         Active active,
-        decimal rate,
-        CancellationToken cancellationToken = default)
+        decimal rate)
     {
         return new ActiveResponse(
             active.Id,
             active.GroupId,
-            await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
+            _skinService.GetBaseSkinResponse(active.Skin),
             active.BuyDate,
             active.Count,
             active.BuyPrice,
@@ -63,7 +62,7 @@ public class ActiveService : IActiveService
         CancellationToken cancellationToken = default)
     {
         decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-        return await MapToResponseAsync(active, rate, cancellationToken);
+        return MapToResponse(active, rate);
     }
 
     public async Task<ActiveResponse> GetActiveInfoAsync(
@@ -103,8 +102,7 @@ public class ActiveService : IActiveService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        IEnumerable<ActiveResponse> responses = await Task.WhenAll(
-            page.Select(x => MapToResponseAsync(x, rate, cancellationToken)));
+        IEnumerable<ActiveResponse> responses = page.Select(x => MapToResponse(x, rate));
 
         return new ActivesResponse(activesCount, pagesCount, responses);
     }

@@ -60,7 +60,7 @@ public class GameService : IGameService
         CancellationToken cancellationToken = default)
     {
         using HttpClient client = _httpClientFactory.CreateClient();
-        SteamGameResponse? steamResponse =
+        SteamGameResponse steamResponse =
             await client.GetFromJsonAsync<SteamGameResponse>(_steamApiUrlBuilder.GetGameInfoUrl(request.SteamGameId),
                 cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status400BadRequest, "Invalid game id provided");

@@ -187,7 +187,7 @@ public class SkinsController : ControllerBase
     /// <summary>
     /// Import a single skin from Steam
     /// </summary>
-    /// <response code="200">The skin was successfully added</response>
+    /// <response code="201">The skin was successfully added</response>
     /// <response code="400">An error occurred during method execution (see description)</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="404">No game with the given Id exists</response>
@@ -199,7 +199,7 @@ public class SkinsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         await _skinService.PostSkinAsync(request, cancellationToken);
-        return Ok();
+        return Created();
     }
 
     /// <summary>

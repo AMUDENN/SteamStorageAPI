@@ -27,6 +27,8 @@ rateLimit:
   httpStatusCode: 429
   realIpHeader: "X-Forwarded-For"
   clientIdHeader: "X-ClientId"
+  ipWhiteList:
+    - "172.20.0.0/24"
   rules:
     - endpoint: "get:/api/health-*"
       period: "1s"

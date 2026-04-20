@@ -62,7 +62,7 @@ public class ArchivesController : ControllerBase
                           ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                               "No archive item with the given Id exists");
 
-        return Ok(await _archiveService.GetArchiveResponseAsync(archive, cancellationToken));
+        return Ok(_archiveService.GetArchiveResponse(archive));
     }
 
     /// <summary>
@@ -116,9 +116,9 @@ public class ArchivesController : ControllerBase
             user, request.GroupId, request.GameId, request.Filter);
 
         return Ok(new ArchivesStatisticResponse(
-            archives.Sum(x => x.Count),
-            archives.Sum(x => x.BuyPrice * x.Count),
-            archives.Sum(x => x.SoldPrice * x.Count)));
+            await archives.SumAsync(x => x.Count, cancellationToken),
+            await archives.SumAsync(x => x.BuyPrice * x.Count, cancellationToken),
+            await archives.SumAsync(x => x.SoldPrice * x.Count, cancellationToken)));
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public class ArchivesController : ControllerBase
     /// <summary>
     /// Add an archive item
     /// </summary>
-    /// <response code="200">The archive item was successfully added</response>
+    /// <response code="201">The archive item was successfully added</response>
     /// <response code="400">An error occurred during method execution (see description)</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="404">No group with the given Id exists, no item with the given Id exists, or the user was not found</response>
@@ -197,7 +197,7 @@ public class ArchivesController : ControllerBase
 
         await _archiveService.PostArchiveAsync(user, request, cancellationToken);
 
-        return Ok();
+        return Created();
     }
 
     #endregion POST

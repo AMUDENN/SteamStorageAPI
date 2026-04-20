@@ -50,7 +50,7 @@ public class GamesController : Controller
         AddGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PostAsync(
             ApiConstants.ApiMethods.PostGame,
@@ -68,7 +68,7 @@ public class GamesController : Controller
         PutGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PutAsync(
             ApiConstants.ApiMethods.PutGameInfo,
@@ -86,7 +86,7 @@ public class GamesController : Controller
         DeleteGameRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.DeleteAsync(
             ApiConstants.ApiMethods.DeleteGame,

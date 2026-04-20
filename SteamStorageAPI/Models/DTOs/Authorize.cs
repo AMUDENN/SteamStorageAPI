@@ -9,9 +9,6 @@ public record AuthUrlResponse(
     string Url,
     string Group);
 
-public record CookieAuthResponse(
-    string Token);
-
 public record SteamAuthRequest(
     [FromQuery(Name = "requestInfo")] string RequestInfo,
     [FromQuery(Name = "openid.ns")] string Ns,
@@ -28,9 +25,6 @@ public record SteamAuthRequest(
     string AssocHandle,
     [FromQuery(Name = "openid.signed")] string Signed,
     [FromQuery(Name = "openid.sig")] string Sig);
-
-public record CheckCookieAuthRequest(
-    long SteamId);
 
 public record ExchangeTokenResponse(
     string Token);

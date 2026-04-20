@@ -25,11 +25,11 @@ public class CookiesUserService : ICookiesUserService
 
     #region Methods
 
-    public void SetCookiesToken(string? token, CancellationToken cancellationToken = default)
+    public void SetCookiesToken(string? token)
     {
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(JWT_COOKIES, token ?? string.Empty);
     }
-    public string? GetCookiesToken(CancellationToken cancellationToken = default)
+    public string? GetCookiesToken()
     {
         string? token = null;
         _httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue(JWT_COOKIES, out token);

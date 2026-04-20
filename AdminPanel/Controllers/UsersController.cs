@@ -42,7 +42,7 @@ public class UsersController : Controller
         SetRoleRequest request,
         CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PutAsync(
             ApiConstants.ApiMethods.SetRole,

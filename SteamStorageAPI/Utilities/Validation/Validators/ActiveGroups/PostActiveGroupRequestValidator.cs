@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Tools;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
@@ -20,6 +22,6 @@ public sealed class PostActiveGroupRequestValidator : AbstractValidator<PostActi
 
         RuleFor(expression => expression.GoalSum)
             .GreaterThanOrEqualTo(0).WithMessage("The financial goal cannot be less than 0")
-            .LessThan(1000000000000).WithMessage("The financial goal cannot be greater than 999999999999");
+            .LessThan(ValidationConstants.MaxPrice).WithMessage("The financial goal cannot be greater than 999999999999");
     }
 }

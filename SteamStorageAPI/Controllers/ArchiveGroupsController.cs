@@ -143,7 +143,7 @@ public class ArchiveGroupsController : ControllerBase
     /// <summary>
     /// Add a new archive group
     /// </summary>
-    /// <response code="200">The group was successfully added</response>
+    /// <response code="201">The group was successfully added</response>
     /// <response code="400">An error occurred during method execution (see description)</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="404">The user was not found</response>
@@ -160,7 +160,7 @@ public class ArchiveGroupsController : ControllerBase
 
         await _archiveGroupService.PostArchiveGroupAsync(user, request, cancellationToken);
 
-        return Ok();
+        return Created();
     }
 
     #endregion POST

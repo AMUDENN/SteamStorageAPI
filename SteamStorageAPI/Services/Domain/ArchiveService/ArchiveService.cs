@@ -31,13 +31,12 @@ public class ArchiveService : IArchiveService
 
     #region Methods
 
-    public async Task<ArchiveResponse> GetArchiveResponseAsync(
-        Archive archive,
-        CancellationToken cancellationToken = default)
+    public ArchiveResponse GetArchiveResponse(
+        Archive archive)
     {
         return new ArchiveResponse(archive.Id,
             archive.GroupId,
-            await _skinService.GetBaseSkinResponseAsync(archive.Skin, cancellationToken),
+            _skinService.GetBaseSkinResponse(archive.Skin),
             archive.BuyDate,
             archive.SoldDate,
             archive.Count,
@@ -65,11 +64,11 @@ public class ArchiveService : IArchiveService
 
         return new ArchivesResponse(archivesCount,
             pagesCount,
-            await Task.WhenAll(archiveList
-                .Select(async x => new ArchiveResponse(
+            archiveList
+                .Select(x => new ArchiveResponse(
                     x.Id,
                     x.GroupId,
-                    await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
+                    _skinService.GetBaseSkinResponse(x.Skin),
                     x.BuyDate,
                     x.SoldDate,
                     x.Count,
@@ -77,7 +76,7 @@ public class ArchiveService : IArchiveService
                     x.SoldPrice,
                     x.SoldPrice * x.Count,
                     x.BuyPrice == 0 ? 0 : (x.SoldPrice - x.BuyPrice) / x.BuyPrice,
-                    x.Description))).WaitAsync(cancellationToken));
+                    x.Description)));
     }
 
     public IQueryable<Archive> GetArchivesQuery(

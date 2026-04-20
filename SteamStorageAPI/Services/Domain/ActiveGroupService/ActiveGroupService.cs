@@ -42,7 +42,7 @@ public class ActiveGroupService : IActiveGroupService
             group.Description,
             $"#{group.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
             group.GoalSum,
-            group.GoalSum == null || group.GoalSum == 0
+            group.GoalSum is null or 0
                 ? null
                 : group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / group.GoalSum.Value,
             group.Actives.Sum(y => y.Count),

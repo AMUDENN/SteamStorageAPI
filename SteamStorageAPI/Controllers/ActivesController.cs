@@ -169,7 +169,7 @@ public class ActivesController : ControllerBase
     /// <summary>
     /// Add an active item
     /// </summary>
-    /// <response code="200">The active item was successfully added</response>
+    /// <response code="201">The active item was successfully added</response>
     /// <response code="400">An error occurred during method execution (see description)</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="404">No group with the given Id exists, no item with the given Id exists, or the user was not found</response>
@@ -186,7 +186,7 @@ public class ActivesController : ControllerBase
 
         await _activeService.PostActiveAsync(user, request, cancellationToken);
 
-        return Ok();
+        return Created();
     }
 
     #endregion POST

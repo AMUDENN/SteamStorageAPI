@@ -101,10 +101,7 @@ public class AuthorizeController : ControllerBase
         User user = await _authorizeService.GetOrCreateUserAsync(steamId, cancellationToken);
         string jwt = _jwtProvider.Generate(user);
 
-        if (returnTo is not null)
-            return Redirect(_authorizeService.DeliverTokenViaAuthCode(returnTo, jwt));
-
-        return Redirect(await _authorizeService.DeliverTokenViaSignalRAsync(group, jwt, cancellationToken));
+        return returnTo is not null ? Redirect(_authorizeService.DeliverTokenViaAuthCode(returnTo, jwt)) : Redirect(await _authorizeService.DeliverTokenViaSignalRAsync(group, jwt, cancellationToken));
     }
 
     /// <summary>

@@ -165,7 +165,7 @@ public class ActiveGroupsController : ControllerBase
     /// <summary>
     /// Add a new active group
     /// </summary>
-    /// <response code="200">The group was successfully added</response>
+    /// <response code="201">The group was successfully added</response>
     /// <response code="400">An error occurred during method execution (see description)</response>
     /// <response code="401">The user is not authorized</response>
     /// <response code="404">The user was not found</response>
@@ -182,7 +182,7 @@ public class ActiveGroupsController : ControllerBase
 
         await _activeGroupService.PostActiveGroupAsync(user, request, cancellationToken);
 
-        return Ok();
+        return Created();
     }
 
     #endregion POST

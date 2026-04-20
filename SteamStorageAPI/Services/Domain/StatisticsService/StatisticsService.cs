@@ -39,11 +39,11 @@ public class StatisticsService : IStatisticsService
         IQueryable<Archive> archives = GetArchivesQuery(user);
 
         decimal investedSum =
-            actives.Sum(y => y.BuyPrice * y.Count) + archives.Sum(y => y.BuyPrice * y.Count);
+            await actives.SumAsync(y => y.BuyPrice * y.Count, cancellationToken) + await archives.SumAsync(y => y.BuyPrice * y.Count, cancellationToken);
 
         decimal currentSum =
-            actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate
-            + archives.Sum(y => y.SoldPrice * y.Count);
+            await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate
+            + await archives.SumAsync(y => y.SoldPrice * y.Count, cancellationToken);
 
         decimal percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
@@ -62,8 +62,8 @@ public class StatisticsService : IStatisticsService
         decimal financialGoal = user.GoalSum ?? 0;
 
         decimal currentSum =
-            actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate
-            + archives.Sum(y => y.SoldPrice * y.Count);
+            await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate
+            + await archives.SumAsync(y => y.SoldPrice * y.Count, cancellationToken);
 
         decimal percentage = financialGoal == 0 ? 1 : currentSum / financialGoal;
 
@@ -78,9 +78,9 @@ public class StatisticsService : IStatisticsService
 
         IQueryable<Active> actives = GetActivesQuery(user);
 
-        int count = actives.Sum(x => x.Count);
-        decimal investedSum = actives.Sum(y => y.BuyPrice * y.Count);
-        decimal currentSum = actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
+        int count = await actives.SumAsync(x => x.Count, cancellationToken);
+        decimal investedSum = await actives.SumAsync(y => y.BuyPrice * y.Count, cancellationToken);
+        decimal currentSum = await actives.SumAsync(x => x.Skin.CurrentPrice * x.Count, cancellationToken) * rate;
         decimal percentage = investedSum == 0 ? 1 : (currentSum - investedSum) / investedSum;
 
         return new ActiveStatisticResponse(count, currentSum, percentage);
@@ -92,9 +92,9 @@ public class StatisticsService : IStatisticsService
     {
         IQueryable<Archive> archives = GetArchivesQuery(user);
 
-        int count = archives.Sum(x => x.Count);
-        decimal investedSum = archives.Sum(y => y.BuyPrice * y.Count);
-        decimal soldSum = archives.Sum(y => y.SoldPrice * y.Count);
+        int count = await archives.SumAsync(x => x.Count, cancellationToken);
+        decimal investedSum = await archives.SumAsync(y => y.BuyPrice * y.Count, cancellationToken);
+        decimal soldSum = await archives.SumAsync(y => y.SoldPrice * y.Count, cancellationToken);
         decimal percentage = investedSum == 0 ? 1 : (soldSum - investedSum) / investedSum;
 
         return new ArchiveStatisticResponse(count, soldSum, percentage);
@@ -134,10 +134,10 @@ public class StatisticsService : IStatisticsService
         User user,
         CancellationToken cancellationToken = default)
     {
-        int activesCount = GetActivesQuery(user).Sum(x => x.Count);
-        int archivesCount = GetArchivesQuery(user).Sum(x => x.Count);
-        int inventoriesCount = _context.Entry(user).Collection(u => u.Inventories).Query()
-            .AsNoTracking().Sum(x => x.Count);
+        int activesCount = await GetActivesQuery(user).SumAsync(x => x.Count, cancellationToken);
+        int archivesCount = await GetArchivesQuery(user).SumAsync(x => x.Count, cancellationToken);
+        int inventoriesCount = await _context.Entry(user).Collection(u => u.Inventories).Query()
+            .AsNoTracking().SumAsync(x => x.Count, cancellationToken);
 
         return new ItemsCountResponse(activesCount + archivesCount + inventoriesCount);
     }

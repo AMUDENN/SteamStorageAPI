@@ -10,7 +10,7 @@ public interface ISteamApiUrlBuilder
     string GetSkinIconUrl(string urlHash);
     string GetSkinMarketUrl(int appId, string marketHashName);
     string GetSkinsUrl(int appId, int currencyId, int count, int start);
-    string GetMostPopularSkinUrl(int appId);
+    string GetMostPopularSkinUrl(int appId, int steamCurrencyId);
     string GetSkinInfoUrl(string marketHashName);
     string GetInventoryUrl(long steamProfileId, int appId, int count);
     string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId);

@@ -32,7 +32,7 @@ public class JobsController : Controller
     [HttpPost]
     public async Task<IActionResult> TriggerRefreshSkinDynamics(CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PostAsync(
             ApiConstants.ApiMethods.TriggerJob,
@@ -53,7 +53,7 @@ public class JobsController : Controller
     [HttpPost]
     public async Task<IActionResult> TriggerRefreshCurrencies(CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PostAsync(
             ApiConstants.ApiMethods.TriggerJob,
@@ -74,7 +74,7 @@ public class JobsController : Controller
     [HttpPost]
     public async Task<IActionResult> TriggerRefreshActiveGroupsDynamics(CancellationToken cancellationToken = default)
     {
-        _apiClient.Token = _cookieUserService.GetCookiesToken(cancellationToken) ?? string.Empty;
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
 
         await _apiClient.PostAsync(
             ApiConstants.ApiMethods.TriggerJob,

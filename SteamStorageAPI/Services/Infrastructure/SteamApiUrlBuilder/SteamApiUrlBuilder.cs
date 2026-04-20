@@ -76,9 +76,9 @@ public class SteamApiUrlBuilder : ISteamApiUrlBuilder
             $"{STEAM_COMMUNITY_BASE}/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
     }
 
-    public string GetMostPopularSkinUrl(int appId)
+    public string GetMostPopularSkinUrl(int appId, int steamCurrencyId)
     {
-        return GetSkinsUrl(appId, Currency.BASE_CURRENCY_ID, 1, 0);
+        return GetSkinsUrl(appId, steamCurrencyId, 1, 0);
     }
 
     public string GetSkinInfoUrl(string marketHashName)

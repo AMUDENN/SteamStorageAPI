@@ -55,7 +55,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
     {
         Currency baseCurrency =
             await _context.Currencies
-                .FirstOrDefaultAsync(x => x.Id == Currency.BASE_CURRENCY_ID, cancellationToken)
+                .FirstOrDefaultAsync(x => x.IsBase, cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
                 "The base currency is missing from the database");
 
@@ -164,13 +164,10 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
             SteamSkinResponse? response =
                 await httpResponse.Content.ReadFromJsonAsync<SteamSkinResponse>(cancellationToken);
 
-            if (response is null || !response.success)
-            {
-                _logger.LogWarning("Steam returned success=false or null body (start={Start})", start);
-                return (null, TimeSpan.Zero);
-            }
-
-            return (response, TimeSpan.Zero);
+            if (response is not null && response.success)
+                return (response, TimeSpan.Zero);
+            _logger.LogWarning("Steam returned success=false or null body (start={Start})", start);
+            return (null, TimeSpan.Zero);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -259,7 +256,7 @@ public class RefreshSkinDynamicsService : IRefreshSkinDynamicsService
         if (retryAfter > TimeSpan.Zero)
             return (int)retryAfter.TotalMilliseconds;
 
-        int backoffMs = (int)Math.Min(BACKOFF_BASE_MS * Math.Pow(2, consecutiveErrors - 1), BACKOFF_MAX_MS);
+        int backoffMs = (int)Math.Clamp(BACKOFF_BASE_MS * Math.Pow(2, consecutiveErrors - 1), 0, BACKOFF_MAX_MS);
         int jitter = Random.Shared.Next(0, backoffMs / 5);
         return backoffMs + jitter;
     }

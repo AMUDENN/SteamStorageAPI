@@ -8,10 +8,10 @@ public class JwtOptions
 {
     #region Properties
 
-    public string Key { get; init; }
-    public string Issuer { get; init; }
-    public string Audience { get; init; }
-    public int ExpiresDays { get; init; }
+    private string Key { get; }
+    public string Issuer { get; }
+    public string Audience { get; }
+    public int ExpiresDays { get; }
 
     #endregion Properties
 

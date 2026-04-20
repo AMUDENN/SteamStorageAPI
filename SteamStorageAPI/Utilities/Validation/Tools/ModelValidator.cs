@@ -27,12 +27,12 @@ public sealed class ModelValidator : IModelValidator
     public IEnumerable<ModelValidationResult> Validate(ModelValidationContext context)
     {
         if (context.Model is null || Activator.CreateInstance(_validatorType) is not IValidator validator)
-            return Enumerable.Empty<ModelValidationResult>();
+            return [];
 
         ValidationResult? result = validator.Validate(GetValidationContext(context.Model));
 
         return result.IsValid
-            ? Enumerable.Empty<ModelValidationResult>()
+            ? []
             : result.Errors.Select(error => new ModelValidationResult(error.PropertyName, error.ErrorMessage));
     }
 

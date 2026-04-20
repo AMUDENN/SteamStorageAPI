@@ -13,7 +13,7 @@ public class TokenController : Controller
 {
     #region Constants
 
-    private const string InternalApiKeyHeader = "X-Internal-Api-Key";
+    private const string INTERNAL_API_KEY_HEADER = "X-Internal-Api-Key";
 
     #endregion Constants
 
@@ -50,7 +50,7 @@ public class TokenController : Controller
     public async Task<IActionResult> SetToken([FromBody] SetTokenRequest request)
     {
         if (string.IsNullOrEmpty(_internalApiKey)
-            || !Request.Headers.TryGetValue(InternalApiKeyHeader, out StringValues providedKey)
+            || !Request.Headers.TryGetValue(INTERNAL_API_KEY_HEADER, out StringValues providedKey)
             || providedKey != _internalApiKey)
             return Unauthorized();
 

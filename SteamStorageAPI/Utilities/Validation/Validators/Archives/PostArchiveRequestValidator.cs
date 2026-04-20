@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Tools;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Archives;
 
@@ -15,11 +17,11 @@ public sealed class PostArchiveRequestValidator : AbstractValidator<PostArchiveR
 
         RuleFor(expression => expression.BuyPrice)
             .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Buy price cannot be less than 0.01")
-            .LessThan(1000000000000).WithMessage("Buy price cannot be greater than 999999999999");
+            .LessThan(ValidationConstants.MaxPrice).WithMessage("Buy price cannot be greater than 999999999999");
 
         RuleFor(expression => expression.SoldPrice)
             .GreaterThanOrEqualTo((decimal)0.01).WithMessage("Sold price cannot be less than 0.01")
-            .LessThan(1000000000000).WithMessage("Sold price cannot be greater than 999999999999");
+            .LessThan(ValidationConstants.MaxPrice).WithMessage("Sold price cannot be greater than 999999999999");
 
         RuleFor(expression => expression.SkinId)
             .GreaterThan(0).WithMessage("Skin Id cannot be less than 1");

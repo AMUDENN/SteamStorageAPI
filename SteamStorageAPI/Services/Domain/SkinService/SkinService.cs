@@ -51,7 +51,7 @@ public class SkinService : ISkinService
             .ToListAsync(cancellationToken);
     }
 
-    private IQueryable<Skin> ApplySkinOrder(
+    private static IQueryable<Skin> ApplySkinOrder(
         IQueryable<Skin> skins,
         SkinOrderName? orderName,
         bool? isAscending)
@@ -77,41 +77,40 @@ public class SkinService : ISkinService
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff7)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (x.CurrentPrice - y.Price) / y.Price)
                         .FirstOrDefault() ?? 0)
                 : skins.OrderByDescending(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff7)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (x.CurrentPrice - y.Price) / y.Price)
                         .FirstOrDefault() ?? 0),
             SkinOrderName.Change30D => isAscending.Value
                 ? skins.OrderBy(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff30)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (x.CurrentPrice - y.Price) / y.Price)
                         .FirstOrDefault() ?? 0)
                 : skins.OrderByDescending(x =>
                     x.SkinsDynamics
                         .Where(y => y.DateUpdate > cutoff30)
                         .OrderBy(y => y.DateUpdate)
-                        .Select(y => y.Price == 0 ? (decimal?)0 : (decimal?)((x.CurrentPrice - y.Price) / y.Price))
+                        .Select(y => y.Price == 0 ? (decimal?)0 : (x.CurrentPrice - y.Price) / y.Price)
                         .FirstOrDefault() ?? 0),
             _ => skins.OrderBy(x => x.Id)
         };
     }
 
-    public Task<BaseSkinResponse> GetBaseSkinResponseAsync(
-        Skin skin,
-        CancellationToken cancellationToken = default)
+    public BaseSkinResponse GetBaseSkinResponse(
+        Skin skin)
     {
-        return Task.FromResult(new BaseSkinResponse(
+        return new BaseSkinResponse(
             skin.Id,
             _steamApiUrlBuilder.GetSkinIconUrl(skin.SkinIconUrl),
             skin.Title,
             skin.MarketHashName,
-            _steamApiUrlBuilder.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName)));
+            _steamApiUrlBuilder.GetSkinMarketUrl(skin.Game.SteamGameId, skin.MarketHashName));
     }
 
     public async Task<SkinResponse> GetSkinResponseAsync(
@@ -151,7 +150,7 @@ public class SkinService : ISkinService
             : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price;
 
         return new SkinResponse(
-            await GetBaseSkinResponseAsync(skin, cancellationToken),
+            GetBaseSkinResponse(skin),
             skin.CurrentPrice * rate,
             change7D,
             change30D,
@@ -173,7 +172,7 @@ public class SkinService : ISkinService
             .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > cutoff30))
             .ToListAsync(cancellationToken);
 
-        return await Task.WhenAll(skinList.Select(async x => {
+        return skinList.Select(x => {
             List<SkinsDynamic> dynamics7 = x.SkinsDynamics
                 .Where(y => y.DateUpdate > cutoff7)
                 .OrderBy(y => y.DateUpdate)
@@ -192,12 +191,12 @@ public class SkinService : ISkinService
                 : (x.CurrentPrice - dynamics30.First().Price) / dynamics30.First().Price;
 
             return new SkinResponse(
-                await GetBaseSkinResponseAsync(x, cancellationToken),
+                GetBaseSkinResponse(x),
                 x.CurrentPrice * rate,
                 change7D,
                 change30D,
                 markedSkinsIds.Any(y => y == x.Id));
-        })).WaitAsync(cancellationToken);
+        });
     }
 
     public async Task<List<SkinDynamicResponse>> GetSkinDynamicsResponseAsync(
@@ -273,8 +272,7 @@ public class SkinService : ISkinService
 
         return new BaseSkinsResponse(
             skinList.Count,
-            await Task.WhenAll(skinList.Select(async x => await GetBaseSkinResponseAsync(x, cancellationToken)))
-                .WaitAsync(cancellationToken));
+            skinList.Select(GetBaseSkinResponse));
     }
 
     public async Task<SkinsResponse> GetSkinsAsync(
@@ -354,10 +352,12 @@ public class SkinService : ISkinService
                     ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                         "A game with this Id does not exist");
 
+        Currency currency = await _context.Currencies.FirstAsync(cancellationToken);
+
         using HttpClient client = _httpClientFactory.CreateClient();
         SteamSkinResponse response =
             await client.GetFromJsonAsync<SteamSkinResponse>(
-                _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId), cancellationToken)
+                _steamApiUrlBuilder.GetMostPopularSkinUrl(game.SteamGameId, currency.SteamCurrencyId), cancellationToken)
             ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
                 "An error occurred while retrieving data from the Steam server");
 
@@ -401,8 +401,7 @@ public class SkinService : ISkinService
 
         SkinResult result = response.results.First();
 
-        if (result.asset_description is null
-            || result.asset_description.market_hash_name is null
+        if (result.asset_description?.market_hash_name is null
             || result.name is null
             || result.asset_description.icon_url is null)
             throw new HttpResponseException(StatusCodes.Status400BadRequest,

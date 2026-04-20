@@ -8,7 +8,7 @@
     <link rel="stylesheet" type="text/css" href="~/admin/css/main-style.css"/>
     <link rel="stylesheet" type="text/css" href="~/admin/css/layout-style.css"/>
     <link rel="shortcut icon" type="image/x-icon" href="https://steamstorage.hb.ru-msk.vkcs.cloud/icons/favicon32.ico"/>
-    @RenderSection("PageStyles", false)
+    @await RenderSectionAsync("PageStyles", false)
 </head>
 
 <body>
@@ -47,7 +47,7 @@
     </div>
 </div>
 
-@RenderSection("Scripts", false)
+@await RenderSectionAsync("Scripts", false)
 </body>
 
 </html>

@@ -25,7 +25,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     #region Records
 
-    public record ErrorResponse(string Message);
+    private record ErrorResponse(string Message);
 
     #endregion Records
 

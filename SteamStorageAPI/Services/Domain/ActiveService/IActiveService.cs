@@ -6,11 +6,6 @@ namespace SteamStorageAPI.Services.Domain.ActiveService;
 
 public interface IActiveService
 {
-    Task<ActiveResponse> GetActiveResponseAsync(
-        Active active,
-        User user,
-        CancellationToken cancellationToken = default);
-
     Task<ActiveResponse> GetActiveInfoAsync(
         User user,
         int activeId,

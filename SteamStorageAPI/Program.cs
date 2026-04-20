@@ -1,13 +1,12 @@
+using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using SteamStorageAPI.Middlewares;
-using SteamStorageAPI.Utilities.JWT;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using SteamStorageAPI.Middlewares;
 using SteamStorageAPI.Models.DBEntities;
 using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Services.Infrastructure.JwtProvider;
@@ -16,6 +15,8 @@ using SteamStorageAPI.Utilities.Config;
 using SteamStorageAPI.Utilities.ExceptionHandlers;
 using SteamStorageAPI.Utilities.Extensions;
 using SteamStorageAPI.Utilities.HealthCheck.Tools;
+using SteamStorageAPI.Utilities.JWT;
+using RateLimitRule=AspNetCoreRateLimit.RateLimitRule;
 
 namespace SteamStorageAPI;
 
@@ -46,7 +47,7 @@ public static class Program
 
 
         JwtOptions jwtOptions = new(config);
-        builder.Services.AddSingleton<JwtOptions>(jwtOptions);
+        builder.Services.AddSingleton(jwtOptions);
 
         //SteamAPI Service
         builder.Services.AddSingleton<ISteamApiUrlBuilder, SteamApiUrlBuilder>();
@@ -92,8 +93,9 @@ public static class Program
             options.HttpStatusCode = config.RateLimit.HttpStatusCode;
             options.RealIpHeader = config.RateLimit.RealIpHeader;
             options.ClientIdHeader = config.RateLimit.ClientIdHeader;
+            options.IpWhitelist = config.RateLimit.IpWhiteList;
             options.GeneralRules = config.RateLimit.Rules
-                .Select(r => new AspNetCoreRateLimit.RateLimitRule
+                .Select(r => new RateLimitRule
                 {
                     Endpoint = r.Endpoint,
                     Period = r.Period,

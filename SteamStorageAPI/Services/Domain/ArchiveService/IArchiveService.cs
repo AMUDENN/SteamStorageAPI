@@ -5,9 +5,8 @@ namespace SteamStorageAPI.Services.Domain.ArchiveService;
 
 public interface IArchiveService
 {
-    Task<ArchiveResponse> GetArchiveResponseAsync(
-        Archive archive,
-        CancellationToken cancellationToken = default);
+    ArchiveResponse GetArchiveResponse(
+        Archive archive);
 
     Task<ArchivesResponse> GetArchivesResponseAsync(
         IQueryable<Archive> archives,
