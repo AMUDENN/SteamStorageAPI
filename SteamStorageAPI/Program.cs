@@ -165,7 +165,16 @@ public static class Program
         });
 
         // Prometheus metrics
-        app.MapPrometheusScrapingEndpoint("/api/metrics");
+        string metricsBearer = $"Bearer {app.Services.GetRequiredService<AppConfig>().App.InternalApiKey}";
+        app.MapPrometheusScrapingEndpoint("/api/metrics")
+           .AddEndpointFilter(async (ctx, next) =>
+           {
+               string? authHeader = ctx.HttpContext.Request.Headers.Authorization.FirstOrDefault();
+               if (authHeader == metricsBearer)
+                   return await next(ctx);
+               ctx.HttpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+               return null;
+           });
 
         // HealthChecks
         app.MapHealthChecks("/api/health-all", CreateHealthCheckOptions(_ => true))

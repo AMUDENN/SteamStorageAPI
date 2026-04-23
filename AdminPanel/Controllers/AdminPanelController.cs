@@ -193,6 +193,43 @@ public class AdminPanelController : Controller
             "application/json");
     }
 
+    public async Task<IActionResult> CurrenciesProxy(CancellationToken cancellationToken = default)
+    {
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
+
+        Currencies.CurrenciesResponse? response = await _apiClient.GetAsync<Currencies.CurrenciesResponse>(
+            ApiConstants.ApiMethods.GetCurrencies, cancellationToken);
+
+        return Json(response ?? new Currencies.CurrenciesResponse(0, []));
+    }
+
+    public async Task<IActionResult> GamesProxy(CancellationToken cancellationToken = default)
+    {
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
+
+        Games.GamesResponse? response = await _apiClient.GetAsync<Games.GamesResponse>(
+            ApiConstants.ApiMethods.GetGames, cancellationToken);
+
+        return Json(response ?? new Games.GamesResponse(0, []));
+    }
+
+    public async Task<IActionResult> UsersProxy(
+        [FromQuery] int? page,
+        [FromQuery] int? userId,
+        [FromQuery] string? nickname,
+        [FromQuery] int? steamId,
+        CancellationToken cancellationToken = default)
+    {
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
+
+        Users.UsersResponse? response = await _apiClient.GetAsync<Users.UsersResponse, Users.GetUsersRequest>(
+            ApiConstants.ApiMethods.GetUsers,
+            new Users.GetUsersRequest(page ?? 1, 10, userId, nickname, steamId),
+            cancellationToken);
+
+        return Json(response ?? new Users.UsersResponse(0, 1, []));
+    }
+
     public async Task<IActionResult> HealthProxy(CancellationToken cancellationToken = default)
     {
         string? token = _cookieUserService.GetCookiesToken();

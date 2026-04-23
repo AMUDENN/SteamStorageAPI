@@ -33,63 +33,54 @@ public class JobsController : Controller
     public async Task<IActionResult> TriggerRefreshSkinDynamics(CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.PostAsync(
-            ApiConstants.ApiMethods.TriggerJob,
-            new Jobs.TriggerJobRequest(Jobs.JobName.RefreshSkinDynamicsJob),
-            cancellationToken);
-
-        TempData["ToastMessage"] = "RefreshSkinDynamics triggered";
-        TempData["ToastType"] = "success";
-        return RedirectToAction(
-            nameof(AdminPanelController.AdminPanel),
-            "AdminPanel",
-            new
-            {
-                tab = "jobs"
-            });
+        try
+        {
+            await _apiClient.PostAsync(
+                ApiConstants.ApiMethods.TriggerJob,
+                new Jobs.TriggerJobRequest(Jobs.JobName.RefreshSkinDynamicsJob),
+                cancellationToken);
+            return Json(new { ok = true, message = "RefreshSkinDynamics triggered" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     [HttpPost]
     public async Task<IActionResult> TriggerRefreshCurrencies(CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.PostAsync(
-            ApiConstants.ApiMethods.TriggerJob,
-            new Jobs.TriggerJobRequest(Jobs.JobName.RefreshCurrenciesJob),
-            cancellationToken);
-
-        TempData["ToastMessage"] = "RefreshCurrencies triggered";
-        TempData["ToastType"] = "success";
-        return RedirectToAction(
-            nameof(AdminPanelController.AdminPanel),
-            "AdminPanel",
-            new
-            {
-                tab = "jobs"
-            });
+        try
+        {
+            await _apiClient.PostAsync(
+                ApiConstants.ApiMethods.TriggerJob,
+                new Jobs.TriggerJobRequest(Jobs.JobName.RefreshCurrenciesJob),
+                cancellationToken);
+            return Json(new { ok = true, message = "RefreshCurrencies triggered" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     [HttpPost]
     public async Task<IActionResult> TriggerRefreshActiveGroupsDynamics(CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.PostAsync(
-            ApiConstants.ApiMethods.TriggerJob,
-            new Jobs.TriggerJobRequest(Jobs.JobName.RefreshActiveGroupsDynamicsJob),
-            cancellationToken);
-
-        TempData["ToastMessage"] = "RefreshActiveGroupsDynamics triggered";
-        TempData["ToastType"] = "success";
-        return RedirectToAction(
-            nameof(AdminPanelController.AdminPanel),
-            "AdminPanel",
-            new
-            {
-                tab = "jobs"
-            });
+        try
+        {
+            await _apiClient.PostAsync(
+                ApiConstants.ApiMethods.TriggerJob,
+                new Jobs.TriggerJobRequest(Jobs.JobName.RefreshActiveGroupsDynamicsJob),
+                cancellationToken);
+            return Json(new { ok = true, message = "RefreshActiveGroupsDynamics triggered" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     #endregion Methods

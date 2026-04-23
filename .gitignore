@@ -366,3 +366,4 @@ FodyWeavers.xsd
 .env
 grafana.env
 **/.config.yaml
+prometheus.yml

@@ -51,16 +51,18 @@ public class GamesController : Controller
         CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.PostAsync(
-            ApiConstants.ApiMethods.PostGame,
-            new Games.PostGameRequest(request.SteamGameId, request.IconUrlHash),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        try
         {
-            tab = "games"
-        });
+            await _apiClient.PostAsync(
+                ApiConstants.ApiMethods.PostGame,
+                new Games.PostGameRequest(request.SteamGameId, request.IconUrlHash),
+                cancellationToken);
+            return Json(new { ok = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     [HttpPost]
@@ -69,16 +71,18 @@ public class GamesController : Controller
         CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.PutAsync(
-            ApiConstants.ApiMethods.PutGameInfo,
-            new Games.PutGameRequest(request.GameId, request.IconUrlHash, request.Title),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        try
         {
-            tab = "games"
-        });
+            await _apiClient.PutAsync(
+                ApiConstants.ApiMethods.PutGameInfo,
+                new Games.PutGameRequest(request.GameId, request.IconUrlHash, request.Title),
+                cancellationToken);
+            return Json(new { ok = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     [HttpPost]
@@ -87,16 +91,18 @@ public class GamesController : Controller
         CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.DeleteAsync(
-            ApiConstants.ApiMethods.DeleteGame,
-            new Games.DeleteGameRequest(request.GameId),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        try
         {
-            tab = "games"
-        });
+            await _apiClient.DeleteAsync(
+                ApiConstants.ApiMethods.DeleteGame,
+                new Games.DeleteGameRequest(request.GameId),
+                cancellationToken);
+            return Json(new { ok = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     #endregion Methods

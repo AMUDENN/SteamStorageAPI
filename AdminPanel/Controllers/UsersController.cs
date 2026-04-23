@@ -43,16 +43,18 @@ public class UsersController : Controller
         CancellationToken cancellationToken = default)
     {
         _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
-
-        await _apiClient.PutAsync(
-            ApiConstants.ApiMethods.SetRole,
-            new Roles.SetRoleRequest(request.UserId, request.RoleId),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanelController.AdminPanel), "AdminPanel", new
+        try
         {
-            tab = "users"
-        });
+            await _apiClient.PutAsync(
+                ApiConstants.ApiMethods.SetRole,
+                new Roles.SetRoleRequest(request.UserId, request.RoleId),
+                cancellationToken);
+            return Json(new { ok = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
+        }
     }
 
     #endregion Methods

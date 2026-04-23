@@ -23,7 +23,6 @@ function switchTab(tabName, pushState = true) {
 }
 
 // ── Context menus ─────────────────────────────────────────
-// Single shared menu outside any transformed ancestor to avoid position:fixed bugs
 
 let _activeCtxMenu = null;
 let _ctxRow = null;
@@ -87,11 +86,195 @@ function closeModal() {
     document.getElementById('modal-overlay').classList.remove('open');
 }
 
+// ── AJAX helpers ──────────────────────────────────────────
+
+async function fetchPost(url, fields) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams(fields)
+    });
+    return res.json();
+}
+
+async function submitAjax(url, fields, successMsg, onSuccess) {
+    try {
+        const data = await fetchPost(url, fields);
+        if (data.ok) {
+            closeModal();
+            showToast(successMsg, 'success');
+            if (onSuccess) await onSuccess();
+        } else {
+            showToast(data.error || 'Error', 'error');
+        }
+    } catch (err) {
+        showToast(err.message || 'Network error', 'error');
+    }
+}
+
+// ── Table rendering helpers ───────────────────────────────
+
+function fmtDate(str) {
+    if (!str) return '—';
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+}
+
+function currencyRowHtml(c) {
+    const price = c.price != null
+        ? Number(c.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+        : '—';
+    return `<div class="table-data-row cols-currency"
+         data-id="${ea(c.id)}"
+         data-mark="${ea(c.mark ?? '')}"
+         data-title="${ea(c.title ?? '')}"
+         data-culture="${ea(c.cultureInfo ?? '')}">
+        <span class="cell">${escHtml(String(c.id ?? ''))}</span>
+        <span class="cell">${escHtml(c.title ?? '')}</span>
+        <span class="cell">${escHtml(String(c.steamCurrencyId ?? ''))}</span>
+        <span class="cell">${escHtml(c.mark ?? '')}</span>
+        <span class="cell">${escHtml(c.cultureInfo ?? '')}</span>
+        <span class="cell">${escHtml(price)}</span>
+        <span class="cell">${escHtml(fmtDate(c.dateUpdate))}</span>
+        <div class="ctx-menu-wrap">
+            <button class="btn-row-menu" type="button"
+                    onclick="toggleCtxMenu(this,'currency',event)" aria-label="Actions">⋮</button>
+        </div>
+    </div>`;
+}
+
+function gameRowHtml(g) {
+    return `<div class="table-data-row cols-game"
+         data-id="${ea(g.id)}"
+         data-title="${ea(g.title ?? '')}"
+         data-icon-url="${ea(g.gameIconUrl ?? '')}">
+        <span class="cell"><img src="${escHtml(g.gameIconUrl ?? '')}" alt=""/></span>
+        <span class="cell">${escHtml(String(g.id ?? ''))}</span>
+        <span class="cell">${escHtml(g.title ?? '')}</span>
+        <span class="cell">${escHtml(String(g.steamGameId ?? ''))}</span>
+        <a class="cell-link" href="${escHtml(g.gameIconUrl ?? '')}" target="_blank">Icon</a>
+        <div class="ctx-menu-wrap">
+            <button class="btn-row-menu" type="button"
+                    onclick="toggleCtxMenu(this,'game',event)" aria-label="Actions">⋮</button>
+        </div>
+    </div>`;
+}
+
+function userRowHtml(u) {
+    return `<div class="table-data-row cols-user"
+         data-user-id="${ea(u.userId)}"
+         data-nickname="${ea(u.nickname ?? '')}"
+         data-steam-id="${ea(u.steamId ?? '')}">
+        <span class="cell"><img src="${escHtml(u.imageUrlFull ?? '')}" alt=""/></span>
+        <span class="cell">${escHtml(String(u.userId ?? ''))}</span>
+        <span class="cell mono">${escHtml(u.steamId ?? '')}</span>
+        <span class="cell">${escHtml(u.nickname ?? '')}</span>
+        <span class="cell">${escHtml(u.role ?? '')}</span>
+        <span class="cell">${escHtml(fmtDate(u.dateRegistration))}</span>
+        <a class="cell-link" href="${escHtml(u.profileUrl ?? '')}" target="_blank">Steam</a>
+        <div class="ctx-menu-wrap">
+            <button class="btn-row-menu" type="button"
+                    onclick="toggleCtxMenu(this,'user',event)" aria-label="Actions">⋮</button>
+        </div>
+    </div>`;
+}
+
+// ── Data refresh ──────────────────────────────────────────
+
+async function refreshCurrencies() {
+    try {
+        const data = await fetch('/admin/AdminPanel/CurrenciesProxy').then(r => r.json());
+        renderCurrenciesTable(data.currencies || []);
+    } catch { /* ignore */ }
+}
+
+async function refreshGames() {
+    try {
+        const data = await fetch('/admin/AdminPanel/GamesProxy').then(r => r.json());
+        renderGamesTable(data.games || []);
+    } catch { /* ignore */ }
+}
+
+async function loadUsers(page, userId, nickname, steamId) {
+    const params = new URLSearchParams({page: page || 1});
+    if (userId) params.set('userId', userId);
+    if (nickname) params.set('nickname', nickname);
+    if (steamId) params.set('steamId', steamId);
+    try {
+        const data = await fetch('/admin/AdminPanel/UsersProxy?' + params).then(r => r.json());
+        renderUsersTable(data, page || 1);
+    } catch { /* ignore */ }
+}
+
+// ── Table render ──────────────────────────────────────────
+
+function renderCurrenciesTable(currencies) {
+    const wrap = document.querySelector('#panel-currencies .table-rows-wrap');
+    if (wrap) wrap.innerHTML = currencies.map(c => currencyRowHtml(c)).join('');
+
+    const header = document.querySelector('#panel-currencies .table-header-row span');
+    if (header) header.textContent = `Currencies (${currencies.length})`;
+
+    const sel = document.getElementById('currency-chart-select');
+    if (sel) {
+        sel.innerHTML = currencies.map(c =>
+            `<option value="${ea(c.id)}" data-title="${ea(c.title ?? '')}">${escHtml(c.title ?? '')} (${escHtml(c.mark ?? '')})</option>`
+        ).join('');
+    }
+
+    const jsonEl = document.getElementById('currencies-json');
+    if (jsonEl) jsonEl.textContent = JSON.stringify(currencies.map(c => ({id: c.id, title: c.title, mark: c.mark})));
+
+    if (_chartsInited && currencies.length > 0) {
+        loadCurrencyDynamics(currencies[0].id, currencies[0].title);
+        loadUsersCountByCurrency();
+    }
+}
+
+function renderGamesTable(games) {
+    const wrap = document.querySelector('#panel-games .table-rows-wrap');
+    if (wrap) wrap.innerHTML = games.map(g => gameRowHtml(g)).join('');
+
+    const header = document.querySelector('#panel-games .table-header-row span');
+    if (header) header.textContent = `Games (${games.length})`;
+
+    const sel = document.getElementById('game-stats-select');
+    if (sel) {
+        sel.innerHTML = games.map(g =>
+            `<option value="${ea(g.id)}">${escHtml(g.title ?? '')}</option>`
+        ).join('');
+        if (games.length > 0) loadGameStats(sel.value);
+    }
+
+    _gameStatsInited = !!games.length;
+}
+
+function renderUsersTable(data, currentPage) {
+    const users = data.users || [];
+    const pagesCount = data.pagesCount || 1;
+
+    const wrap = document.querySelector('#panel-users .table-rows-wrap');
+    if (wrap) wrap.innerHTML = users.map(u => userRowHtml(u)).join('');
+
+    const header = document.querySelector('#panel-users .table-header-row span');
+    if (header) header.textContent = `Users (${users.length} / page)`;
+
+    const input = document.querySelector('.pagination .page-input');
+    if (input) {
+        input.max = String(pagesCount);
+        input.value = String(currentPage || 1);
+    }
+
+    const pageCount = document.querySelector('.page-count');
+    if (pageCount) pageCount.textContent = `/ ${pagesCount}`;
+}
+
 // ── Currency actions ──────────────────────────────────────
 
 function openAddCurrencyModal() {
     openModal('Add currency', `
-        <form method="post" action="/admin/Currencies/AddCurrency">
+        <form id="modal-form">
             <div class="form-grid g-2">
                 <label class="form-label">SteamCurrencyId</label>
                 <input name="steamCurrencyId" class="form-input" type="text" pattern="\\d*" autofocus/>
@@ -105,6 +288,13 @@ function openAddCurrencyModal() {
             <input type="submit" class="btn-submit" value="Add"/>
         </form>
     `);
+    document.getElementById('modal-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type=submit]');
+        if (btn) btn.disabled = true;
+        await submitAjax('/admin/Currencies/AddCurrency', Object.fromEntries(new FormData(e.target)), 'Currency added', refreshCurrencies);
+        if (btn) btn.disabled = false;
+    });
 }
 
 function openCurrencyEdit() {
@@ -113,7 +303,7 @@ function openCurrencyEdit() {
     if (!row) return;
     const {id, mark, title, culture} = row.dataset;
     openModal('Edit currency', `
-        <form method="post" action="/admin/Currencies/PutCurrency">
+        <form id="modal-form">
             <input type="hidden" name="currencyId" value="${ea(id)}"/>
             <div class="form-grid g-2">
                 <label class="form-label">Mark</label>
@@ -126,22 +316,29 @@ function openCurrencyEdit() {
             <input type="submit" class="btn-submit" value="Save"/>
         </form>
     `);
+    document.getElementById('modal-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type=submit]');
+        if (btn) btn.disabled = true;
+        await submitAjax('/admin/Currencies/PutCurrency', Object.fromEntries(new FormData(e.target)), 'Currency updated', refreshCurrencies);
+        if (btn) btn.disabled = false;
+    });
 }
 
-function confirmDeleteCurrency() {
+async function confirmDeleteCurrency() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
     const {id, title} = row.dataset;
     if (!confirm(`Delete currency "${title}" (#${id})?`)) return;
-    submitPost('/admin/Currencies/DeleteCurrency', {currencyId: id});
+    await submitAjax('/admin/Currencies/DeleteCurrency', {currencyId: id}, `Currency "${title}" deleted`, refreshCurrencies);
 }
 
 // ── Game actions ──────────────────────────────────────────
 
 function openAddGameModal() {
     openModal('Add game', `
-        <form method="post" action="/admin/Games/AddGame">
+        <form id="modal-form">
             <div class="form-grid g-2">
                 <label class="form-label">SteamGameId</label>
                 <input name="steamGameId" class="form-input" type="text" pattern="\\d*" autofocus/>
@@ -151,6 +348,13 @@ function openAddGameModal() {
             <input type="submit" class="btn-submit" value="Add"/>
         </form>
     `);
+    document.getElementById('modal-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type=submit]');
+        if (btn) btn.disabled = true;
+        await submitAjax('/admin/Games/AddGame', Object.fromEntries(new FormData(e.target)), 'Game added', refreshGames);
+        if (btn) btn.disabled = false;
+    });
 }
 
 function openGameEdit() {
@@ -160,7 +364,7 @@ function openGameEdit() {
     const {id, title, iconUrl} = row.dataset;
     const hash = iconUrl ? iconUrl.split('/').pop().replace('.jpg', '') : '';
     openModal('Edit game', `
-        <form method="post" action="/admin/Games/PutGame">
+        <form id="modal-form">
             <input type="hidden" name="gameId" value="${ea(id)}"/>
             <div class="form-grid g-2">
                 <label class="form-label">Title</label>
@@ -171,15 +375,22 @@ function openGameEdit() {
             <input type="submit" class="btn-submit" value="Save"/>
         </form>
     `);
+    document.getElementById('modal-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type=submit]');
+        if (btn) btn.disabled = true;
+        await submitAjax('/admin/Games/PutGame', Object.fromEntries(new FormData(e.target)), 'Game updated', refreshGames);
+        if (btn) btn.disabled = false;
+    });
 }
 
-function confirmDeleteGame() {
+async function confirmDeleteGame() {
     const row = _ctxRow;
     closeCtxMenus();
     if (!row) return;
     const {id, title} = row.dataset;
     if (!confirm(`Delete game "${title}" (#${id})?`)) return;
-    submitPost('/admin/Games/DeleteGame', {gameId: id});
+    await submitAjax('/admin/Games/DeleteGame', {gameId: id}, `Game "${title}" deleted`, refreshGames);
 }
 
 // ── User actions ──────────────────────────────────────────
@@ -194,7 +405,7 @@ function openSetRole() {
         .map(r => `<option value="${ea(String(r.id))}">${escHtml(r.title)}</option>`)
         .join('');
     openModal(`Assign role — ${escHtml(nickname || '')} (#${userId})`, `
-        <form method="post" action="/admin/Users/SetRole">
+        <form id="modal-form">
             <input type="hidden" name="userId" value="${ea(userId)}"/>
             <div class="form-grid g-2">
                 <label class="form-label">Role</label>
@@ -203,23 +414,16 @@ function openSetRole() {
             <input type="submit" class="btn-submit" value="Apply"/>
         </form>
     `);
+    document.getElementById('modal-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type=submit]');
+        if (btn) btn.disabled = true;
+        await submitAjax('/admin/Users/SetRole', Object.fromEntries(new FormData(e.target)), `Role assigned to ${nickname || userId}`, null);
+        if (btn) btn.disabled = false;
+    });
 }
 
 // ── Utilities ─────────────────────────────────────────────
-
-function submitPost(action, fields) {
-    const f = document.createElement('form');
-    f.method = 'post';
-    f.action = action;
-    Object.entries(fields).forEach(([k, v]) => {
-        const inp = document.createElement('input');
-        inp.name = k;
-        inp.value = v;
-        f.appendChild(inp);
-    });
-    document.body.appendChild(f);
-    f.submit();
-}
 
 function ea(str) {
     return String(str ?? '')
@@ -237,8 +441,6 @@ function escHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 }
-
-// ── User filter (server-side via GET form — no client JS needed) ───────────
 
 // ── Game stats ────────────────────────────────────────────
 
@@ -534,25 +736,38 @@ function showToast(message, type = 'info') {
 // ── Pagination ────────────────────────────────────────────
 
 function initPagination() {
-    const form = document.querySelector('.pagination form');
     const input = document.querySelector('.pagination .page-input');
     const plus = document.querySelector('.pagination .btn-page.plus');
     const minus = document.querySelector('.pagination .btn-page.minus');
 
-    if (!form || !input) return;
+    if (!input) return;
 
-    input.addEventListener('change', () => form.submit());
+    const getFilters = () => ({
+        userId: document.querySelector('.user-search-form [name=userId]')?.value || '',
+        nickname: document.querySelector('.user-search-form [name=nickname]')?.value || '',
+        steamId: document.querySelector('.user-search-form [name=steamId]')?.value || ''
+    });
+
+    const go = () => {
+        const {userId, nickname, steamId} = getFilters();
+        loadUsers(input.valueAsNumber || 1, userId, nickname, steamId);
+    };
+
+    input.addEventListener('change', go);
 
     plus?.addEventListener('click', () => {
-        const prev = input.valueAsNumber;
-        input.stepUp();
-        if (input.valueAsNumber !== prev) form.submit();
+        const max = parseInt(input.max) || Infinity;
+        if (input.valueAsNumber < max) {
+            input.stepUp();
+            go();
+        }
     });
 
     minus?.addEventListener('click', () => {
-        const prev = input.valueAsNumber;
-        input.stepDown();
-        if (input.valueAsNumber !== prev) form.submit();
+        if (input.valueAsNumber > 1) {
+            input.stepDown();
+            go();
+        }
     });
 }
 
@@ -572,23 +787,38 @@ document.addEventListener('DOMContentLoaded', () => {
         switchTab(e.state?.tab || 'currencies', false);
     });
 
-    // Close ctx menus on outside click
     document.addEventListener('click', () => closeCtxMenus());
 
-    // Modal
     document.getElementById('modal-overlay')?.addEventListener('click', e => {
         if (e.target.id === 'modal-overlay') closeModal();
     });
 
-    // Health
     document.getElementById('health-refresh')?.addEventListener('click', loadHealthData);
 
-    // Game stats select
     document.getElementById('game-stats-select')?.addEventListener('change', e => {
         loadGameStats(e.target.value);
     });
 
-    // Toast
+    // Job forms — intercept to avoid page reload
+    document.querySelectorAll('#panel-jobs form').forEach(form => {
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = form.querySelector('button[type=submit]');
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            try {
+                const res = await fetch(form.action, {method: 'POST'});
+                const data = await res.json();
+                if (data.ok) showToast(data.message || 'Job triggered', 'success');
+                else showToast(data.error || 'Error', 'error');
+            } catch {
+                showToast('Network error', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '▶ Run'; }
+            }
+        });
+    });
+
+    // Server-side toast (after hard navigation, e.g. auth redirect)
     const toastEl = document.getElementById('server-toast');
     if (toastEl) showToast(toastEl.dataset.message, toastEl.dataset.type || 'info');
 

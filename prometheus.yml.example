@@ -8,3 +8,6 @@ scrape_configs:
       - targets: ["steamstorage.api:80"]
     metrics_path: /api/metrics
     scheme: http
+    authorization:
+      type: Bearer
+      credentials: <your-internal-api-key>

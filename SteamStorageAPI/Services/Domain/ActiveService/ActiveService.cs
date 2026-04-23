@@ -312,7 +312,8 @@ public class ActiveService : IActiveService
             BuyDate = active.BuyDate,
             BuyPrice = active.BuyPrice,
             SoldDate = request.SoldDate,
-            SoldPrice = request.SoldPrice
+            SoldPrice = request.SoldPrice,
+            Description = request.Description
         }, cancellationToken);
 
         if (request.Count >= active.Count)
