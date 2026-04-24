@@ -1,11 +1,11 @@
-# 🎮 SteamStorage
+# SteamStorageAPI
 
 A self-hosted investment tracker for Steam Market items. Build portfolios of active and archived skin positions, track
 price dynamics, monitor aggregated statistics — all against live Steam Market data.
 
 ---
 
-## 📦 Projects
+## Projects
 
 | Project           | Description                                      | Default port |
 |-------------------|--------------------------------------------------|--------------|
@@ -17,7 +17,7 @@ Supporting services: **Prometheus** (`9090`) · **Grafana** (`3000`)
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### High-level overview
 
@@ -38,7 +38,7 @@ SteamStorageAPI
 
 ---
 
-### 🔐 Authentication flow
+### Authentication flow
 
 ```
 User browser
@@ -62,7 +62,7 @@ The token contains three claims: `SteamId`, `UserId`, and `Role`.
 
 ---
 
-### 📁 SteamStorageAPI — project layout
+### SteamStorageAPI — project layout
 
 ```
 SteamStorageAPI/
@@ -91,7 +91,7 @@ SteamStorageAPI/
 
 ---
 
-### 🔄 Request lifecycle
+### Request lifecycle
 
 Every incoming HTTP request passes through the following pipeline in order:
 
@@ -130,7 +130,7 @@ Response
 
 ---
 
-### 🧩 Service layers
+### Service layers
 
 #### Domain services (Scoped)
 
@@ -163,7 +163,7 @@ One service per business aggregate, injected into controllers via constructor DI
 
 ---
 
-### 🗄️ Data model
+### Data model
 
 `SteamStorageContext` (EF Core 10, SQL Server) manages 15 entities:
 
@@ -192,7 +192,7 @@ Key schema decisions:
 
 ---
 
-### ⚙️ Background jobs
+### Background jobs
 
 Jobs are Quartz.NET `IJob` implementations. Because Quartz registers jobs as singletons but EF Core `DbContext` is
 Scoped, each job execution opens its own DI scope via `IServiceScopeFactory.CreateScope()`:
@@ -215,7 +215,7 @@ Back-off on Steam API rate-limit errors: `delay = clamp(BASE_MS × 2^(errors−1
 
 ---
 
-### ✅ Validation
+### Validation
 
 Every request DTO has a corresponding **FluentValidation** validator.  
 Validators are auto-run before the action executes via a custom `IModelValidatorProvider` — the controller never calls
@@ -225,7 +225,7 @@ relevant validators.
 
 ---
 
-### 📊 Observability pipeline
+### Observability pipeline
 
 ```
 SteamStorageAPI
@@ -246,7 +246,7 @@ SteamStorageAPI
 
 ---
 
-## 🚀 Getting started
+## Getting started
 
 ### Prerequisites
 
@@ -355,14 +355,14 @@ docker compose up --build
 
 ---
 
-## 📡 API reference
+## API reference
 
 All endpoints require `Authorization: Bearer <jwt>` unless noted otherwise.  
 Full interactive docs (request/response schemas, try-it-out) available at `/api/swagger` in development mode.
 
 ---
 
-### 🔑 Authorization
+### Authorization
 
 | Method | Endpoint                           | Auth | Description                                                                                      |
 |--------|------------------------------------|------|--------------------------------------------------------------------------------------------------|
@@ -372,7 +372,7 @@ Full interactive docs (request/response schemas, try-it-out) available at `/api/
 
 ---
 
-### 📂 Active groups
+### Active groups
 
 Open-position containers. Each active item belongs to exactly one group.
 
@@ -389,7 +389,7 @@ Open-position containers. Each active item belongs to exactly one group.
 
 ---
 
-### 💼 Actives (open positions)
+### Actives (open positions)
 
 Individual skin positions that are currently held.
 
@@ -407,7 +407,7 @@ Individual skin positions that are currently held.
 
 ---
 
-### 🗄️ Archive groups
+### Archive groups
 
 Closed-position containers. Each archived item belongs to exactly one archive group.
 
@@ -423,7 +423,7 @@ Closed-position containers. Each archived item belongs to exactly one archive gr
 
 ---
 
-### 📦 Archives (closed positions)
+### Archives (closed positions)
 
 Individual skin positions that have been sold.
 
@@ -440,7 +440,7 @@ Individual skin positions that have been sold.
 
 ---
 
-### 💱 Currencies
+### Currencies
 
 Fiat currencies used for price display. Exchange rates are refreshed daily.
 
@@ -457,7 +457,7 @@ Fiat currencies used for price display. Exchange rates are refreshed daily.
 
 ---
 
-### 🎮 Games
+### Games
 
 Steam games whose items can be tracked (CS2, Dota 2, etc.).
 
@@ -470,7 +470,7 @@ Steam games whose items can be tracked (CS2, Dota 2, etc.).
 
 ---
 
-### 🎨 Skins
+### Skins
 
 Steam Market items. Skins are shared across users; only the positions (actives/archives) are per-user.
 
@@ -489,7 +489,7 @@ Steam Market items. Skins are shared across users; only the positions (actives/a
 
 ---
 
-### 🎒 Inventory
+### Inventory
 
 The current user's Steam inventory items.
 
@@ -503,7 +503,7 @@ The current user's Steam inventory items.
 
 ---
 
-### 📊 Statistics
+### Statistics
 
 Cross-cutting statistics endpoints.
 
@@ -520,7 +520,7 @@ Cross-cutting statistics endpoints.
 
 ---
 
-### 👤 Users
+### Users
 
 | Method   | Endpoint                              | Description                                                             |
 |----------|---------------------------------------|-------------------------------------------------------------------------|
@@ -535,7 +535,7 @@ Cross-cutting statistics endpoints.
 
 ---
 
-### 🔖 Roles
+### Roles
 
 | Method | Endpoint              | Description                       |
 |--------|-----------------------|-----------------------------------|
@@ -544,7 +544,7 @@ Cross-cutting statistics endpoints.
 
 ---
 
-### 📄 Pages
+### Pages
 
 Each user can configure a default start page.
 
@@ -556,7 +556,7 @@ Each user can configure a default start page.
 
 ---
 
-### 📥 File export
+### File export
 
 | Method | Endpoint                 | Description                                          |
 |--------|--------------------------|------------------------------------------------------|
@@ -564,7 +564,7 @@ Each user can configure a default start page.
 
 ---
 
-### ⚙️ Jobs
+### Jobs
 
 Manually trigger background jobs. Requires admin role.
 
@@ -574,7 +574,7 @@ Manually trigger background jobs. Requires admin role.
 
 ---
 
-### 🏥 Health checks
+### Health checks
 
 | Endpoint                | Auth | Description                                           |
 |-------------------------|------|-------------------------------------------------------|
@@ -585,7 +585,7 @@ Manually trigger background jobs. Requires admin role.
 
 ---
 
-### 📈 Metrics
+### Metrics
 
 | Endpoint           | Auth                      | Description                                                             |
 |--------------------|---------------------------|-------------------------------------------------------------------------|
@@ -593,7 +593,7 @@ Manually trigger background jobs. Requires admin role.
 
 ---
 
-## 🖥️ Admin panel
+## Admin panel
 
 The Admin Panel (`localhost:8085`) is a server-rendered MVC application with SPA-style tab navigation — switching tabs
 and performing CRUD operations never triggers a full page reload.
@@ -610,7 +610,7 @@ Requires `AdminPanel/.config.yaml` mounted at runtime (see [Getting started](#-g
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Rate limiting
 
@@ -632,7 +632,7 @@ claim, enforced via policy-based authorization.
 
 ---
 
-## 🛠️ Tech stack
+## Tech stack
 
 | Layer            | Technology                            |
 |------------------|---------------------------------------|
