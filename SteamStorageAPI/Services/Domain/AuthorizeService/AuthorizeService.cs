@@ -156,7 +156,7 @@ public class AuthorizeService : IAuthorizeService
             },
             cancellationToken);
 
-        return $"{_tokenAddress}Token";
+        return $"{_tokenAddress}Token?isTokenEmpty=false";
     }
 
     public string DeliverTokenViaAuthCode(string returnTo, string jwt)
