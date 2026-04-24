@@ -108,9 +108,9 @@ public class AuthorizeController : ControllerBase
     /// <response code="400">Invalid or expired auth code</response>
     [HttpGet(Name = "ExchangeToken")]
     [Produces(MediaTypeNames.Application.Json)]
-    public ActionResult<ExchangeTokenResponse> ExchangeToken([FromQuery] string authCode)
+    public ActionResult<ExchangeTokenResponse> ExchangeToken([FromQuery] ExchangeTokenRequest request)
     {
-        string? jwt = _authorizeService.ExchangeAuthCode(authCode);
+        string? jwt = _authorizeService.ExchangeAuthCode(request.AuthCode);
         if (jwt is null)
             return BadRequest("Invalid or expired auth code");
 

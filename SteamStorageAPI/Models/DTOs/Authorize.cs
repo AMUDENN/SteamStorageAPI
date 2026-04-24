@@ -26,5 +26,8 @@ public record SteamAuthRequest(
     [FromQuery(Name = "openid.signed")] string Signed,
     [FromQuery(Name = "openid.sig")] string Sig);
 
+public record ExchangeTokenRequest(
+    string AuthCode);
+
 public record ExchangeTokenResponse(
     string Token);

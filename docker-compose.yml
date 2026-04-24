@@ -1,6 +1,6 @@
 ﻿services:
   steamstorage.api:
-    image: steamstorage.api
+    image: ghcr.io/amudenn/steamstorage-api:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
       - ASPNETCORE_URLS=http://+:80
@@ -11,12 +11,9 @@
       - ./SteamStorageAPI/.config.yaml:/app/.config.yaml:ro
     networks:
       - steamstorage-network
-    build:
-      context: .
-      dockerfile: SteamStorageAPI/Dockerfile
 
   loginwebapp:
-    image: loginwebapp
+    image: ghcr.io/amudenn/loginwebapp:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
       - ASPNETCORE_URLS=http://+:80
@@ -27,12 +24,9 @@
       - ./LoginWebApp/.config.yaml:/app/.config.yaml:ro
     networks:
       - steamstorage-network
-    build:
-      context: .
-      dockerfile: LoginWebApp/Dockerfile
 
   adminpanel:
-    image: adminpanel
+    image: ghcr.io/amudenn/adminpanel:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
       - ASPNETCORE_URLS=http://+:80
@@ -43,9 +37,6 @@
       - ./AdminPanel/.config.yaml:/app/.config.yaml:ro
     networks:
       - steamstorage-network
-    build:
-      context: .
-      dockerfile: AdminPanel/Dockerfile
 
   prometheus:
     image: prom/prometheus:latest

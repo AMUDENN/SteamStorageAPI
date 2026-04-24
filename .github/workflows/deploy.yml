@@ -1,0 +1,31 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Docker"]
+    types: [completed]
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: CR_PAT
+          script: |
+            echo "$CR_PAT" | docker login ghcr.io -u amudenn --password-stdin
+            sudo git -C ~/SteamStorageAPI fetch origin
+            sudo git -C ~/SteamStorageAPI reset --hard origin/master
+            cd ~/SteamStorageAPI
+            docker compose pull
+            sudo docker compose up -d
+        env:
+          CR_PAT: ${{ secrets.CR_PAT }}

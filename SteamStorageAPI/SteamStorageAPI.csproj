@@ -8,6 +8,7 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <ApplicationIcon>wwwroot\img\favicon32.ico</ApplicationIcon>
         <LangVersion>14</LangVersion>
+        <AssemblyVersion>2.0.0</AssemblyVersion>
     </PropertyGroup>
 
     <PropertyGroup>
