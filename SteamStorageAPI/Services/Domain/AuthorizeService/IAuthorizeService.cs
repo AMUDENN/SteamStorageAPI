@@ -20,6 +20,8 @@ public interface IAuthorizeService
         string sig,
         CancellationToken cancellationToken = default);
 
+    string? PopCachedReturnTo(string group);
+
     Task<string> DeliverTokenViaSignalRAsync(string group, string jwt, CancellationToken cancellationToken = default);
 
     string DeliverTokenViaAuthCode(string returnTo, string jwt);

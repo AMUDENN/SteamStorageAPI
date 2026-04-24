@@ -33,8 +33,8 @@ public class CurrencyService : ICurrencyService
             .Collection(s => s.CurrencyDynamics)
             .Query()
             .AsNoTracking()
-            .OrderBy(x => x.DateUpdate)
-            .LastOrDefaultAsync(cancellationToken);
+            .OrderByDescending(x => x.DateUpdate)
+            .FirstOrDefaultAsync(cancellationToken);
 
         return new CurrencyResponse(currency.Id,
             currency.SteamCurrencyId,

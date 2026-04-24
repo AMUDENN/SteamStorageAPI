@@ -13,6 +13,7 @@ public class AuthorizeService : IAuthorizeService
     #region Constants
 
     private static readonly TimeSpan AuthCodeTtl = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan ReturnToTtl = TimeSpan.FromMinutes(5);
 
     #endregion Constants
 
@@ -92,15 +93,23 @@ public class AuthorizeService : IAuthorizeService
 
         string group = Guid.NewGuid().ToString();
         string baseUrl = $"{scheme}://{host}/";
-        string callbackParam = returnTo is null
-            ? group
-            : $"{group}_{returnTo}";
+
+        if (returnTo is not null)
+            _memoryCache.Set($"returnTo:{group}", returnTo, ReturnToTtl);
 
         string url = _steamApiUrlBuilder.GetAuthUrl(
-            $"{baseUrl}api/Authorize/SteamAuthCallback?requestInfo={callbackParam}",
+            $"{baseUrl}api/Authorize/SteamAuthCallback?requestInfo={group}",
             baseUrl);
 
         return (url, group);
+    }
+
+    public string? PopCachedReturnTo(string group)
+    {
+        if (!_memoryCache.TryGetValue($"returnTo:{group}", out string? returnTo))
+            return null;
+        _memoryCache.Remove($"returnTo:{group}");
+        return returnTo;
     }
 
     public async Task<bool> ValidateSteamAuthAsync(

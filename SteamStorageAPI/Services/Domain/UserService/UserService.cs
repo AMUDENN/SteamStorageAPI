@@ -56,24 +56,23 @@ public class UserService : IUserService
         User user,
         CancellationToken cancellationToken = default)
     {
-        if (!user.DateUpdate.HasValue || user.DateUpdate.Value < DateTime.UtcNow.AddDays(-1))
-        {
-            using HttpClient client = _httpClientFactory.CreateClient();
-            SteamUserResult? steamUserResult =
-                await client.GetFromJsonAsync<SteamUserResult>(
-                    _steamApiUrlBuilder.GetUserInfoUrl(user.SteamId), cancellationToken);
+        if (user.DateUpdate.HasValue && user.DateUpdate.Value >= DateTime.UtcNow.AddDays(-1))
+            return GetUserResponse(user);
+        
+        using HttpClient client = _httpClientFactory.CreateClient();
+        SteamUserResult? steamUserResult =
+            await client.GetFromJsonAsync<SteamUserResult>(
+                _steamApiUrlBuilder.GetUserInfoUrl(user.SteamId), cancellationToken);
 
-            if (steamUserResult is not null)
-            {
-                SteamUser? steamUser = steamUserResult.response?.players?.FirstOrDefault();
-                user.Username = steamUser?.personaname;
-                user.IconUrl = steamUser?.avatar?.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.IconUrlMedium = steamUser?.avatarmedium?.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.IconUrlFull = steamUser?.avatarfull?.Replace("https://avatars.steamstatic.com/", string.Empty);
-                user.DateUpdate = DateTime.UtcNow;
-            }
-        }
-
+        if (steamUserResult is null)
+            return GetUserResponse(user);
+        SteamUser? steamUser = steamUserResult.response?.players?.FirstOrDefault();
+        user.Username = steamUser?.personaname;
+        user.IconUrl = steamUser?.avatar?.Replace("https://avatars.steamstatic.com/", string.Empty);
+        user.IconUrlMedium = steamUser?.avatarmedium?.Replace("https://avatars.steamstatic.com/", string.Empty);
+        user.IconUrlFull = steamUser?.avatarfull?.Replace("https://avatars.steamstatic.com/", string.Empty);
+        user.DateUpdate = DateTime.UtcNow;
+                
         await _context.SaveChangesAsync(cancellationToken);
 
         return GetUserResponse(user);

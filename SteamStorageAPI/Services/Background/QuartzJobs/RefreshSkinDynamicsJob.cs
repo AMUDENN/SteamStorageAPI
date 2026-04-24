@@ -4,6 +4,7 @@ using SteamStorageAPI.Utilities.Config;
 
 namespace SteamStorageAPI.Services.Background.QuartzJobs;
 
+[DisallowConcurrentExecution]
 public class RefreshSkinDynamicsJob : IJob
 {
     #region Fields

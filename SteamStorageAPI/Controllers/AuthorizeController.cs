@@ -72,13 +72,7 @@ public class AuthorizeController : ControllerBase
         [FromQuery] SteamAuthRequest steamAuthRequest,
         CancellationToken cancellationToken = default)
     {
-        int separatorIndex = steamAuthRequest.RequestInfo.IndexOf('_');
-        string group = separatorIndex < 0
-            ? steamAuthRequest.RequestInfo
-            : steamAuthRequest.RequestInfo[..separatorIndex];
-        string? returnTo = separatorIndex < 0
-            ? null
-            : steamAuthRequest.RequestInfo[(separatorIndex + 1)..];
+        string group = steamAuthRequest.RequestInfo;
 
         bool authResult = await _authorizeService.ValidateSteamAuthAsync(
             steamAuthRequest.Ns,
@@ -101,7 +95,10 @@ public class AuthorizeController : ControllerBase
         User user = await _authorizeService.GetOrCreateUserAsync(steamId, cancellationToken);
         string jwt = _jwtProvider.Generate(user);
 
-        return returnTo is not null ? Redirect(_authorizeService.DeliverTokenViaAuthCode(returnTo, jwt)) : Redirect(await _authorizeService.DeliverTokenViaSignalRAsync(group, jwt, cancellationToken));
+        string? returnTo = _authorizeService.PopCachedReturnTo(group);
+        return returnTo is not null
+            ? Redirect(_authorizeService.DeliverTokenViaAuthCode(returnTo, jwt))
+            : Redirect(await _authorizeService.DeliverTokenViaSignalRAsync(group, jwt, cancellationToken));
     }
 
     /// <summary>
