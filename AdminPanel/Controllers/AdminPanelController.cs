@@ -55,8 +55,9 @@ public class AdminPanelController : Controller
         if (string.IsNullOrEmpty(authCode))
             return RedirectToAction(nameof(AccessDenied));
 
-        Authorize.ExchangeTokenResponse? result = await _apiClient.GetAsync<Authorize.ExchangeTokenResponse>(
+        Authorize.ExchangeTokenResponse? result = await _apiClient.GetAsync<Authorize.ExchangeTokenResponse, Authorize.ExchangeTokenRequest>(
             ApiConstants.ApiMethods.ExchangeToken,
+            new Authorize.ExchangeTokenRequest(authCode),
             cancellationToken);
 
         if (result is null)
