@@ -1,8 +1,7 @@
-using AdminPanel.Utilities;
+using AdminPanel.Models;
+using AdminPanel.Services.CookiesUserService;
 using Microsoft.AspNetCore.HttpOverrides;
-using SteamStorageAPI.SDK.Services.Logger.LoggerService;
-using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection;
-using LoggerService = AdminPanel.Services.LoggerService.LoggerService;
+using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection.Api;
 
 namespace AdminPanel;
 
@@ -14,16 +13,29 @@ public static class Program
     {
         builder.Services.AddControllersWithViews();
 
+        string apiInternalHost = builder.Configuration["STEAMSTORAGE_API_INTERNAL_HOST"] ?? "localhost:8081";
+        string apiPublicHost = builder.Configuration["STEAMSTORAGE_API_PUBLIC_HOST"] ?? "localhost:8081";
+        string apiAddress = $"http://{apiInternalHost}/api";
+
         //SteamStorageApi
-        builder.Services.AddSteamStorageApiWeb(options =>
-        {
-            options.ClientTimeout = ProgramConstants.API_CLIENT_TIMEOUT;
+        builder.Services.AddSteamStorageApiWeb(options => {
+            options.ClientTimeout = 15;
+            options.ClientName = "MainClient";
+            options.HostName = apiPublicHost;
+            options.ServerAddress = apiInternalHost;
+            options.ApiAddress = apiAddress;
+            options.TokenHubEndpoint = "https://steamstorage.ru/token/token-hub";
         });
 
-        //Custom SteamStorageApi Services
-        builder.Services.AddSingleton<ILoggerService, LoggerService>();
-        
+        builder.Services.AddSingleton(new AdminPanelOptions
+        {
+            ApiAddress = apiAddress
+        });
+        builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();
+
+        //Services
+        builder.Services.AddTransient<ICookiesUserService, CookiesUserService>();
 
         return builder;
     }
@@ -42,15 +54,15 @@ public static class Program
         }
 
         //ForwardedHeaders
-        app.UseForwardedHeaders(new()
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-        
+
         //app.UseHttpsRedirection();
-        app.UseStaticFiles(new StaticFileOptions  
+        app.UseStaticFiles(new StaticFileOptions
         {
-            RequestPath = "/admin"  
+            RequestPath = "/admin"
         });
 
         app.UseRouting();
@@ -58,8 +70,8 @@ public static class Program
         app.UseAuthorization();
 
         app.MapControllerRoute(
-            name: "default",
-            pattern: "admin/{controller=Authorize}/{action=Index}/{id?}");
+            "default",
+            "admin/{controller=Authorize}/{action=Index}/{id?}");
 
         app.Run();
     }

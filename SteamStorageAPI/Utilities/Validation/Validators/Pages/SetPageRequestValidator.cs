@@ -1,13 +1,13 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Pages;
 
-public sealed class SetPageRequestValidator : AbstractValidator<PagesController.SetPageRequest>
+public sealed class SetPageRequestValidator : AbstractValidator<SetPageRequest>
 {
     public SetPageRequestValidator()
     {
         RuleFor(expression => expression.PageId)
-            .GreaterThan(0).WithMessage("Id страницы не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Page Id cannot be less than 1");
     }
 }

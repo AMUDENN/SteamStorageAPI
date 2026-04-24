@@ -1,131 +1,96 @@
-﻿using System.Net.Mime;
+using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Services.Domain.PageService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Validation.Tools;
-using SteamStorageAPI.Utilities.Validation.Validators.Pages;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
 
-namespace SteamStorageAPI.Controllers
+namespace SteamStorageAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]/[action]")]
+public class PagesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class PagesController : ControllerBase
+    #region Fields
+
+    private readonly IPageService _pageService;
+    private readonly IContextUserService _contextUserService;
+
+    #endregion Fields
+
+    #region Constructor
+
+    public PagesController(IPageService pageService, IContextUserService contextUserService)
     {
-        #region Fields
-
-        private readonly IUserService _userService;
-        private readonly SteamStorageContext _context;
-
-        #endregion Fields
-
-        #region Constructor
-
-        public PagesController(
-            IUserService userService,
-            SteamStorageContext context)
-        {
-            _userService = userService;
-            _context = context;
-        }
-
-        #endregion Constructor
-
-        #region Records
-
-        public record PageResponse(
-            int Id,
-            string Title);
-        
-        public record PagesResponse(
-            int Count,
-            IEnumerable<PageResponse> Pages);
-
-        [Validator<SetPageRequestValidator>]
-        public record SetPageRequest(
-            int PageId);
-
-        #endregion Records
-
-        #region GET
-
-        /// <summary>
-        /// Получение списка страниц
-        /// </summary>
-        /// <response code="200">Возвращает список страниц</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="499">Операция отменена</response>
-        [HttpGet(Name = "GetPages")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<PagesResponse>> GetPages(
-            CancellationToken cancellationToken = default)
-        {
-            List<Page> pages = await _context.Pages.AsNoTracking().ToListAsync(cancellationToken);
-
-            return Ok(new PagesResponse(pages.Count, pages.Select(x => new PageResponse(x.Id, x.Title))));
-        }
-
-        /// <summary>
-        /// Получение информации о текущей стартовой странице пользователя
-        /// </summary>
-        /// <response code="200">Возвращает информацию о текущей стартовой странице пользователя</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetCurrentStartPage")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<PageResponse>> GetCurrentStartPage(
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Page page =
-                await _context.Pages.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == user.StartPageId, cancellationToken) ??
-                throw new HttpResponseException(StatusCodes.Status404NotFound, "Страницы с таким Id не существует");
-
-            return Ok(new PageResponse(page.Id, page.Title));
-        }
-
-        #endregion GET
-
-        #region PUT
-
-        /// <summary>
-        /// Установка стартовой страницы
-        /// </summary>
-        /// <response code="200">Стартовая страница успешно установлена</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Страницы с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpPut(Name = "SetStartPage")]
-        public async Task<ActionResult> SetStartPage(
-            SetPageRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            if (!await _context.Pages.AnyAsync(x => x.Id == request.PageId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound, "Страницы с таким Id не существует");
-
-            user.StartPageId = request.PageId;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion PUT
+        _pageService = pageService;
+        _contextUserService = contextUserService;
     }
+
+    #endregion Constructor
+
+    #region GET
+
+    /// <summary>
+    /// Get the list of pages
+    /// </summary>
+    /// <response code="200">Returns the list of pages</response>
+    /// <response code="499">The operation was cancelled</response>
+    [HttpGet(Name = "GetPages")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<PagesResponse>> GetPages(
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _pageService.GetPagesAsync(cancellationToken));
+    }
+
+    /// <summary>
+    /// Get the current start page of the user
+    /// </summary>
+    /// <response code="200">Returns the current start page of the user</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No page with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetCurrentStartPage")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<PageResponse>> GetCurrentStartPage(
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        return Ok(await _pageService.GetCurrentStartPageAsync(user, cancellationToken));
+    }
+
+    #endregion GET
+
+    #region PUT
+
+    /// <summary>
+    /// Set the start page
+    /// </summary>
+    /// <response code="200">The start page was successfully set</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No page with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpPut(Name = "SetStartPage")]
+    public async Task<ActionResult> SetStartPage(
+        SetPageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _pageService.SetStartPageAsync(user, request, cancellationToken);
+        return Ok();
+    }
+
+    #endregion PUT
 }

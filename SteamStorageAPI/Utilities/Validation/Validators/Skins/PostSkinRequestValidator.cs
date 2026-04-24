@@ -1,16 +1,16 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Skins;
 
-public sealed class PostSkinRequestValidator : AbstractValidator<SkinsController.PostSkinRequest>
+public sealed class PostSkinRequestValidator : AbstractValidator<PostSkinRequest>
 {
     public PostSkinRequestValidator()
     {
         RuleFor(expression => expression.GameId)
-            .GreaterThan(0).WithMessage("Id игры не может быть меньше 1");
-        
+            .GreaterThan(0).WithMessage("Game Id cannot be less than 1");
+
         RuleFor(expression => expression.MarketHashName)
-            .MinimumLength(3).WithMessage("Длина MarketHashName должна быть больше 3 символов");
+            .MinimumLength(3).WithMessage("The length of MarketHashName must be greater than 3 characters");
     }
 }

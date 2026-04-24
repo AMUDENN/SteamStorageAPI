@@ -1,115 +1,78 @@
-﻿using System.Net.Mime;
+using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Services.Domain.RoleService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Validation.Tools;
-using SteamStorageAPI.Utilities.Validation.Validators.Roles;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
 
-namespace SteamStorageAPI.Controllers
+namespace SteamStorageAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]/[action]")]
+public class RolesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class RolesController : ControllerBase
+    #region Fields
+
+    private readonly IRoleService _roleService;
+    private readonly IContextUserService _contextUserService;
+
+    #endregion Fields
+
+    #region Constructor
+
+    public RolesController(IRoleService roleService, IContextUserService contextUserService)
     {
-        #region Fields
-
-        private readonly IUserService _userService;
-        private readonly SteamStorageContext _context;
-
-        #endregion Fields
-
-        #region Constructor
-
-        public RolesController(
-            IUserService userService,
-            SteamStorageContext context)
-        {
-            _userService = userService;
-            _context = context;
-        }
-
-        #endregion Constructor
-
-        #region Records
-
-        public record RoleResponse(
-            int Id,
-            string Title);
-        
-        public record RolesResponse(
-            int Count,
-            IEnumerable<RoleResponse> Roles);
-
-        [Validator<SetRoleRequestValidator>]
-        public record SetRoleRequest(
-            int UserId,
-            int RoleId);
-
-        #endregion Records
-
-        #region GET
-
-        /// <summary>
-        /// Получение списка ролей
-        /// </summary>
-        /// <response code="200">Возвращает список ролей</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
-        [HttpGet(Name = "GetRoles")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<RolesResponse>> GetRoles(
-            CancellationToken cancellationToken = default)
-        {
-            List<Role> roles = await _context.Roles.AsNoTracking().ToListAsync(cancellationToken);
-
-            return Ok(new RolesResponse(roles.Count, roles.Select(x => new RoleResponse(x.Id, x.Title))));
-        }
-
-        #endregion GET
-
-        #region PUT
-
-        /// <summary>
-        /// Установка роли пользователю
-        /// </summary>
-        /// <response code="200">Роль успешно установлена</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Роли с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
-        [HttpPut(Name = "SetRole")]
-        public async Task<ActionResult> SetRole(
-            SetRoleRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User currentUser = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                               throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                   "Текущий пользователь не найден");
-
-            if (request.UserId == currentUser.Id)
-                throw new HttpResponseException(StatusCodes.Status400BadRequest, "Нельзя изменить свою роль");
-            
-            User user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            if (!await _context.Roles.AnyAsync(x => x.Id == request.RoleId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound, "Роли с таким Id не существует");
-
-            user.RoleId = request.RoleId;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion PUT
+        _roleService = roleService;
+        _contextUserService = contextUserService;
     }
+
+    #endregion Constructor
+
+    #region GET
+
+    /// <summary>
+    /// Get the list of roles
+    /// </summary>
+    /// <response code="200">Returns the list of roles</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
+    [HttpGet(Name = "GetRoles")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<RolesResponse>> GetRoles(
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _roleService.GetRolesAsync(cancellationToken));
+    }
+
+    #endregion GET
+
+    #region PUT
+
+    /// <summary>
+    /// Assign a role to a user
+    /// </summary>
+    /// <response code="200">The role was successfully assigned</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No role with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
+    [HttpPut(Name = "SetRole")]
+    public async Task<ActionResult> SetRole(
+        SetRoleRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _roleService.SetRoleAsync(user, request, cancellationToken);
+        return Ok();
+    }
+
+    #endregion PUT
 }

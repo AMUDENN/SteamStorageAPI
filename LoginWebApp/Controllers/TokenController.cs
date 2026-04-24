@@ -1,26 +1,37 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using LoginWebApp.Models;
+using LoginWebApp.Utilities.Config;
 using LoginWebApp.Utilities.TokenHub;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Primitives;
 
 namespace LoginWebApp.Controllers;
 
 [Route("token/[action]")]
 public class TokenController : Controller
 {
+    #region Constants
+
+    private const string INTERNAL_API_KEY_HEADER = "X-Internal-Api-Key";
+
+    #endregion Constants
+
     #region Fields
 
     private readonly IHubContext<TokenHub> _hubContext;
+    private readonly string _internalApiKey;
 
     #endregion Fields
 
     #region Constructor
 
     public TokenController(
-        IHubContext<TokenHub> hubContext)
+        IHubContext<TokenHub> hubContext,
+        AppConfig config)
     {
         _hubContext = hubContext;
+        _internalApiKey = config.App.InternalApiKey;
     }
 
     #endregion Constructor
@@ -34,15 +45,23 @@ public class TokenController : Controller
     #endregion Records
 
     #region Methods
-    
-    public async Task<IActionResult> SetToken([FromQuery] SetTokenRequest request)
+
+    [HttpPost]
+    public async Task<IActionResult> SetToken([FromBody] SetTokenRequest request)
     {
+        if (string.IsNullOrEmpty(_internalApiKey)
+            || !Request.Headers.TryGetValue(INTERNAL_API_KEY_HEADER, out StringValues providedKey)
+            || providedKey != _internalApiKey)
+            return Unauthorized();
+
         if (string.IsNullOrWhiteSpace(request.Group) || string.IsNullOrWhiteSpace(request.Token))
-            return RedirectToAction(nameof(Token), new { IsTokenEmpty = true });
+            return BadRequest();
+
         await _hubContext.Clients.Group(request.Group).SendAsync("Token", request.Token);
-        return RedirectToAction(nameof(Token), new { IsTokenEmpty = false });
+
+        return Ok();
     }
-    
+
     public IActionResult Token([FromQuery] TokenRequest request)
     {
         return View(new TokenViewModel
@@ -54,9 +73,9 @@ public class TokenController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel 
-        { 
-            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier 
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
         });
     }
 

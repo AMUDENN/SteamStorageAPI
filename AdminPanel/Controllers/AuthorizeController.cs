@@ -1,9 +1,7 @@
-using System.Diagnostics;
-using AdminPanel.Models;
 using Microsoft.AspNetCore.Mvc;
-using SteamStorageAPI.SDK;
+using SteamStorageAPI.SDK.ApiClient;
 using SteamStorageAPI.SDK.ApiEntities;
-using SteamStorageAPI.SDK.Utilities;
+using SteamStorageAPI.SDK.Utilities.ApiControllers;
 
 namespace AdminPanel.Controllers;
 
@@ -12,7 +10,7 @@ public class AuthorizeController : Controller
     #region Fields
 
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ApiClient _apiClient;
+    private readonly IApiClient _apiClient;
 
     #endregion Fields
 
@@ -20,7 +18,7 @@ public class AuthorizeController : Controller
 
     public AuthorizeController(
         IHttpContextAccessor httpContextAccessor,
-        ApiClient apiClient)
+        IApiClient apiClient)
     {
         _httpContextAccessor = httpContextAccessor;
         _apiClient = apiClient;
@@ -44,7 +42,7 @@ public class AuthorizeController : Controller
         Authorize.AuthUrlResponse? authUrlResponse =
             await _apiClient.GetAsync<Authorize.AuthUrlResponse, Authorize.GetAuthUrlRequest>(
                 ApiConstants.ApiMethods.GetAuthUrl,
-                new($"{baseUrl}/AdminPanel/CheckAdmin"),
+                new Authorize.GetAuthUrlRequest($"{baseUrl}/AdminPanel/CheckAdmin"),
                 cancellationToken);
 
         if (authUrlResponse is null)

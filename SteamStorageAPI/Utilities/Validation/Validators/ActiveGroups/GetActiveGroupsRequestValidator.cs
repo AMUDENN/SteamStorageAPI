@@ -1,13 +1,13 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
-public sealed class GetActiveGroupsRequestValidator : AbstractValidator<ActiveGroupsController.GetActiveGroupsRequest>
+public sealed class GetActiveGroupsRequestValidator : AbstractValidator<GetActiveGroupsRequest>
 {
     public GetActiveGroupsRequestValidator()
     {
         RuleFor(expression => expression.OrderName)
-            .IsInEnum().WithMessage("Порядок сортировки должен находиться в пределах от 0 до 4");
+            .IsInEnum().WithMessage("Sort order must be in the range from 0 to 4");
     }
 }

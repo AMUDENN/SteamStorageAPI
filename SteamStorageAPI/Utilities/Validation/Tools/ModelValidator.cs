@@ -27,12 +27,12 @@ public sealed class ModelValidator : IModelValidator
     public IEnumerable<ModelValidationResult> Validate(ModelValidationContext context)
     {
         if (context.Model is null || Activator.CreateInstance(_validatorType) is not IValidator validator)
-            return Enumerable.Empty<ModelValidationResult>();
+            return [];
 
         ValidationResult? result = validator.Validate(GetValidationContext(context.Model));
 
         return result.IsValid
-            ? Enumerable.Empty<ModelValidationResult>()
+            ? []
             : result.Errors.Select(error => new ModelValidationResult(error.PropertyName, error.ErrorMessage));
     }
 
@@ -40,8 +40,8 @@ public sealed class ModelValidator : IModelValidator
     {
         Type genericType = typeof(ValidationContext<>).MakeGenericType(model.GetType());
         ConstructorInfo constructor =
-            genericType.GetConstructors().FirstOrDefault(constructor => constructor.GetParameters().Length == 1) ??
-            throw new ArgumentException($"Не удалось найти конструктор с 1 параметров в виде `{genericType}`.",
+            genericType.GetConstructors().FirstOrDefault(constructor => constructor.GetParameters().Length == 1)
+            ?? throw new ArgumentException($"Could not find a constructor with 1 parameter of type `{genericType}`.",
                 nameof(constructor));
 
         return (IValidationContext)constructor.Invoke([model]);

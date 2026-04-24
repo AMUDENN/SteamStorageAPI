@@ -1,640 +1,270 @@
-﻿using System.Net.Mime;
+using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Services.CurrencyService;
-using SteamStorageAPI.Services.SkinService;
-using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Services.Domain.ActiveService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Extensions;
-using SteamStorageAPI.Utilities.Validation.Tools;
-using SteamStorageAPI.Utilities.Validation.Validators.Actives;
-using static SteamStorageAPI.Controllers.SkinsController;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
 
-namespace SteamStorageAPI.Controllers
+namespace SteamStorageAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]/[action]")]
+public class ActivesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class ActivesController : ControllerBase
+    #region Fields
+
+    private readonly IActiveService _activeService;
+    private readonly IContextUserService _contextUserService;
+
+    #endregion Fields
+
+    #region Constructor
+
+    public ActivesController(
+        IActiveService activeService,
+        IContextUserService contextUserService)
     {
-        #region Enums
-
-        public enum ActiveOrderName
-        {
-            Title,
-            Count,
-            BuyPrice,
-            CurrentPrice,
-            CurrentSum,
-            Change
-        }
-
-        #endregion Enums
-
-        #region Fields
-
-        private readonly ISkinService _skinService;
-        private readonly IUserService _userService;
-        private readonly ICurrencyService _currencyService;
-        private readonly SteamStorageContext _context;
-
-        #endregion Fields
-
-        #region Constructor
-
-        public ActivesController(
-            ISkinService skinService,
-            IUserService userService,
-            ICurrencyService currencyService,
-            SteamStorageContext context)
-        {
-            _skinService = skinService;
-            _userService = userService;
-            _currencyService = currencyService;
-            _context = context;
-        }
-
-        #endregion Constructor
-
-        #region Records
-
-        public record ActiveResponse(
-            int Id,
-            int GroupId,
-            BaseSkinResponse Skin,
-            DateTime BuyDate,
-            int Count,
-            decimal BuyPrice,
-            decimal CurrentPrice,
-            decimal CurrentSum,
-            decimal? GoalPrice,
-            double? GoalPriceCompletion,
-            double Change,
-            string? Description);
-
-        public record ActivesResponse(
-            int Count,
-            int PagesCount,
-            IEnumerable<ActiveResponse> Actives);
-
-        public record ActivesStatisticResponse(
-            int ActivesCount,
-            decimal InvestmentSum,
-            decimal CurrentSum);
-
-        public record ActivesPagesCountResponse(
-            int Count);
-
-        public record ActivesCountResponse(
-            int Count);
-
-        [Validator<GetActiveInfoRequestValidator>]
-        public record GetActiveInfoRequest(
-            int Id);
-
-        [Validator<GetActivesRequestValidator>]
-        public record GetActivesRequest(
-            int? GroupId,
-            int? GameId,
-            string? Filter,
-            ActiveOrderName? OrderName,
-            bool? IsAscending,
-            int PageNumber,
-            int PageSize);
-
-        [Validator<GetActivesStatisticRequestValidator>]
-        public record GetActivesStatisticRequest(
-            int? GroupId,
-            int? GameId,
-            string? Filter);
-
-        [Validator<GetActivesPagesCountRequestValidator>]
-        public record GetActivesPagesCountRequest(
-            int? GroupId,
-            int? GameId,
-            string? Filter,
-            int PageSize);
-
-        [Validator<GetActivesCountRequestValidator>]
-        public record GetActivesCountRequest(
-            int? GroupId,
-            int? GameId,
-            string? Filter);
-
-        [Validator<PostActiveRequestValidator>]
-        public record PostActiveRequest(
-            int GroupId,
-            int Count,
-            decimal BuyPrice,
-            decimal? GoalPrice,
-            int SkinId,
-            string? Description,
-            DateTime BuyDate);
-
-        [Validator<PutActiveRequestValidator>]
-        public record PutActiveRequest(
-            int Id,
-            int GroupId,
-            int Count,
-            decimal BuyPrice,
-            decimal? GoalPrice,
-            int SkinId,
-            string? Description,
-            DateTime BuyDate);
-
-        [Validator<SoldActiveRequestValidator>]
-        public record SoldActiveRequest(
-            int Id,
-            int GroupId,
-            int Count,
-            decimal SoldPrice,
-            DateTime SoldDate,
-            string? Description);
-
-        [Validator<DeleteActiveRequestValidator>]
-        public record DeleteActiveRequest(
-            int Id);
-
-        #endregion Records
-
-        #region Methods
-
-        private async Task<ActiveResponse> GetActiveResponseAsync(
-            Active active,
-            User user,
-            CancellationToken cancellationToken = default)
-        {
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-            return new(
-                active.Id,
-                active.GroupId,
-                await _skinService.GetBaseSkinResponseAsync(active.Skin, cancellationToken),
-                active.BuyDate,
-                active.Count,
-                active.BuyPrice,
-                (decimal)((double)active.Skin.CurrentPrice * currencyExchangeRate),
-                (decimal)((double)active.Skin.CurrentPrice * currencyExchangeRate * active.Count),
-                active.GoalPrice,
-                active.GoalPrice == null
-                    ? null
-                    : (double)active.Skin.CurrentPrice * currencyExchangeRate / (double)active.GoalPrice,
-                ((double)active.Skin.CurrentPrice * currencyExchangeRate - (double)active.BuyPrice) /
-                (double)active.BuyPrice,
-                active.Description);
-        }
-
-        private async Task<ActivesResponse> GetActivesResponseAsync(
-            IQueryable<Active> actives,
-            int pageNumber,
-            int pageSize,
-            User user,
-            CancellationToken cancellationToken = default)
-        {
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-            int activesCount = await actives.CountAsync(cancellationToken);
-
-            int pagesCount = (int)Math.Ceiling((double)activesCount / pageSize);
-
-            actives = actives.AsNoTracking()
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return new(activesCount,
-                pagesCount,
-                await Task.WhenAll(actives.AsEnumerable()
-                    .Select(async x =>
-                        new ActiveResponse(
-                            x.Id,
-                            x.GroupId,
-                            await _skinService.GetBaseSkinResponseAsync(x.Skin, cancellationToken),
-                            x.BuyDate,
-                            x.Count,
-                            x.BuyPrice,
-                            (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate),
-                            (decimal)((double)x.Skin.CurrentPrice * currencyExchangeRate * x.Count),
-                            x.GoalPrice,
-                            x.GoalPrice == null
-                                ? null
-                                : (double)x.Skin.CurrentPrice * currencyExchangeRate / (double)x.GoalPrice,
-                            ((double)x.Skin.CurrentPrice * currencyExchangeRate - (double)x.BuyPrice) /
-                            (double)x.BuyPrice,
-                            x.Description)
-                    )).WaitAsync(cancellationToken)
-            );
-        }
-
-        #endregion Methods
-
-        #region GET
-
-        /// <summary>
-        /// Получение информации об активе
-        /// </summary>
-        /// <response code="200">Возвращает подробную информацию об активе</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetActiveInfo")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<ActiveResponse>> GetActiveInfo(
-            [FromQuery] GetActiveInfoRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Active active = await _context.Entry(user)
-                                .Collection(x => x.ActiveGroups)
-                                .Query()
-                                .AsNoTracking()
-                                .SelectMany(x => x.Actives)
-                                .Include(x => x.Skin)
-                                .ThenInclude(x => x.Game)
-                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
-                            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "Группы активов с таким Id не существует");
-
-            return Ok(await GetActiveResponseAsync(active, user, cancellationToken));
-        }
-
-        /// <summary>
-        /// Получение списка активов
-        /// </summary>
-        /// <response code="200">Возвращает список активов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetActives")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<ActivesResponse>> GetActives(
-            [FromQuery] GetActivesRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            IQueryable<Active> actives = _context.Entry(user)
-                .Collection(x => x.ActiveGroups)
-                .Query()
-                .AsNoTracking()
-                .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .ThenInclude(x => x.Game)
-                .SelectMany(x => x.Actives)
-                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (request.GroupId == null || x.GroupId == request.GroupId))
-                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
-
-            if (request is { OrderName: not null, IsAscending: not null })
-                switch (request.OrderName)
-                {
-                    case ActiveOrderName.Title:
-                        actives = request.IsAscending.Value
-                            ? actives.OrderBy(x => x.Skin.Title)
-                            : actives.OrderByDescending(x => x.Skin.Title);
-                        break;
-                    case ActiveOrderName.Count:
-                        actives = request.IsAscending.Value
-                            ? actives.OrderBy(x => x.Count)
-                            : actives.OrderByDescending(x => x.Count);
-                        break;
-                    case ActiveOrderName.BuyPrice:
-                        actives = request.IsAscending.Value
-                            ? actives.OrderBy(x => x.BuyPrice)
-                            : actives.OrderByDescending(x => x.BuyPrice);
-                        break;
-                    case ActiveOrderName.CurrentPrice:
-                        actives = request.IsAscending.Value
-                            ? actives.OrderBy(x => x.Skin.CurrentPrice)
-                            : actives.OrderByDescending(x => x.Skin.CurrentPrice);
-                        break;
-                    case ActiveOrderName.CurrentSum:
-                        actives = request.IsAscending.Value
-                            ? actives.OrderBy(x => x.Skin.CurrentPrice * x.Count)
-                            : actives.OrderByDescending(x => x.Skin.CurrentPrice * x.Count);
-                        break;
-                    case ActiveOrderName.Change:
-                        actives = request.IsAscending.Value
-                            ? actives.OrderBy(x => (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice)
-                            : actives.OrderByDescending(x => (x.Skin.CurrentPrice - x.BuyPrice) / x.BuyPrice);
-                        break;
-                }
-            else
-                actives = actives.OrderBy(x => x.Id);
-
-            return Ok(await GetActivesResponseAsync(actives,
-                request.PageNumber,
-                request.PageSize,
-                user,
-                cancellationToken));
-        }
-
-        /// <summary>
-        /// Получение статистики по выборке активов
-        /// </summary>
-        /// <response code="200">Возвращает статистику по выборке активов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetActivesStatistic")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<ActivesStatisticResponse>> GetActivesStatistic(
-            [FromQuery] GetActivesStatisticRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            IQueryable<Active> actives = _context.Entry(user)
-                .Collection(x => x.ActiveGroups)
-                .Query()
-                .AsNoTracking()
-                .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .Where(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                            && (request.GroupId == null || x.GroupId == request.GroupId))
-                .WhereMatchFilter(x => x.Skin.Title, request.Filter);
-
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-            return Ok(new ActivesStatisticResponse(
-                actives.Sum(x => x.Count),
-                actives.Sum(x => x.BuyPrice * x.Count),
-                (decimal)((double)actives.Sum(x => x.Skin.CurrentPrice * x.Count) * currencyExchangeRate)
-            ));
-        }
-
-        /// <summary>
-        /// Получение количества страниц активов
-        /// </summary>
-        /// <response code="200">Возвращает количество страниц активов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetActivesPagesCount")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<ActivesPagesCountResponse>> GetActivesPagesCount(
-            [FromQuery] GetActivesPagesCountRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            int count = await _context
-                .Entry(user)
-                .Collection(x => x.ActiveGroups)
-                .Query()
-                .AsNoTracking()
-                .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
-                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken);
-
-            int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
-
-            return Ok(new ActivesPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
-        }
-
-        /// <summary>
-        /// Получение количества активов
-        /// </summary>
-        /// <response code="200">Возвращает количество активов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetActivesCount")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<ActivesCountResponse>> GetActivesCount(
-            [FromQuery] GetActivesCountRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            return Ok(new ActivesCountResponse(await _context
-                .Entry(user)
-                .Collection(x => x.ActiveGroups)
-                .Query()
-                .AsNoTracking()
-                .Include(x => x.Actives)
-                .ThenInclude(x => x.Skin)
-                .SelectMany(x => x.Actives)
-                .WhereMatchFilter(x => x.Skin.Title, request.Filter)
-                .CountAsync(x => (request.GameId == null || x.Skin.GameId == request.GameId)
-                                 && (request.GroupId == null || x.GroupId == request.GroupId), cancellationToken)));
-        }
-
-        #endregion GET
-
-        #region POST
-
-        /// <summary>
-        /// Добавление актива
-        /// </summary>
-        /// <response code="200">Актив успешно добавлен</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpPost(Name = "PostActive")]
-        public async Task<ActionResult> PostActive(
-            PostActiveRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound,
-                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
-
-            if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound, "Предмета с таким Id не существует");
-
-            await _context.Actives.AddAsync(new()
-            {
-                GroupId = request.GroupId,
-                Count = request.Count,
-                BuyPrice = request.BuyPrice,
-                GoalPrice = request.GoalPrice,
-                SkinId = request.SkinId,
-                Description = request.Description,
-                BuyDate = request.BuyDate
-            }, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion POST
-
-        #region PUT
-
-        /// <summary>
-        /// Изменение актива
-        /// </summary>
-        /// <response code="200">Актив успешно изменён</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Актива с таким Id не существует, группы с таким Id не существует, предмета с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpPut(Name = "PutActive")]
-        public async Task<ActionResult> PutActive(
-            PutActiveRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Active active = await _context.Entry(user)
-                                .Collection(u => u.ActiveGroups)
-                                .Query()
-                                .Include(x => x.Actives)
-                                .SelectMany(x => x.Actives)
-                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
-                            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
-
-            if (!await _context.Entry(user).Collection(x => x.ActiveGroups).Query()
-                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound,
-                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
-
-            if (!await _context.Skins.AnyAsync(x => x.Id == request.SkinId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound, "Предмета с таким Id не существует");
-
-            active.GroupId = request.GroupId;
-            active.Count = request.Count;
-            active.BuyPrice = request.BuyPrice;
-            active.GoalPrice = request.GoalPrice;
-            active.SkinId = request.SkinId;
-            active.Description = request.Description;
-            active.BuyDate = request.BuyDate;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Продажа актива
-        /// </summary>
-        /// <response code="200">Актив успешно продан</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Актива с таким Id не существует, группы архива с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpPut(Name = "SoldActive")]
-        public async Task<ActionResult> SoldActive(
-            SoldActiveRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Active active = await _context.Entry(user)
-                                .Collection(u => u.ActiveGroups)
-                                .Query()
-                                .Include(x => x.Actives)
-                                .SelectMany(x => x.Actives)
-                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
-                            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
-
-            if (!await _context.Entry(user).Collection(x => x.ArchiveGroups).Query()
-                    .AnyAsync(x => x.Id == request.GroupId, cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status404NotFound,
-                    "У вас нет доступа к изменению этой группы или группы с таким Id не существует");
-
-            await _context.Archives.AddAsync(new()
-            {
-                GroupId = request.GroupId,
-                SkinId = active.SkinId,
-                Count = request.Count > active.Count ? active.Count : request.Count,
-                BuyDate = active.BuyDate,
-                BuyPrice = active.BuyPrice,
-                SoldDate = request.SoldDate,
-                SoldPrice = request.SoldPrice
-            }, cancellationToken);
-
-            if (request.Count >= active.Count)
-                _context.Actives.Remove(active);
-            else
-                active.Count -= request.Count;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion PUT
-
-        #region DELETE
-
-        /// <summary>
-        /// Удаление актива
-        /// </summary>
-        /// <response code="200">Актив успешно удалён</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Актива с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpDelete(Name = "DeleteActive")]
-        public async Task<ActionResult> DeleteActive(
-            DeleteActiveRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Active active = await _context.Entry(user)
-                                .Collection(u => u.ActiveGroups)
-                                .Query()
-                                .Include(x => x.Actives)
-                                .SelectMany(x => x.Actives)
-                                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken) ??
-                            throw new HttpResponseException(StatusCodes.Status404NotFound,
-                                "У вас нет доступа к изменению этого актива или актива с таким Id не существует");
-
-            _context.Actives.Remove(active);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion DELETE
+        _activeService = activeService;
+        _contextUserService = contextUserService;
     }
+
+    #endregion Constructor
+
+    #region GET
+
+    /// <summary>
+    /// Get information about an active item
+    /// </summary>
+    /// <response code="200">Returns detailed information about the active item</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetActiveInfo")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<ActiveResponse>> GetActiveInfo(
+        [FromQuery] GetActiveInfoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        ActiveResponse response = await _activeService.GetActiveInfoAsync(user, request.Id, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get the list of active items
+    /// </summary>
+    /// <response code="200">Returns the list of active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetActives")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<ActivesResponse>> GetActives(
+        [FromQuery] GetActivesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        IQueryable<Active> actives =
+            _activeService.GetActivesQuery(user, request.GroupId, request.GameId, request.Filter);
+        actives = _activeService.ApplyOrder(actives, request.OrderName, request.IsAscending);
+
+        return Ok(await _activeService.GetActivesResponseAsync(
+            actives, request.PageNumber, request.PageSize, user, cancellationToken));
+    }
+
+    /// <summary>
+    /// Get statistics for the active items selection
+    /// </summary>
+    /// <response code="200">Returns statistics for the active items selection</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetActivesStatistic")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<ActivesStatisticResponse>> GetActivesStatistic(
+        [FromQuery] GetActivesStatisticRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        ActivesStatisticResponse response =
+            await _activeService.GetActivesStatisticAsync(user, request, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get the number of pages of active items
+    /// </summary>
+    /// <response code="200">Returns the number of pages of active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetActivesPagesCount")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<ActivesPagesCountResponse>> GetActivesPagesCount(
+        [FromQuery] GetActivesPagesCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        ActivesPagesCountResponse response =
+            await _activeService.GetActivesPagesCountAsync(user, request, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get the number of active items
+    /// </summary>
+    /// <response code="200">Returns the number of active items</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetActivesCount")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<ActivesCountResponse>> GetActivesCount(
+        [FromQuery] GetActivesCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        ActivesCountResponse response =
+            await _activeService.GetActivesCountAsync(user, request, cancellationToken);
+
+        return Ok(response);
+    }
+
+    #endregion GET
+
+    #region POST
+
+    /// <summary>
+    /// Add an active item
+    /// </summary>
+    /// <response code="201">The active item was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No group with the given Id exists, no item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpPost(Name = "PostActive")]
+    public async Task<ActionResult> PostActive(
+        PostActiveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _activeService.PostActiveAsync(user, request, cancellationToken);
+
+        return Created();
+    }
+
+    #endregion POST
+
+    #region PUT
+
+    /// <summary>
+    /// Update an active item
+    /// </summary>
+    /// <response code="200">The active item was successfully updated</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, no group with the given Id exists, no item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpPut(Name = "PutActive")]
+    public async Task<ActionResult> PutActive(
+        PutActiveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _activeService.PutActiveAsync(user, request, cancellationToken);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Sell an active item
+    /// </summary>
+    /// <response code="200">The active item was successfully sold</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, no archive group with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpPut(Name = "SoldActive")]
+    public async Task<ActionResult> SoldActive(
+        SoldActiveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _activeService.SoldActiveAsync(user, request, cancellationToken);
+
+        return Ok();
+    }
+
+    #endregion PUT
+
+    #region DELETE
+
+    /// <summary>
+    /// Delete an active item
+    /// </summary>
+    /// <response code="200">The active item was successfully deleted</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No active item with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpDelete(Name = "DeleteActive")]
+    public async Task<ActionResult> DeleteActive(
+        DeleteActiveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _activeService.DeleteActiveAsync(user, request.Id, cancellationToken);
+
+        return Ok();
+    }
+
+    #endregion DELETE
 }

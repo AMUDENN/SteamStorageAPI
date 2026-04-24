@@ -1,16 +1,20 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Users;
 
-public sealed class GetUsersRequestValidator : AbstractValidator<UsersController.GetUsersRequest>
+public sealed class GetUsersRequestValidator : AbstractValidator<GetUsersRequest>
 {
     public GetUsersRequestValidator()
     {
         RuleFor(expression => expression.PageNumber)
-            .GreaterThan(0).WithMessage("Номер страницы не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Page number cannot be less than 1");
 
         RuleFor(expression => expression.PageSize)
-            .InclusiveBetween(1, 200).WithMessage("Размер страницы должен находиться в интервале от 1 до 200");
+            .InclusiveBetween(1, 200).WithMessage("Page size must be in the range from 1 to 200");
+
+        When(expression => expression.UserId.HasValue, () =>
+            RuleFor(expression => expression.UserId!.Value)
+                .GreaterThan(0).WithMessage("User Id cannot be less than 1"));
     }
 }

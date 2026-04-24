@@ -1,8 +1,8 @@
-﻿using AdminPanel.Utilities;
+﻿using AdminPanel.Services.CookiesUserService;
 using Microsoft.AspNetCore.Mvc;
-using SteamStorageAPI.SDK;
+using SteamStorageAPI.SDK.ApiClient;
 using SteamStorageAPI.SDK.ApiEntities;
-using SteamStorageAPI.SDK.Utilities;
+using SteamStorageAPI.SDK.Utilities.ApiControllers;
 
 namespace AdminPanel.Controllers;
 
@@ -10,16 +10,19 @@ public class CurrenciesController : Controller
 {
     #region Fields
 
-    private readonly ApiClient _apiClient;
+    private readonly IApiClient _apiClient;
+    private readonly ICookiesUserService _cookieUserService;
 
     #endregion Fields
 
     #region Construtore
 
     public CurrenciesController(
-        ApiClient apiClient)
+        IApiClient apiClient,
+        ICookiesUserService cookieUserService)
     {
         _apiClient = apiClient;
+        _cookieUserService = cookieUserService;
     }
 
     #endregion Constructor
@@ -50,19 +53,30 @@ public class CurrenciesController : Controller
         AddCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
-
-        await _apiClient.PostAsync(
-            ApiConstants.ApiMethods.PostCurrency,
-            new Currencies.PostCurrencyRequest(
-                request.SteamCurrencyId,
-                request.Title,
-                request.Mark,
-                request.CultureInfo),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
+        try
+        {
+            await _apiClient.PostAsync(
+                ApiConstants.ApiMethods.PostCurrency,
+                new Currencies.PostCurrencyRequest(
+                    request.SteamCurrencyId,
+                    request.Title,
+                    request.Mark,
+                    request.CultureInfo),
+                cancellationToken);
+            return Json(new
+            {
+                ok = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
+        }
     }
 
     [HttpPost]
@@ -70,19 +84,30 @@ public class CurrenciesController : Controller
         PutCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
-
-        await _apiClient.PutAsync(
-            ApiConstants.ApiMethods.PutCurrencyInfo,
-            new Currencies.PutCurrencyRequest(
-                request.CurrencyId,
-                request.Title,
-                request.Mark,
-                request.CultureInfo),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
+        try
+        {
+            await _apiClient.PutAsync(
+                ApiConstants.ApiMethods.PutCurrencyInfo,
+                new Currencies.PutCurrencyRequest(
+                    request.CurrencyId,
+                    request.Title,
+                    request.Mark,
+                    request.CultureInfo),
+                cancellationToken);
+            return Json(new
+            {
+                ok = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
+        }
     }
 
     [HttpPost]
@@ -90,15 +115,26 @@ public class CurrenciesController : Controller
         DeleteCurrencyRequest request,
         CancellationToken cancellationToken = default)
     {
-        HttpContext.Request.Cookies.TryGetValue(ProgramConstants.JWT_COOKIES, out string? token);
-        _apiClient.Token = token ?? string.Empty;
-
-        await _apiClient.DeleteAsync(
-            ApiConstants.ApiMethods.DeleteCurrency,
-            new Currencies.DeleteCurrencyRequest(request.CurrencyId),
-            cancellationToken);
-
-        return RedirectToAction(nameof(AdminPanel), nameof(AdminPanel));
+        _apiClient.Token = _cookieUserService.GetCookiesToken() ?? string.Empty;
+        try
+        {
+            await _apiClient.DeleteAsync(
+                ApiConstants.ApiMethods.DeleteCurrency,
+                new Currencies.DeleteCurrencyRequest(request.CurrencyId),
+                cancellationToken);
+            return Json(new
+            {
+                ok = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
+        }
     }
 
     #endregion Methods

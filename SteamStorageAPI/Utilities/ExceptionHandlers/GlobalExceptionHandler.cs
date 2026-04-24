@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SteamStorageAPI.Utilities.Exceptions;
 
@@ -24,7 +25,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     #region Records
 
-    public record ErrorResponse(string Message);
+    private record ErrorResponse(string Message);
 
     #endregion Records
 
@@ -35,7 +36,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError($"Ошибка, переданная в глобальный обработчик: {exception.Message}");
+        _logger.LogError(exception, "Error passed to the global handler: {ExceptionMessage}", exception.Message);
 
         ProblemDetails problemDetails = new()
         {
@@ -53,15 +54,15 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Title = ex.StatusCode.ToString();
                 break;
             default:
-                problemDetails.Status = StatusCodes.Status400BadRequest;
-                problemDetails.Title = "BadRequest";
+                problemDetails.Status = StatusCodes.Status500InternalServerError;
+                problemDetails.Title = "InternalServerError";
                 break;
         }
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
         await httpContext.Response.WriteAsJsonAsync(
             new ErrorResponse(problemDetails.Detail),
-            new()
+            new JsonSerializerOptions
             {
                 WriteIndented = true,
                 PropertyNamingPolicy = null

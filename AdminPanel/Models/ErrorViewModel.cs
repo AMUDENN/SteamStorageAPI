@@ -6,10 +6,7 @@ public class ErrorViewModel
 
     public string? RequestId { get; set; }
 
-    public bool ShowRequestId
-    {
-        get => !string.IsNullOrEmpty(RequestId);
-    }
+    public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
     #endregion Properties
 }

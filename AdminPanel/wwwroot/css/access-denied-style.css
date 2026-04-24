@@ -3,11 +3,70 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 2rem;
+}
+
+.access-denied-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: clamp(2rem, 5vw, 3.5rem) clamp(2rem, 6vw, 4rem);
+    background: var(--bg-glass);
+    border: 1px solid rgba(236, 72, 153, 0.2);
+    border-radius: 24px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    width: min(520px, 100%);
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.7s var(--ease-out) both;
+    text-align: center;
+}
+
+.access-denied-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ec4899, transparent);
+}
+
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(32px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.access-denied-icon {
+    font-size: 3rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 20px rgba(236, 72, 153, 0.5));
+    animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
 }
 
 .access-denied-content p {
-    font-size: var(--large-text);
-    font-weight: 500;
-    color: var(--fg-color-dark);
-    text-align: center;
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-weight: 600;
+    color: var(--fg-color-second);
+    line-height: 1.55;
+    letter-spacing: -0.01em;
+    max-width: 340px;
 }

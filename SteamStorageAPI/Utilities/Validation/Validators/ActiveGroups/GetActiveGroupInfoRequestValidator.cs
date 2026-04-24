@@ -1,13 +1,13 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
-public sealed class GetActiveGroupInfoRequestValidator : AbstractValidator<ActiveGroupsController.GetActiveGroupInfoRequest>
+public sealed class GetActiveGroupInfoRequestValidator : AbstractValidator<GetActiveGroupInfoRequest>
 {
     public GetActiveGroupInfoRequestValidator()
     {
         RuleFor(expression => expression.GroupId)
-            .GreaterThan(0).WithMessage("Id группы не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Group Id cannot be less than 1");
     }
 }

@@ -13,7 +13,7 @@ public static class QueryableExtension
 
     #region Fields
 
-    private static readonly char[] _separator = [' '];
+    private static readonly char[] Separator = [' '];
 
     #endregion Fields
 
@@ -26,7 +26,7 @@ public static class QueryableExtension
     {
         if (filter is null)
             return source;
-        string[] filterWords = filter.ToLower().Split(_separator, StringSplitOptions.RemoveEmptyEntries);
+        string[] filterWords = filter.ToLower().Split(Separator, StringSplitOptions.RemoveEmptyEntries);
         Expression<Func<TSource, bool>> containsFilter = GenerateContainsFilter(propertySelector, filterWords);
         return source.Where(containsFilter);
     }

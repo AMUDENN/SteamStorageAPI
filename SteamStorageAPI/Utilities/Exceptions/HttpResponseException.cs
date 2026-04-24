@@ -12,7 +12,7 @@ public class HttpResponseException : Exception
 
     public HttpResponseException(
         int statusCode = StatusCodes.Status400BadRequest,
-        string? message = default) : base(message)
+        string? message = null) : base(message)
     {
         StatusCode = statusCode;
     }

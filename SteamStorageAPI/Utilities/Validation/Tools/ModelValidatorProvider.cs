@@ -15,7 +15,7 @@ public sealed class ModelValidatorProvider : IModelValidatorProvider
         if (validatorType is null)
             return;
 
-        context.Results.Add(new()
+        context.Results.Add(new ValidatorItem
         {
             Validator = new ModelValidator(validatorType),
             IsReusable = false

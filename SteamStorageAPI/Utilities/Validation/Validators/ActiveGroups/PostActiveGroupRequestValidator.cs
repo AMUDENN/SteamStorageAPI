@@ -1,25 +1,27 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Utilities.Validation;
+using SteamStorageAPI.Utilities.Validation.Tools;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.ActiveGroups;
 
-public sealed class PostActiveGroupRequestValidator : AbstractValidator<ActiveGroupsController.PostActiveGroupRequest>
+public sealed class PostActiveGroupRequestValidator : AbstractValidator<PostActiveGroupRequest>
 {
     public PostActiveGroupRequestValidator()
     {
         RuleFor(expression => expression.Title)
-            .Length(3, 100).WithMessage("Длина названия группы должна быть от 3 до 100 символов");
+            .Length(3, 100).WithMessage("The group name length must be between 3 and 100 characters");
 
         RuleFor(expression => expression.Description)
-            .MaximumLength(300).WithMessage("Длина описания группы должна быть от 0 до 300 символов");
+            .MaximumLength(300).WithMessage("The group description length must be between 0 and 300 characters");
 
         RuleFor(expression => expression.Colour)
             .Matches("^([A-Fa-f0-9]{8}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{3})$")
             .WithMessage(
-                "Цвет не выполняет условия, примеры правильного указания цвета: FA12AD29, FF1AFF, 2483, AD0");
+                "The colour does not meet the requirements, examples of correct colour values: FA12AD29, FF1AFF, 2483, AD0");
 
         RuleFor(expression => expression.GoalSum)
-            .GreaterThanOrEqualTo(0).WithMessage("Финансовая цель не может быть меньше 0")
-            .LessThan(1000000000000).WithMessage("Финансовая цель не может быть больше 999999999999");
+            .GreaterThanOrEqualTo(0).WithMessage("The financial goal cannot be less than 0")
+            .LessThan(ValidationConstants.MaxPrice).WithMessage("The financial goal cannot be greater than 999999999999");
     }
 }

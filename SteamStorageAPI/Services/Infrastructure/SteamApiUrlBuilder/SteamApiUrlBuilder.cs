@@ -1,0 +1,152 @@
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Utilities.Config;
+
+namespace SteamStorageAPI.Services.Infrastructure.SteamApiUrlBuilder;
+
+public class SteamApiUrlBuilder : ISteamApiUrlBuilder
+{
+    #region Constants
+
+    private const string STEAM_COMMUNITY_BASE = "https://steamcommunity.com";
+
+    #endregion Constants
+
+    #region Fields
+
+    private readonly string _apiKey;
+
+    private static readonly Dictionary<string, string> ReplaceChars = new()
+    {
+        [" "] = "%20",
+        ["'"] = "%27"
+    };
+
+    #endregion Fields
+
+    #region Constructor
+
+    public SteamApiUrlBuilder(AppConfig config)
+    {
+        _apiKey = config.Steam.ApiKey;
+    }
+
+    #endregion Constructor
+
+    #region Methods
+
+    public string GetUserInfoUrl(long steamProfileId)
+    {
+        return
+            $"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={_apiKey}&steamids={steamProfileId}";
+    }
+
+    public string GetUserUrl(long steamProfileId)
+    {
+        return $"{STEAM_COMMUNITY_BASE}/profiles/{steamProfileId}";
+    }
+
+    public string GetUserIconUrl(string urlHash)
+    {
+        return $"https://avatars.steamstatic.com/{urlHash}";
+    }
+
+    public string GetGameIconUrl(int appId, string urlHash)
+    {
+        return $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appId}/{urlHash}.jpg";
+    }
+
+    public string GetGameInfoUrl(int appId)
+    {
+        return $"https://store.steampowered.com/api/libraryappdetails/?appid={appId}";
+    }
+
+    public string GetSkinIconUrl(string urlHash)
+    {
+        return $"https://community.cloudflare.steamstatic.com/economy/image/{urlHash}";
+    }
+
+    public string GetSkinMarketUrl(int appId, string marketHashName)
+    {
+        return $"{STEAM_COMMUNITY_BASE}/market/listings/{appId}/{ReplaceMarketHashName(marketHashName)}";
+    }
+
+    public string GetSkinsUrl(int appId, int currencyId, int count, int start)
+    {
+        return
+            $"{STEAM_COMMUNITY_BASE}/market/search/render?q=&norender=1&search_descriptions=0&l=russian&appid={appId}&count={count}&start={start}&currency={currencyId}";
+    }
+
+    public string GetMostPopularSkinUrl(int appId, int steamCurrencyId)
+    {
+        return GetSkinsUrl(appId, steamCurrencyId, 1, 0);
+    }
+
+    public string GetSkinInfoUrl(string marketHashName)
+    {
+        return
+            $"{STEAM_COMMUNITY_BASE}/market/search/render?norender=1&l=russian&start=0&count=1&query={ReplaceMarketHashName(marketHashName)}";
+    }
+
+    public string GetInventoryUrl(long steamProfileId, int appId, int count)
+    {
+        return $"{STEAM_COMMUNITY_BASE}/inventory/{steamProfileId}/{appId}/2?l=russian&count={count}";
+    }
+
+    public string GetPriceOverviewUrl(int appId, string marketHashName, int steamCurrencyId)
+    {
+        return
+            $"{STEAM_COMMUNITY_BASE}/market/priceoverview/?appid={appId}&market_hash_name={ReplaceMarketHashName(marketHashName)}&currency={steamCurrencyId}";
+    }
+
+    public string GetAuthUrl(string returnTo, string realm)
+    {
+        return $"{STEAM_COMMUNITY_BASE}/openid/login"
+               + "?openid.ns=http://specs.openid.net/auth/2.0"
+               + "&openid.mode=checkid_setup"
+               + $"&openid.return_to={returnTo}"
+               + $"&openid.realm={realm}"
+               + "&openid.identity=http://specs.openid.net/auth/2.0/identifier_select"
+               + "&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select";
+    }
+
+    public string GetAuthCheckUrl()
+    {
+        return $"{STEAM_COMMUNITY_BASE}/openid/login";
+    }
+
+    public HttpContent GetAuthCheckContent(
+        string ns,
+        string opEndpoint,
+        string claimedId,
+        string identity,
+        string returnTo,
+        string responseNonce,
+        string assocHandle,
+        string signed,
+        string sig)
+    {
+        Dictionary<string, string> formData = new()
+        {
+            ["openid.ns"] = ns,
+            ["openid.mode"] = "check_authentication",
+            ["openid.op_endpoint"] = opEndpoint,
+            ["openid.claimed_id"] = claimedId,
+            ["openid.identity"] = identity,
+            ["openid.return_to"] = returnTo,
+            ["openid.response_nonce"] = responseNonce,
+            ["openid.assoc_handle"] = assocHandle,
+            ["openid.signed"] = signed,
+            ["openid.sig"] = sig
+        };
+
+        return new FormUrlEncodedContent(formData);
+    }
+
+    private static string ReplaceMarketHashName(string marketHashName)
+    {
+        return ReplaceChars.Aggregate(marketHashName,
+            (current, replaceChar) => current.Replace(replaceChar.Key, replaceChar.Value));
+    }
+
+    #endregion Methods
+}

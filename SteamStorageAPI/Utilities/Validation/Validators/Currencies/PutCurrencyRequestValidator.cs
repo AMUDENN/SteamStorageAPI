@@ -1,22 +1,22 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
-public sealed class PutCurrencyRequestValidator : AbstractValidator<CurrenciesController.PutCurrencyRequest>
+public sealed class PutCurrencyRequestValidator : AbstractValidator<PutCurrencyRequest>
 {
     public PutCurrencyRequestValidator()
     {
         RuleFor(expression => expression.CurrencyId)
-            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1");
-        
+            .GreaterThan(0).WithMessage("Currency Id cannot be less than 1");
+
         RuleFor(expression => expression.Title)
-            .Length(3, 100).WithMessage("Длина названия валюты должна быть от 3 до 100 символов");
-        
+            .Length(3, 100).WithMessage("The length of the currency name must be between 3 and 100 characters");
+
         RuleFor(expression => expression.Mark)
-            .Length(1, 10).WithMessage("Длина названия валюты должна быть от 1 до 10 символов");
-        
+            .Length(1, 10).WithMessage("The length of the currency name must be between 1 and 10 characters");
+
         RuleFor(expression => expression.CultureInfo)
-            .Length(1, 10).WithMessage("Длина CultureInfo должна быть от 1 до 10 символов");
+            .Length(1, 10).WithMessage("The length of CultureInfo must be between 1 and 10 characters");
     }
 }

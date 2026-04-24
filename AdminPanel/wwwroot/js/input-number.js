@@ -24,7 +24,7 @@ input.addEventListener('change', event => {
 })
 
 
-function invokeChange(object){
+function invokeChange(object) {
     const ev = new Event('change');
     object.dispatchEvent(ev);
 }

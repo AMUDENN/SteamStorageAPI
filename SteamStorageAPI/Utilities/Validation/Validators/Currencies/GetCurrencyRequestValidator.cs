@@ -1,13 +1,13 @@
 ﻿using FluentValidation;
-using SteamStorageAPI.Controllers;
+using SteamStorageAPI.Models.DTOs;
 
 namespace SteamStorageAPI.Utilities.Validation.Validators.Currencies;
 
-public sealed class GetCurrencyRequestValidator : AbstractValidator<CurrenciesController.GetCurrencyRequest>
+public sealed class GetCurrencyRequestValidator : AbstractValidator<GetCurrencyRequest>
 {
     public GetCurrencyRequestValidator()
     {
         RuleFor(expression => expression.Id)
-            .GreaterThan(0).WithMessage("Id валюты не может быть меньше 1");
+            .GreaterThan(0).WithMessage("Currency Id cannot be less than 1");
     }
 }

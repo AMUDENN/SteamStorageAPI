@@ -1,24 +1,132 @@
-﻿.token-page-content {
-    height: 100%;
-    justify-content: center;
-}
+/* =======================================================
+   Token page  (SteamStorage style)
+   ======================================================= */
 
-.token-content {
-    max-width: 50%;
-    flex-direction: column;
+.token-page-content {
+    height: 100%;
     justify-content: center;
     align-items: center;
 }
 
-.token-content p {
-    margin-bottom: 15px;
+.token-content {
+    max-width: min(520px, 90%);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(2rem, 5vw, 3.5rem) clamp(1.5rem, 4vw, 3rem);
+
+    background: rgba(30, 30, 55, 0.45);
+    border: 1px solid var(--border-medium);
+    border-radius: 28px;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: var(--shadow-glow), var(--shadow-elevated);
+    position: relative;
+    overflow: hidden;
+    animation: cardReveal 0.8s var(--ease-out) 0.15s both;
 }
 
-.token-content svg {
-    width: 120px;
-    margin-bottom: 25px;
+/* Top accent line */
+.token-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    background-size: 200% 100%;
+    animation: gradientShift 4s ease infinite;
 }
 
-.token-content svg path {
-    fill: var(--fg-color-dark);
+/* Subtle inner glow */
+.token-content::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(139, 92, 246, 0.12), transparent 70%);
+    pointer-events: none;
+}
+
+@keyframes cardReveal {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* --- Steam logo icon --- */
+.token-content svg.logo {
+    width: 80px;
+    height: auto;
+    margin-bottom: 2rem;
+    animation: iconFloat 0.9s var(--ease-bounce) 0.35s both;
+    filter: drop-shadow(0 0 18px rgba(139, 92, 246, 0.55));
+}
+
+@keyframes iconFloat {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --- Status heading --- */
+.token-content p.large-text {
+    background: var(--gradient-primary);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: gradientShift 6s ease infinite;
+    margin-bottom: 1rem;
+}
+
+/* --- Description text --- */
+.token-content p.big-text {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    font-weight: 400;
+    color: var(--fg-color-dark);
+    line-height: 1.65;
+    text-align: center;
+}
+
+/* --- Failure variant: pink accent --- */
+.token-content.is-failure::before {
+    background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+}
+
+.token-content.is-failure svg {
+    filter: drop-shadow(0 0 18px rgba(236, 72, 153, 0.55));
+}
+
+.token-content.is-failure p.large-text {
+    background: linear-gradient(135deg, #ec4899, #f43f5e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* --- Failure variant icon --- */
+.token-content.is-failure svg.logo {
+    filter: drop-shadow(0 0 18px rgba(236, 72, 153, 0.55));
 }

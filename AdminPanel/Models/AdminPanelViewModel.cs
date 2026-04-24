@@ -15,16 +15,26 @@ public class AdminPanelViewModel
     public string Role { get; init; } = string.Empty;
 
     public List<Currencies.CurrencyResponse> Currencies { get; init; } = [];
-    
+
     public List<Games.GameResponse> Games { get; init; } = [];
-    
+
     public List<Roles.RoleResponse> Roles { get; init; } = [];
+
+    public int UsersCount { get; init; }
 
     public int UsersPageNumber { get; init; } = 1;
 
     public int UsersPagesCount { get; init; } = 1;
 
     public List<Users.UserResponse> Users { get; init; } = [];
+
+    public string ActiveTab { get; init; } = "currencies";
+
+    public int? SearchUserId { get; init; }
+
+    public string? SearchNickname { get; init; }
+
+    public int? SearchSteamId { get; init; }
 
     #endregion Properties
 }

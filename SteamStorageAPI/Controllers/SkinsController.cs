@@ -1,668 +1,254 @@
-﻿using System.Net.Mime;
+using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteamStorageAPI.DBEntities;
-using SteamStorageAPI.Models.SteamAPIModels.Skins;
-using SteamStorageAPI.Services.CurrencyService;
-using SteamStorageAPI.Services.SkinService;
-using SteamStorageAPI.Services.UserService;
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Services.Domain.SkinService;
+using SteamStorageAPI.Services.Infrastructure.ContextUserService;
 using SteamStorageAPI.Utilities.Exceptions;
-using SteamStorageAPI.Utilities.Extensions;
-using SteamStorageAPI.Utilities.Steam;
-using SteamStorageAPI.Utilities.Validation.Tools;
-using SteamStorageAPI.Utilities.Validation.Validators.Skins;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
 
-namespace SteamStorageAPI.Controllers
+namespace SteamStorageAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]/[action]")]
+public class SkinsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class SkinsController : ControllerBase
+    #region Fields
+
+    private readonly ISkinService _skinService;
+    private readonly IContextUserService _contextUserService;
+
+    #endregion Fields
+
+    #region Constructor
+
+    public SkinsController(ISkinService skinService, IContextUserService contextUserService)
     {
-        #region Enums
-
-        public enum SkinOrderName
-        {
-            Title,
-            Price,
-            Change7D,
-            Change30D
-        }
-
-        #endregion Enums
-
-        #region Fields
-
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ISkinService _skinService;
-        private readonly IUserService _userService;
-        private readonly ICurrencyService _currencyService;
-        private readonly SteamStorageContext _context;
-
-        #endregion Fields
-
-        #region Constructor
-
-        public SkinsController(
-            IHttpClientFactory httpClientFactory,
-            ISkinService skinService,
-            IUserService userService,
-            ICurrencyService currencyService,
-            SteamStorageContext context)
-        {
-            _httpClientFactory = httpClientFactory;
-            _skinService = skinService;
-            _userService = userService;
-            _currencyService = currencyService;
-            _context = context;
-        }
-
-        #endregion Constructor
-
-        #region Records
-
-        public record BaseSkinResponse(
-            int Id,
-            string SkinIconUrl,
-            string Title,
-            string MarketHashName,
-            string MarketUrl);
-
-        public record BaseSkinsResponse(
-            int Count,
-            IEnumerable<BaseSkinResponse> Skins);
-
-        public record SkinResponse(
-            BaseSkinResponse Skin,
-            decimal CurrentPrice,
-            double Change7D,
-            double Change30D,
-            bool IsMarked);
-
-        public record SkinsResponse(
-            int Count,
-            int PagesCount,
-            IEnumerable<SkinResponse> Skins);
-
-        public record SkinDynamicResponse(
-            int Id,
-            DateTime DateUpdate,
-            decimal Price);
-
-        public record SkinDynamicStatsResponse(
-            double ChangePeriod,
-            IEnumerable<SkinDynamicResponse> Dynamic);
-
-        public record SkinPagesCountResponse(
-            int Count);
-
-        public record SteamSkinsCountResponse(
-            int Count);
-
-        public record SavedSkinsCountResponse(
-            int Count);
-
-        [Validator<GetSkinInfoRequestValidator>]
-        public record GetSkinInfoRequest(
-            int SkinId);
-
-        public record GetBaseSkinsRequest(
-            string? Filter);
-
-        [Validator<GetSkinsRequestValidator>]
-        public record GetSkinsRequest(
-            int? GameId,
-            string? Filter,
-            SkinOrderName? OrderName,
-            bool? IsAscending,
-            bool? IsMarked,
-            int PageNumber,
-            int PageSize);
-
-        [Validator<GetSkinDynamicsRequestValidator>]
-        public record GetSkinDynamicsRequest(
-            int SkinId,
-            DateTime StartDate,
-            DateTime EndDate);
-
-        [Validator<GetSkinPagesCountRequestValidator>]
-        public record GetSkinPagesCountRequest(
-            int? GameId,
-            string? Filter,
-            bool? IsMarked,
-            int PageSize);
-
-        [Validator<GetSteamSkinsCountRequestValidator>]
-        public record GetSteamSkinsCountRequest(
-            int GameId);
-
-        [Validator<GetSavedSkinsCountRequestValidator>]
-        public record GetSavedSkinsCountRequest(
-            int? GameId,
-            string? Filter,
-            bool? IsMarked);
-
-        [Validator<PostSkinRequestValidator>]
-        public record PostSkinRequest(
-            int GameId,
-            string MarketHashName);
-
-        [Validator<SetMarkedSkinRequestValidator>]
-        public record SetMarkedSkinRequest(
-            int SkinId);
-
-        [Validator<DeleteMarkedSkinRequestValidator>]
-        public record DeleteMarkedSkinRequest(
-            int SkinId);
-
-        #endregion Records
-
-        #region Methods
-
-        private async Task<SkinResponse> GetSkinResponseAsync(
-            Skin skin,
-            User user,
-            IEnumerable<int> markedSkinsIds,
-            CancellationToken cancellationToken = default)
-        {
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-            List<SkinsDynamic> dynamic30 = await _context.Entry(skin)
-                .Collection(x => x.SkinsDynamics)
-                .Query()
-                .AsNoTracking()
-                .Where(x => x.DateUpdate > DateTime.Now.AddDays(-30).Date)
-                .OrderBy(x => x.DateUpdate)
-                .ToListAsync(cancellationToken);
-
-            List<SkinsDynamic> dynamic7 = dynamic30.Where(x => x.DateUpdate > DateTime.Now.AddDays(-7).Date).ToList();
-
-            double change7D = (double)(dynamic7.Count == 0
-                ? 0
-                : (skin.CurrentPrice - dynamic7.First().Price) / dynamic7.First().Price);
-            double change30D = (double)(dynamic30.Count == 0
-                ? 0
-                : (skin.CurrentPrice - dynamic30.First().Price) / dynamic30.First().Price);
-
-            bool isMarked = markedSkinsIds.Any(x => x == skin.Id);
-
-            return new(await _skinService.GetBaseSkinResponseAsync(skin, cancellationToken),
-                (decimal)((double)skin.CurrentPrice * currencyExchangeRate),
-                change7D,
-                change30D,
-                isMarked);
-        }
-
-        private async Task<IEnumerable<SkinResponse>> GetSkinsResponseAsync(
-            IQueryable<Skin> skins,
-            User user,
-            IEnumerable<int> markedSkinsIds,
-            CancellationToken cancellationToken = default)
-        {
-            double currencyExchangeRate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
-
-            return await Task.WhenAll(skins
-                .Include(x => x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30).Date))
-                .AsEnumerable()
-                .Select(async x =>
-                    new SkinResponse(
-                        await _skinService.GetBaseSkinResponseAsync(x, cancellationToken),
-                        (decimal)((double)x.CurrentPrice * currencyExchangeRate),
-                        x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
-                            ? (double)((x.CurrentPrice - x.SkinsDynamics
-                                           .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
-                                           .OrderBy(y => y.DateUpdate).First().Price)
-                                       / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7).Date)
-                                           .OrderBy(y => y.DateUpdate).First().Price)
-                            : 0,
-                        x.SkinsDynamics.Count != 0
-                            ? (double)((x.CurrentPrice - x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
-                                       / x.SkinsDynamics.OrderBy(y => y.DateUpdate).First().Price)
-                            : 0,
-                        markedSkinsIds.Any(y => y == x.Id)))
-            ).WaitAsync(cancellationToken);
-        }
-
-        #endregion Methods
-
-        #region GET
-
-        /// <summary>
-        /// Получение информации об одном предмете
-        /// </summary>
-        /// <response code="200">Возвращает подробную информацию о предмете</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetSkinInfo")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SkinResponse>> GetSkinInfo(
-            [FromQuery] GetSkinInfoRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Skin skin = await _context.Skins.AsNoTracking()
-                            .Include(x => x.Game)
-                            .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Предмета с таким Id не существует");
-
-            List<int> markedSkinsIds = await _context.Entry(user)
-                .Collection(x => x.MarkedSkins)
-                .Query()
-                .AsNoTracking()
-                .Select(x => x.SkinId)
-                .ToListAsync(cancellationToken);
-
-            return Ok(await GetSkinResponseAsync(skin, user, markedSkinsIds, cancellationToken));
-        }
-
-        /// <summary>
-        /// Получение упрощённого списка предметов
-        /// </summary>
-        /// <response code="200">Возвращает упрощённый список предметов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetBaseSkins")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<BaseSkinsResponse>> GetBaseSkins(
-            [FromQuery] GetBaseSkinsRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            IQueryable<Skin> skins = _context.Skins
-                .AsNoTracking()
-                .WhereMatchFilter(x => x.Title, request.Filter);
-
-            skins = skins.Take(20)
-                .Include(x => x.Game);
-
-            return Ok(new BaseSkinsResponse(await skins.CountAsync(cancellationToken),
-                await Task.WhenAll(skins.AsEnumerable()
-                        .Select(async x => await _skinService.GetBaseSkinResponseAsync(x, cancellationToken)))
-                    .WaitAsync(cancellationToken)));
-        }
-
-        /// <summary>
-        /// Получение списка предметов
-        /// </summary>
-        /// <response code="200">Возвращает список предметов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetSkins")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SkinsResponse>> GetSkins(
-            [FromQuery] GetSkinsRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            List<int> markedSkinsIds = await _context.Entry(user)
-                .Collection(x => x.MarkedSkins)
-                .Query()
-                .AsNoTracking()
-                .Select(x => x.SkinId)
-                .ToListAsync(cancellationToken);
-
-            IQueryable<Skin> skins = _context.Skins
-                .AsNoTracking()
-                .Include(x => x.Game)
-                .Where(x =>
-                    (request.GameId == null || x.GameId == request.GameId)
-                    && (request.IsMarked == null || request.IsMarked == markedSkinsIds.Any(y => y == x.Id)))
-                .WhereMatchFilter(x => x.Title, request.Filter);
-
-            if (request is { OrderName: not null, IsAscending: not null })
-                switch (request.OrderName)
-                {
-                    case SkinOrderName.Title:
-                        skins = request.IsAscending.Value
-                            ? skins.OrderBy(x => x.Title)
-                            : skins.OrderByDescending(x => x.Title);
-                        break;
-                    case SkinOrderName.Price:
-                        skins = request.IsAscending.Value
-                            ? skins.OrderBy(x => x.CurrentPrice)
-                            : skins.OrderByDescending(x => x.CurrentPrice);
-                        break;
-                    case SkinOrderName.Change7D:
-                        skins = request.IsAscending.Value
-                            ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                ? (double)((x.CurrentPrice - x.SkinsDynamics
-                                               .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                               .OrderBy(y => y.DateUpdate).First().Price)
-                                           / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                               .OrderBy(y => y.DateUpdate).First().Price)
-                                : 0)
-                            : skins.OrderByDescending(x =>
-                                x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                    ? (double)((x.CurrentPrice - x.SkinsDynamics
-                                                   .Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                                   .OrderBy(y => y.DateUpdate).First().Price)
-                                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-7))
-                                                   .OrderBy(y => y.DateUpdate).First().Price)
-                                    : 0);
-                        break;
-                    case SkinOrderName.Change30D:
-                        skins = request.IsAscending.Value
-                            ? skins.OrderBy(x => x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                ? (double)((x.CurrentPrice - x.SkinsDynamics
-                                               .Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                               .OrderBy(y => y.DateUpdate).First().Price)
-                                           / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                               .OrderBy(y => y.DateUpdate).First().Price)
-                                : 0)
-                            : skins.OrderByDescending(x =>
-                                x.SkinsDynamics.Any(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                    ? (double)((x.CurrentPrice - x.SkinsDynamics
-                                                   .Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                                   .OrderBy(y => y.DateUpdate).First().Price)
-                                               / x.SkinsDynamics.Where(y => y.DateUpdate > DateTime.Now.AddDays(-30))
-                                                   .OrderBy(y => y.DateUpdate).First().Price)
-                                    : 0);
-                        break;
-                }
-            else
-                skins = skins.OrderBy(x => x.Id);
-
-            int skinsCount = await skins.CountAsync(cancellationToken);
-
-            int pagesCount = (int)Math.Ceiling((double)skinsCount / request.PageSize);
-
-            skins = skins.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
-
-            return Ok(new SkinsResponse(skinsCount,
-                pagesCount == 0 ? 1 : pagesCount,
-                await GetSkinsResponseAsync(skins, user, markedSkinsIds, cancellationToken)));
-        }
-
-        /// <summary>
-        /// Получение динамики стоимости предмета
-        /// </summary>
-        /// <response code="200">Возвращает динамику стоимости предмета</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetSkinDynamics")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SkinDynamicStatsResponse>> GetSkinDynamics(
-            [FromQuery] GetSkinDynamicsRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Skin skin = await _context.Skins.AsNoTracking()
-                            .FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Предмета с таким Id не существует");
-
-            List<SkinDynamicResponse> dynamic = await
-                _skinService.GetSkinDynamicsResponseAsync(skin, user, request.StartDate, request.EndDate,
-                    cancellationToken);
-
-            double changePeriod = (double)(dynamic.Count == 0
-                ? 0
-                : (dynamic.Last().Price - dynamic.First().Price) / dynamic.First().Price);
-
-            return Ok(new SkinDynamicStatsResponse(changePeriod, dynamic));
-        }
-
-        /// <summary>
-        /// Получение количества страниц предметов
-        /// </summary>
-        /// <response code="200">Возвращает количество страниц определённого размера</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetSkinPagesCount")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SkinPagesCountResponse>> GetSkinPagesCount(
-            [FromQuery] GetSkinPagesCountRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            List<int> markedSkinsIds = [];
-
-            if (request.IsMarked is not null)
-                markedSkinsIds = await _context.Entry(user)
-                    .Collection(x => x.MarkedSkins)
-                    .Query()
-                    .AsNoTracking()
-                    .Select(x => x.SkinId)
-                    .ToListAsync(cancellationToken);
-
-            int count = await _context.Skins.AsNoTracking()
-                .WhereMatchFilter(x => x.Title, request.Filter)
-                .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                 && (request.IsMarked == null ||
-                                     request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
-                    cancellationToken);
-
-            int pagesCount = (int)Math.Ceiling((double)count / request.PageSize);
-
-            return Ok(new SkinPagesCountResponse(pagesCount == 0 ? 1 : pagesCount));
-        }
-
-        /// <summary>
-        /// Получение общего количества предметов в Steam
-        /// </summary>
-        /// <response code="200">Возвращает количество предметов в Steam</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Игры с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetSteamSkinsCount")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount(
-            [FromQuery] GetSteamSkinsCountRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            Game game = await _context.Games.AsNoTracking()
-                            .FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                            "Игры с таким Id не существует");
-
-            HttpClient client = _httpClientFactory.CreateClient();
-            SteamSkinResponse response =
-                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetMostPopularSkinUrl(game.SteamGameId),
-                    cancellationToken) ?? throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "При получении данных с сервера Steam произошла ошибка");
-
-            return Ok(new SteamSkinsCountResponse(response.total_count));
-        }
-
-        /// <summary>
-        /// Получение количества сохранённых предметов
-        /// </summary>
-        /// <response code="200">Возвращает количество сохранённых предметов</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpGet(Name = "GetSavedSkinsCount")]
-        [Produces(MediaTypeNames.Application.Json)]
-        public async Task<ActionResult<SavedSkinsCountResponse>> GetSavedSkinsCount(
-            [FromQuery] GetSavedSkinsCountRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            List<int> markedSkinsIds = [];
-
-            if (request.IsMarked is not null)
-                markedSkinsIds = await _context.Entry(user)
-                    .Collection(x => x.MarkedSkins)
-                    .Query()
-                    .AsNoTracking()
-                    .Select(x => x.SkinId)
-                    .ToListAsync(cancellationToken: cancellationToken);
-
-            int count = await _context.Skins.AsNoTracking()
-                .WhereMatchFilter(x => x.Title, request.Filter)
-                .CountAsync(x => (request.GameId == null || x.GameId == request.GameId)
-                                 && (request.IsMarked == null ||
-                                     request.IsMarked == markedSkinsIds.Any(y => y == x.Id)),
-                    cancellationToken);
-
-            return Ok(new SavedSkinsCountResponse(count));
-        }
-
-        #endregion GET
-
-        #region POST
-
-        /// <summary>
-        /// Занесение одного предмета из Steam
-        /// </summary>
-        /// <response code="200">Предмет успешно добавлен</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Игры с таким Id не существует</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize(Roles = nameof(Role.Roles.Admin))]
-        [HttpPost(Name = "PostSkin")]
-        public async Task<ActionResult> PostSkin(
-            PostSkinRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            Game game = await _context.Games.FirstOrDefaultAsync(x => x.Id == request.GameId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                            "Игры с таким Id не существует");
-
-            HttpClient client = _httpClientFactory.CreateClient();
-
-            SteamSkinResponse? response =
-                await client.GetFromJsonAsync<SteamSkinResponse>(SteamApi.GetSkinInfoUrl(request.MarketHashName),
-                    cancellationToken);
-
-            if (response is null)
-                throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "При получении данных с сервера Steam произошла ошибка");
-
-            SkinResult result = response.results.First();
-
-            if (await _context.Skins.AnyAsync(x => x.MarketHashName == result.asset_description.market_hash_name,
-                    cancellationToken))
-                throw new HttpResponseException(StatusCodes.Status502BadGateway,
-                    "Скин с таким MarketHashName уже присутствует в базе");
-
-            await _context.Skins.AddAsync(new()
-            {
-                GameId = game.Id,
-                MarketHashName = result.asset_description.market_hash_name,
-                Title = result.name,
-                SkinIconUrl = result.asset_description.icon_url
-            }, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Добавление предмета в отмеченные
-        /// </summary>
-        /// <response code="200">Предмет отмечен</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Предмета с таким Id не существует или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpPost(Name = "SetMarkedSkin")]
-        public async Task<ActionResult> SetMarkedSkin(
-            SetMarkedSkinRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            Skin skin = await _context.Skins.FirstOrDefaultAsync(x => x.Id == request.SkinId, cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Предмета с таким Id не существует");
-
-            MarkedSkin? markedSkin =
-                await _context.MarkedSkins.Where(x => x.UserId == user.Id)
-                    .FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
-
-            if (markedSkin is not null)
-                throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "Скин с таким Id уже добавлен в избранное");
-
-            await _context.MarkedSkins.AddAsync(new()
-            {
-                SkinId = skin.Id,
-                UserId = user.Id
-            }, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion POST
-
-        #region DELETE
-
-        /// <summary>
-        /// Удаление отмеченного предмета
-        /// </summary>
-        /// <response code="200">Отметка предмета снята</response>
-        /// <response code="400">Ошибка во время выполнения метода (см. описание)</response>
-        /// <response code="401">Пользователь не прошёл авторизацию</response>
-        /// <response code="404">Предмета с таким Id в таблице отмеченных предметов нет или пользователь не найден</response>
-        /// <response code="499">Операция отменена</response>
-        [Authorize]
-        [HttpDelete(Name = "DeleteMarkedSkin")]
-        public async Task<ActionResult> DeleteMarkedSkin(
-            DeleteMarkedSkinRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            User user = await _userService.GetCurrentUserAsync(cancellationToken) ??
-                        throw new HttpResponseException(StatusCodes.Status404NotFound,
-                            "Пользователя с таким Id не существует");
-
-            MarkedSkin? markedSkin =
-                await _context.MarkedSkins.Where(x => x.UserId == user.Id)
-                    .FirstOrDefaultAsync(x => x.SkinId == request.SkinId, cancellationToken);
-
-            if (markedSkin is null)
-                throw new HttpResponseException(StatusCodes.Status400BadRequest,
-                    "Скина с таким Id в таблице отмеченных скинов нет");
-
-            _context.MarkedSkins.Remove(markedSkin);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return Ok();
-        }
-
-        #endregion DELETE
+        _skinService = skinService;
+        _contextUserService = contextUserService;
     }
+
+    #endregion Constructor
+
+    #region GET
+
+    /// <summary>
+    /// Get information about a single skin
+    /// </summary>
+    /// <response code="200">Returns detailed information about the skin</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetSkinInfo")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<SkinResponse>> GetSkinInfo(
+        [FromQuery] GetSkinInfoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        return Ok(await _skinService.GetSkinInfoAsync(user, request, cancellationToken));
+    }
+
+    /// <summary>
+    /// Get a simplified list of skins
+    /// </summary>
+    /// <response code="200">Returns a simplified list of skins</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetBaseSkins")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<BaseSkinsResponse>> GetBaseSkins(
+        [FromQuery] GetBaseSkinsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _skinService.GetBaseSkinsAsync(request, cancellationToken));
+    }
+
+    /// <summary>
+    /// Get the list of skins
+    /// </summary>
+    /// <response code="200">Returns the list of skins</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetSkins")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<SkinsResponse>> GetSkins(
+        [FromQuery] GetSkinsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        return Ok(await _skinService.GetSkinsAsync(user, request, cancellationToken));
+    }
+
+    /// <summary>
+    /// Get the price dynamics of a skin
+    /// </summary>
+    /// <response code="200">Returns the price dynamics of the skin</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetSkinDynamics")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<SkinDynamicStatsResponse>> GetSkinDynamics(
+        [FromQuery] GetSkinDynamicsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        return Ok(await _skinService.GetSkinDynamicsAsync(user, request, cancellationToken));
+    }
+
+    /// <summary>
+    /// Get the number of skin pages
+    /// </summary>
+    /// <response code="200">Returns the number of pages of the specified size</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetSkinPagesCount")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<SkinPagesCountResponse>> GetSkinPagesCount(
+        [FromQuery] GetSkinPagesCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        return Ok(await _skinService.GetSkinPagesCountAsync(user, request, cancellationToken));
+    }
+
+
+    /// <summary>
+    /// Get the total number of skins in Steam
+    /// </summary>
+    /// <response code="200">Returns the number of skins in Steam</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetSteamSkinsCount")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<SteamSkinsCountResponse>> GetSteamSkinsCount(
+        [FromQuery] GetSteamSkinsCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _skinService.GetSteamSkinsCountAsync(request, cancellationToken));
+    }
+
+    /// <summary>
+    /// Get the number of saved skins
+    /// </summary>
+    /// <response code="200">Returns the number of saved skins</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">The user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpGet(Name = "GetSavedSkinsCount")]
+    [Produces(MediaTypeNames.Application.Json)]
+    public async Task<ActionResult<SavedSkinsCountResponse>> GetSavedSkinsCount(
+        [FromQuery] GetSavedSkinsCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        return Ok(await _skinService.GetSavedSkinsCountAsync(user, request, cancellationToken));
+    }
+
+    #endregion GET
+
+    #region POST
+
+    /// <summary>
+    /// Import a single skin from Steam
+    /// </summary>
+    /// <response code="201">The skin was successfully added</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No game with the given Id exists</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize(Roles = nameof(Role.Roles.Admin))]
+    [HttpPost(Name = "PostSkin")]
+    public async Task<ActionResult> PostSkin(
+        PostSkinRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _skinService.PostSkinAsync(request, cancellationToken);
+        return Created();
+    }
+
+    /// <summary>
+    /// Add a skin to marked items
+    /// </summary>
+    /// <response code="200">The skin was marked</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpPost(Name = "SetMarkedSkin")]
+    public async Task<ActionResult> SetMarkedSkin(
+        SetMarkedSkinRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _skinService.SetMarkedSkinAsync(user, request, cancellationToken);
+        return Ok();
+    }
+
+    #endregion POST
+
+    #region DELETE
+
+    /// <summary>
+    /// Remove a skin from marked items
+    /// </summary>
+    /// <response code="200">The skin mark was removed</response>
+    /// <response code="400">An error occurred during method execution (see description)</response>
+    /// <response code="401">The user is not authorized</response>
+    /// <response code="404">No skin with the given Id exists in the marked skins table, or the user was not found</response>
+    /// <response code="499">The operation was cancelled</response>
+    [Authorize]
+    [HttpDelete(Name = "DeleteMarkedSkin")]
+    public async Task<ActionResult> DeleteMarkedSkin(
+        DeleteMarkedSkinRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        User user = await _contextUserService.GetContextUserAsync(cancellationToken)
+                    ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                        "No user with the given Id exists");
+
+        await _skinService.DeleteMarkedSkinAsync(user, request, cancellationToken);
+        return Ok();
+    }
+
+    #endregion DELETE
 }

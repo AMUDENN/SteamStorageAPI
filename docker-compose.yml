@@ -1,50 +1,82 @@
-﻿version: "3.8"
-
-services:
+﻿services:
   steamstorage.api:
     image: steamstorage.api
-    env_file:
-      - env/api.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
-      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_URLS=http://+:80
+      - CONFIG_PATH=.config.yaml
     ports:
       - "8081:80"
-      - "8082:443"
     volumes:
-      - ~/.aspnet/https:/https:ro
+      - ./SteamStorageAPI/.config.yaml:/app/.config.yaml:ro
+    networks:
+      - steamstorage-network
     build:
       context: .
       dockerfile: SteamStorageAPI/Dockerfile
-  
+
   loginwebapp:
     image: loginwebapp
-    env_file:
-      - env/loginwebapp.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
-      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_URLS=http://+:80
+      - CONFIG_PATH=.config.yaml
     ports:
       - "8083:80"
-      - "8084:443"
     volumes:
-      - ~/.aspnet/https:/https:ro
+      - ./LoginWebApp/.config.yaml:/app/.config.yaml:ro
+    networks:
+      - steamstorage-network
     build:
       context: .
       dockerfile: LoginWebApp/Dockerfile
-      
+
   adminpanel:
     image: adminpanel
-    env_file:
-      - env/adminpanel.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
-      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_URLS=http://+:80
+      - STEAMSTORAGE_API_INTERNAL_HOST=steamstorage.api
+      - STEAMSTORAGE_API_PUBLIC_HOST=localhost:8081
     ports:
       - "8085:80"
-      - "8086:443"
-    volumes:
-      - ~/.aspnet/https:/https:ro
+    networks:
+      - steamstorage-network
     build:
       context: .
       dockerfile: AdminPanel/Dockerfile
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    depends_on:
+      - steamstorage.api
+    networks:
+      - steamstorage-network
+
+  grafana:
+    image: grafana/grafana:latest
+    env_file:
+      - grafana.env
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - steamstorage-network
+
+networks:
+  steamstorage-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.0.0/24"
+
+volumes:
+  prometheus_data:
+  grafana_data:

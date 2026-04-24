@@ -1,0 +1,266 @@
+using Microsoft.EntityFrameworkCore;
+using SteamStorageAPI.Models.DBEntities;
+using SteamStorageAPI.Models.DTOs;
+using SteamStorageAPI.Models.DTOs.Enums;
+using SteamStorageAPI.Services.Domain.CurrencyService;
+using SteamStorageAPI.Utilities.Exceptions;
+
+namespace SteamStorageAPI.Services.Domain.ActiveGroupService;
+
+public class ActiveGroupService : IActiveGroupService
+{
+    #region Fields
+
+    private readonly ICurrencyService _currencyService;
+    private readonly SteamStorageContext _context;
+
+    #endregion Fields
+
+    #region Constructor
+
+    public ActiveGroupService(
+        ICurrencyService currencyService,
+        SteamStorageContext context)
+    {
+        _currencyService = currencyService;
+        _context = context;
+    }
+
+    #endregion Constructor
+
+    #region Methods
+
+    public async Task<ActiveGroupResponse> GetActiveGroupResponseAsync(
+        ActiveGroup group,
+        User user,
+        CancellationToken cancellationToken = default)
+    {
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+        return new ActiveGroupResponse(group.Id,
+            group.Title,
+            group.Description,
+            $"#{group.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
+            group.GoalSum,
+            group.GoalSum is null or 0
+                ? null
+                : group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / group.GoalSum.Value,
+            group.Actives.Sum(y => y.Count),
+            group.Actives.Sum(y => y.BuyPrice * y.Count),
+            group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate,
+            group.Actives.Sum(y => y.BuyPrice * y.Count) != 0
+                ? (group.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
+                   - group.Actives.Sum(y => y.BuyPrice * y.Count))
+                  / group.Actives.Sum(y => y.BuyPrice * y.Count)
+                : 0,
+            group.DateCreation);
+    }
+
+    public async Task<IEnumerable<ActiveGroupResponse>> GetActiveGroupsResponseAsync(
+        IQueryable<ActiveGroup> groups,
+        User user,
+        CancellationToken cancellationToken = default)
+    {
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+        return await groups.Select(x => new ActiveGroupResponse(
+            x.Id,
+            x.Title,
+            x.Description,
+            $"#{x.Colour ?? ActiveGroup.BASE_ACTIVE_GROUP_COLOUR}",
+            x.GoalSum,
+            x.GoalSum == null || x.GoalSum == 0
+                ? null
+                : x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate / x.GoalSum.Value,
+            x.Actives.Sum(y => y.Count),
+            x.Actives.Sum(y => y.BuyPrice * y.Count),
+            x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate,
+            x.Actives.Sum(y => y.BuyPrice * y.Count) != 0
+                ? (x.Actives.Sum(y => y.Skin.CurrentPrice * y.Count) * rate
+                   - x.Actives.Sum(y => y.BuyPrice * y.Count))
+                  / x.Actives.Sum(y => y.BuyPrice * y.Count)
+                : 0,
+            x.DateCreation)).ToListAsync(cancellationToken);
+    }
+
+    public IQueryable<ActiveGroup> GetActiveGroupsQuery(User user)
+    {
+        return _context.Entry(user)
+            .Collection(x => x.ActiveGroups)
+            .Query()
+            .AsNoTracking()
+            .Include(x => x.Actives).ThenInclude(x => x.Skin);
+    }
+
+    public IEnumerable<ActiveGroupResponse> ApplyOrder(
+        IEnumerable<ActiveGroupResponse> groups,
+        ActiveGroupOrderName? orderName,
+        bool? isAscending)
+    {
+        if (orderName is null || isAscending is null)
+            return groups.OrderBy(x => x.Id);
+
+        return orderName switch
+        {
+            ActiveGroupOrderName.Title => isAscending.Value
+                ? groups.OrderBy(x => x.Title)
+                : groups.OrderByDescending(x => x.Title),
+            ActiveGroupOrderName.Count => isAscending.Value
+                ? groups.OrderBy(x => x.Count)
+                : groups.OrderByDescending(x => x.Count),
+            ActiveGroupOrderName.BuySum => isAscending.Value
+                ? groups.OrderBy(x => x.BuySum)
+                : groups.OrderByDescending(x => x.BuySum),
+            ActiveGroupOrderName.CurrentSum => isAscending.Value
+                ? groups.OrderBy(x => x.CurrentSum)
+                : groups.OrderByDescending(x => x.CurrentSum),
+            ActiveGroupOrderName.Change => isAscending.Value
+                ? groups.OrderBy(x => x.Change)
+                : groups.OrderByDescending(x => x.Change),
+            _ => groups.OrderBy(x => x.Id)
+        };
+    }
+
+    public async Task<ActiveGroupsStatisticResponse> GetActiveGroupsStatisticAsync(
+        User user,
+        CancellationToken cancellationToken = default)
+    {
+        decimal rate = await _currencyService.GetCurrencyExchangeRateAsync(user, cancellationToken);
+
+        IQueryable<ActiveGroup> groups = _context.Entry(user)
+            .Collection(x => x.ActiveGroups)
+            .Query()
+            .AsNoTracking()
+            .Include(x => x.Actives).ThenInclude(x => x.Skin).ThenInclude(x => x.Game);
+
+        List<Active> actives = await groups.SelectMany(x => x.Actives).ToListAsync(cancellationToken);
+
+        int activesCount = actives.Sum(x => x.Count);
+        decimal buyPriceSum = actives.Sum(x => x.BuyPrice * x.Count);
+        decimal latestPriceSum = actives.Sum(x => x.Skin.CurrentPrice * x.Count) * rate;
+
+        List<Game> games = actives
+            .Select(x => x.Skin.Game)
+            .DistinctBy(x => x.Id)
+            .ToList();
+
+        List<ActiveGroupsGameCountResponse> gamesCountResponse = games.Select(item =>
+            new ActiveGroupsGameCountResponse(
+                item.Title,
+                activesCount == 0
+                    ? 0
+                    : actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count) / (decimal)activesCount,
+                actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Count))).ToList();
+
+        List<ActiveGroupsGameInvestmentSumResponse> gamesInvestmentSumResponse = games.Select(item =>
+            new ActiveGroupsGameInvestmentSumResponse(
+                item.Title,
+                buyPriceSum == 0
+                    ? 0
+                    : actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count)
+                      / buyPriceSum,
+                actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.BuyPrice * x.Count))).ToList();
+
+        List<ActiveGroupsGameCurrentSumResponse> gamesCurrentSumResponse = games.Select(item =>
+            new ActiveGroupsGameCurrentSumResponse(
+                item.Title,
+                latestPriceSum == 0
+                    ? 0
+                    : actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Skin.CurrentPrice * x.Count)
+                      * rate
+                      / latestPriceSum,
+                actives.Where(x => x.Skin.GameId == item.Id).Sum(x => x.Skin.CurrentPrice * x.Count)
+                * rate)).ToList();
+
+        return new ActiveGroupsStatisticResponse(activesCount, buyPriceSum, latestPriceSum,
+            gamesCountResponse, gamesInvestmentSumResponse, gamesCurrentSumResponse);
+    }
+
+    public async Task<ActiveGroupDynamicStatsResponse> GetActiveGroupDynamicsAsync(
+        User user,
+        GetActiveGroupDynamicRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ActiveGroup group = await _context.Entry(user)
+                                .Collection(u => u.ActiveGroups)
+                                .Query()
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
+                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "You do not have access to the group with this Id or the group with this Id does not exist");
+
+        DateTime startDate = request.StartDate.Date;
+        DateTime endDate = request.EndDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+
+        List<ActiveGroupDynamicResponse> dynamic = await _context.Entry(group)
+            .Collection(s => s.ActiveGroupsDynamics)
+            .Query()
+            .AsNoTracking()
+            .Where(x => x.DateUpdate >= startDate && x.DateUpdate <= endDate)
+            .Select(x => new ActiveGroupDynamicResponse(x.Id, x.DateUpdate, x.Sum))
+            .ToListAsync(cancellationToken);
+
+        decimal changePeriod = dynamic.Count == 0 || dynamic.First().Sum == 0
+            ? 0
+            : (dynamic.Last().Sum - dynamic.First().Sum) / dynamic.First().Sum;
+
+        return new ActiveGroupDynamicStatsResponse(changePeriod, dynamic);
+    }
+
+    public async Task PostActiveGroupAsync(
+        User user,
+        PostActiveGroupRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _context.ActiveGroups.AddAsync(new ActiveGroup
+        {
+            UserId = user.Id,
+            Title = request.Title,
+            Description = request.Description,
+            Colour = request.Colour,
+            GoalSum = request.GoalSum,
+            DateCreation = DateTime.UtcNow
+        }, cancellationToken);
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task PutActiveGroupAsync(
+        User user,
+        PutActiveGroupRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ActiveGroup group = await _context.Entry(user)
+                                .Collection(u => u.ActiveGroups)
+                                .Query()
+                                .FirstOrDefaultAsync(x => x.Id == request.GroupId, cancellationToken)
+                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "You do not have access to edit this group or the group with this Id does not exist");
+
+        group.Title = request.Title;
+        group.Description = request.Description;
+        group.Colour = request.Colour;
+        group.GoalSum = request.GoalSum;
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteActiveGroupAsync(
+        User user,
+        int groupId,
+        CancellationToken cancellationToken = default)
+    {
+        ActiveGroup group = await _context.Entry(user)
+                                .Collection(u => u.ActiveGroups)
+                                .Query()
+                                .FirstOrDefaultAsync(x => x.Id == groupId, cancellationToken)
+                            ?? throw new HttpResponseException(StatusCodes.Status404NotFound,
+                                "You do not have access to edit this group or the group with this Id does not exist");
+
+        _context.ActiveGroups.Remove(group);
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    #endregion Methods
+}

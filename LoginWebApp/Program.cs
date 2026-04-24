@@ -1,3 +1,4 @@
+using LoginWebApp.Utilities.Config;
 using LoginWebApp.Utilities.TokenHub;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -13,6 +14,13 @@ public static class Program
 
         builder.Services.AddSignalR();
 
+        //Initialize config
+        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
+        if (configPath is null) throw new Exception("Path to configuration file not set");
+
+        AppConfig config = ConfigurationReader.Read(configPath);
+        builder.Services.AddSingleton(config);
+
         return builder;
     }
 
@@ -24,20 +32,18 @@ public static class Program
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
-        {
             app.UseHsts();
-        }
 
         //ForwardedHeaders
-        app.UseForwardedHeaders(new()
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
 
         //app.UseHttpsRedirection();
-        app.UseStaticFiles(new StaticFileOptions  
+        app.UseStaticFiles(new StaticFileOptions
         {
-            RequestPath = "/token"  
+            RequestPath = "/token"
         });
 
         app.MapHub<TokenHub>("/token/token-hub");
@@ -45,8 +51,8 @@ public static class Program
         app.UseRouting();
 
         app.MapControllerRoute(
-            name: "default",
-            pattern: "token/{action=Token}/{id?}");
+            "default",
+            "token/{action=Token}/{id?}");
 
         app.Run();
     }

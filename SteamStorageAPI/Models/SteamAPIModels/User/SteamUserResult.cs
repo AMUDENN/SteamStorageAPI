@@ -1,7 +1,6 @@
-﻿namespace SteamStorageAPI.Models.SteamAPIModels.User
+namespace SteamStorageAPI.Models.SteamAPIModels.User;
+
+public class SteamUserResult
 {
-    public class SteamUserResult
-    {
-        public SteamUserResponse response { get; set; }
-    }
+    public SteamUserResponse? response { get; set; }
 }
