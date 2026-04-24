@@ -57,11 +57,18 @@ public class GamesController : Controller
                 ApiConstants.ApiMethods.PostGame,
                 new Games.PostGameRequest(request.SteamGameId, request.IconUrlHash),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 
@@ -77,11 +84,18 @@ public class GamesController : Controller
                 ApiConstants.ApiMethods.PutGameInfo,
                 new Games.PutGameRequest(request.GameId, request.IconUrlHash, request.Title),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 
@@ -97,11 +111,18 @@ public class GamesController : Controller
                 ApiConstants.ApiMethods.DeleteGame,
                 new Games.DeleteGameRequest(request.GameId),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 

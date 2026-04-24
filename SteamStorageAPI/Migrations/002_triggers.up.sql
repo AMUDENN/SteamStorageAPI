@@ -14,16 +14,16 @@ IF OBJECT_ID(N'[dbo].[UpdateSkinsCurrentPrice]', N'TR') IS NOT NULL
 GO
 
 CREATE TRIGGER [dbo].[UpdateSkinsCurrentPrice]
-ON [dbo].[SkinsDynamic]
-AFTER INSERT
-AS
+    ON [dbo].[SkinsDynamic]
+    AFTER INSERT
+    AS
 BEGIN
     SET NOCOUNT ON;
 
     UPDATE s
-    SET    s.[CurrentPrice] = i.[Price]
-    FROM   [dbo].[Skins] s
-    INNER JOIN inserted i ON s.[ID] = i.[SkinID];
+    SET s.[CurrentPrice] = i.[Price]
+    FROM [dbo].[Skins] s
+             INNER JOIN inserted i ON s.[ID] = i.[SkinID];
 END
 GO
 
@@ -36,19 +36,19 @@ IF OBJECT_ID(N'[dbo].[TR_Currencies_SingleBase]', N'TR') IS NOT NULL
 GO
 
 CREATE TRIGGER [dbo].[TR_Currencies_SingleBase]
-ON [dbo].[Currencies]
-AFTER INSERT, UPDATE
-AS
+    ON [dbo].[Currencies]
+    AFTER INSERT, UPDATE
+    AS
 BEGIN
     SET NOCOUNT ON;
 
     IF UPDATE(IsBase) AND EXISTS (SELECT 1 FROM inserted WHERE IsBase = 1)
-    BEGIN
-        UPDATE [dbo].[Currencies]
-        SET    [IsBase] = 0
-        WHERE  [IsBase] = 1
-          AND  [ID] NOT IN (SELECT [ID] FROM inserted WHERE [IsBase] = 1);
-    END
+        BEGIN
+            UPDATE [dbo].[Currencies]
+            SET [IsBase] = 0
+            WHERE [IsBase] = 1
+              AND [ID] NOT IN (SELECT [ID] FROM inserted WHERE [IsBase] = 1);
+        END
 END
 GO
 
@@ -61,18 +61,18 @@ IF OBJECT_ID(N'[dbo].[TR_Games_SingleBase]', N'TR') IS NOT NULL
 GO
 
 CREATE TRIGGER [dbo].[TR_Games_SingleBase]
-ON [dbo].[Games]
-AFTER INSERT, UPDATE
-AS
+    ON [dbo].[Games]
+    AFTER INSERT, UPDATE
+    AS
 BEGIN
     SET NOCOUNT ON;
 
     IF UPDATE(IsBase) AND EXISTS (SELECT 1 FROM inserted WHERE IsBase = 1)
-    BEGIN
-        UPDATE [dbo].[Games]
-        SET    [IsBase] = 0
-        WHERE  [IsBase] = 1
-          AND  [ID] NOT IN (SELECT [ID] FROM inserted WHERE [IsBase] = 1);
-    END
+        BEGIN
+            UPDATE [dbo].[Games]
+            SET [IsBase] = 0
+            WHERE [IsBase] = 1
+              AND [ID] NOT IN (SELECT [ID] FROM inserted WHERE [IsBase] = 1);
+        END
 END
 GO

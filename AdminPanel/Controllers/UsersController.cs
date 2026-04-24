@@ -49,11 +49,18 @@ public class UsersController : Controller
                 ApiConstants.ApiMethods.SetRole,
                 new Roles.SetRoleRequest(request.UserId, request.RoleId),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 

@@ -37,8 +37,6 @@ public class AdminPanelController : Controller
 
     #region Records
 
-    private record ExchangeTokenResponse(string Token);
-
     public record AdminPanelRequest(
         [FromForm(Name = "usersPageNumber")] int? UsersPageNumber,
         [FromQuery(Name = "tab")] string? Tab,
@@ -57,11 +55,8 @@ public class AdminPanelController : Controller
         if (string.IsNullOrEmpty(authCode))
             return RedirectToAction(nameof(AccessDenied));
 
-        using HttpClient client = _httpClientFactory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(10);
-
-        ExchangeTokenResponse? result = await client.GetFromJsonAsync<ExchangeTokenResponse>(
-            $"{_options.ApiAddress}/Authorize/ExchangeToken?authCode={authCode}",
+        Authorize.ExchangeTokenResponse? result = await _apiClient.GetAsync<Authorize.ExchangeTokenResponse>(
+            ApiConstants.ApiMethods.ExchangeToken,
             cancellationToken);
 
         if (result is null)

@@ -64,11 +64,18 @@ public class CurrenciesController : Controller
                     request.Mark,
                     request.CultureInfo),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 
@@ -88,11 +95,18 @@ public class CurrenciesController : Controller
                     request.Mark,
                     request.CultureInfo),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 
@@ -108,11 +122,18 @@ public class CurrenciesController : Controller
                 ApiConstants.ApiMethods.DeleteCurrency,
                 new Currencies.DeleteCurrencyRequest(request.CurrencyId),
                 cancellationToken);
-            return Json(new { ok = true });
+            return Json(new
+            {
+                ok = true
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 

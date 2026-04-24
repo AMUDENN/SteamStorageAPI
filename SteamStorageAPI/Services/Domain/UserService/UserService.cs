@@ -58,7 +58,7 @@ public class UserService : IUserService
     {
         if (user.DateUpdate.HasValue && user.DateUpdate.Value >= DateTime.UtcNow.AddDays(-1))
             return GetUserResponse(user);
-        
+
         using HttpClient client = _httpClientFactory.CreateClient();
         SteamUserResult? steamUserResult =
             await client.GetFromJsonAsync<SteamUserResult>(
@@ -72,7 +72,7 @@ public class UserService : IUserService
         user.IconUrlMedium = steamUser?.avatarmedium?.Replace("https://avatars.steamstatic.com/", string.Empty);
         user.IconUrlFull = steamUser?.avatarfull?.Replace("https://avatars.steamstatic.com/", string.Empty);
         user.DateUpdate = DateTime.UtcNow;
-                
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return GetUserResponse(user);

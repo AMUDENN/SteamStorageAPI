@@ -7,13 +7,13 @@ public class Currency
     public int Id { get; set; }
 
     public int SteamCurrencyId { get; set; }
-    
+
     public string Title { get; set; } = null!;
 
     public string Mark { get; set; } = null!;
 
     public string CultureInfo { get; set; } = null!;
-    
+
     public bool IsBase { get; set; }
 
     public virtual ICollection<CurrencyDynamic> CurrencyDynamics { get; set; } = new List<CurrencyDynamic>();

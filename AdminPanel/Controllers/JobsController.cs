@@ -39,11 +39,19 @@ public class JobsController : Controller
                 ApiConstants.ApiMethods.TriggerJob,
                 new Jobs.TriggerJobRequest(Jobs.JobName.RefreshSkinDynamicsJob),
                 cancellationToken);
-            return Json(new { ok = true, message = "RefreshSkinDynamics triggered" });
+            return Json(new
+            {
+                ok = true,
+                message = "RefreshSkinDynamics triggered"
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 
@@ -57,11 +65,19 @@ public class JobsController : Controller
                 ApiConstants.ApiMethods.TriggerJob,
                 new Jobs.TriggerJobRequest(Jobs.JobName.RefreshCurrenciesJob),
                 cancellationToken);
-            return Json(new { ok = true, message = "RefreshCurrencies triggered" });
+            return Json(new
+            {
+                ok = true,
+                message = "RefreshCurrencies triggered"
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 
@@ -75,11 +91,19 @@ public class JobsController : Controller
                 ApiConstants.ApiMethods.TriggerJob,
                 new Jobs.TriggerJobRequest(Jobs.JobName.RefreshActiveGroupsDynamicsJob),
                 cancellationToken);
-            return Json(new { ok = true, message = "RefreshActiveGroupsDynamics triggered" });
+            return Json(new
+            {
+                ok = true,
+                message = "RefreshActiveGroupsDynamics triggered"
+            });
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = ex.Message });
+            return Json(new
+            {
+                ok = false,
+                error = ex.Message
+            });
         }
     }
 

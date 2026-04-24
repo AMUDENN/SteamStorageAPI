@@ -186,14 +186,16 @@ async function refreshCurrencies() {
     try {
         const data = await fetch('/admin/AdminPanel/CurrenciesProxy').then(r => r.json());
         renderCurrenciesTable(data.currencies || []);
-    } catch { /* ignore */ }
+    } catch { /* ignore */
+    }
 }
 
 async function refreshGames() {
     try {
         const data = await fetch('/admin/AdminPanel/GamesProxy').then(r => r.json());
         renderGamesTable(data.games || []);
-    } catch { /* ignore */ }
+    } catch { /* ignore */
+    }
 }
 
 async function loadUsers(page, userId, nickname, steamId) {
@@ -204,7 +206,8 @@ async function loadUsers(page, userId, nickname, steamId) {
     try {
         const data = await fetch('/admin/AdminPanel/UsersProxy?' + params).then(r => r.json());
         renderUsersTable(data, page || 1);
-    } catch { /* ignore */ }
+    } catch { /* ignore */
+    }
 }
 
 // ── Table render ──────────────────────────────────────────
@@ -804,7 +807,10 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', async e => {
             e.preventDefault();
             const btn = form.querySelector('button[type=submit]');
-            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '...';
+            }
             try {
                 const res = await fetch(form.action, {method: 'POST'});
                 const data = await res.json();
@@ -813,7 +819,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch {
                 showToast('Network error', 'error');
             } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '▶ Run'; }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '▶ Run';
+                }
             }
         });
     });

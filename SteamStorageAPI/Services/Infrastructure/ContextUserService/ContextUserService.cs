@@ -29,7 +29,7 @@ public class ContextUserService : IContextUserService
     {
         if (!int.TryParse(_httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
             return null;
-        
+
         return await _context.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
     }
 
