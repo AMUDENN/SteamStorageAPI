@@ -1,5 +1,6 @@
 using AdminPanel.Models;
 using AdminPanel.Services.CookiesUserService;
+using AdminPanel.Utilities.Config;
 using Microsoft.AspNetCore.HttpOverrides;
 using SteamStorageAPI.SDK.Utilities.Extensions.ServiceCollection.Api;
 
@@ -13,23 +14,26 @@ public static class Program
     {
         builder.Services.AddControllersWithViews();
 
-        string apiInternalHost = builder.Configuration["STEAMSTORAGE_API_INTERNAL_HOST"] ?? "localhost:8081";
-        string apiPublicHost = builder.Configuration["STEAMSTORAGE_API_PUBLIC_HOST"] ?? "localhost:8081";
-        string apiAddress = $"http://{apiInternalHost}/api";
+        //Initialize config
+        string? configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
+        if (configPath is null) throw new Exception("Path to configuration file not set");
+
+        AppConfig config = ConfigurationReader.Read(configPath);
+        builder.Services.AddSingleton(config);
 
         //SteamStorageApi
         builder.Services.AddSteamStorageApiWeb(options => {
-            options.ClientTimeout = 15;
-            options.ClientName = "MainClient";
-            options.HostName = apiPublicHost;
-            options.ServerAddress = apiInternalHost;
-            options.ApiAddress = apiAddress;
-            options.TokenHubEndpoint = "https://steamstorage.ru/token/token-hub";
+            options.ClientTimeout = config.App.ClientTimeout;
+            options.ClientName = config.App.ClientName;
+            options.HostName = config.App.HostName;
+            options.ServerAddress = config.App.ServerAddress;
+            options.ApiAddress = config.App.ApiAddress;
+            options.TokenHubEndpoint = config.App.TokenHubEndpoint;
         });
 
         builder.Services.AddSingleton(new AdminPanelOptions
         {
-            ApiAddress = apiAddress
+            ApiAddress = config.App.ApiAddress
         });
         builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();

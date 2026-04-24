@@ -1,0 +1,7 @@
+app:
+  clientTimeout: 15
+  clientName: "MainClient"
+  hostName: "localhost:8081"
+  serverAddress: "localhost:8081"
+  apiAddress: "http://localhost:8081/api"
+  tokenHubEndpoint: "https://steamstorage.ru/token/token-hub"
