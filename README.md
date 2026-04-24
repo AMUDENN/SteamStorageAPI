@@ -258,10 +258,11 @@ SteamStorageAPI
 ### 1. Create config files from examples
 
 ```bash
-cp SteamStorageAPI/.config.yaml.example  SteamStorageAPI/.config.yaml
-cp LoginWebApp/.config.yaml.example      LoginWebApp/.config.yaml
-cp prometheus.yml.example                prometheus.yml
-cp grafana.env.example                   grafana.env
+cp SteamStorageAPI/config.example.yaml  SteamStorageAPI/.config.yaml
+cp LoginWebApp/config.example.yaml      LoginWebApp/.config.yaml
+cp AdminPanel/config.example.yaml       AdminPanel/.config.yaml
+cp prometheus.yml.example               prometheus.yml
+cp grafana.env.example                  grafana.env
 ```
 
 ### 2. Fill in `SteamStorageAPI/.config.yaml`
@@ -309,7 +310,19 @@ app:
   internalApiKey: "<same-value-as-above>"
 ```
 
-### 4. Fill in `prometheus.yml`
+### 4. Fill in `AdminPanel/.config.yaml`
+
+```yaml
+app:
+  clientTimeout: 15
+  clientName: "MainClient"
+  hostName: "<public-host-of-api>"          # e.g. localhost:8081
+  serverAddress: "<internal-host-of-api>"   # e.g. steamstorage.api (Docker service name)
+  apiAddress: "http://<internal-host-of-api>/api"
+  tokenHubEndpoint: "https://<your-domain>/token/token-hub"
+```
+
+### 5. Fill in `prometheus.yml`
 
 Set `credentials` to the same value as `internalApiKey`:
 
@@ -319,14 +332,14 @@ authorization:
   credentials: <your-internal-api-key>
 ```
 
-### 5. Apply database migrations
+### 6. Apply database migrations
 
 ```bash
 cd SteamStorageAPI
 dotnet ef database update
 ```
 
-### 6. Run with Docker Compose
+### 7. Run with Docker Compose
 
 ```bash
 docker compose up --build
@@ -584,6 +597,8 @@ Manually trigger background jobs. Requires admin role.
 
 The Admin Panel (`localhost:8085`) is a server-rendered MVC application with SPA-style tab navigation — switching tabs
 and performing CRUD operations never triggers a full page reload.
+
+Requires `AdminPanel/.config.yaml` mounted at runtime (see [Getting started](#-getting-started)).
 
 **Tabs:**
 
